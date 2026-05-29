@@ -1,5 +1,5 @@
 ---
-name: deepseek-claude-code-setup
+name: deepseek-cc
 description: "Configure Claude Code to use DeepSeek models instead of Anthropic. Use this whenever the user wants to point Claude Code at DeepSeek (the DeepSeek Anthropic-compatible API), run Claude Code with deepseek-v4-pro or deepseek-v4-flash, set up a cheaper Claude Code, or fix the 400 'messages role unknown variant system' error that DeepSeek returns on recent Claude Code versions (2.1.154 and newer). Works for any coding agent (Claude Code, Cursor, Codex, Gemini CLI, etc.) executing the setup on the user's machine."
 ---
 
@@ -67,7 +67,7 @@ Create the config dir `~/.config/claude-deepseek/` and:
   them.** Just copy the files. (If the skill's `assets/` are not on disk — e.g.
   you only have SKILL.md — fetch them raw instead, no need to print them:
   `curl -fsSLO` from
-  `https://raw.githubusercontent.com/Momoyeyu/skills/master/deepseek-claude-code-setup/assets/{proxy.py,claude-ds.zsh}`.)
+  `https://raw.githubusercontent.com/Momoyeyu/skills/master/deepseek-cc/assets/{proxy.py,claude-ds.zsh}`.)
 - Copy `assets/key.env` there, then have the user fill their key. `chmod 600` it.
 - Wire up the launcher: add ONE line to the user's shell rc (`~/.zshrc` / `~/.bashrc`):
   ```
