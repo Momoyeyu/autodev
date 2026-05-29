@@ -43,6 +43,18 @@
         "assets/claude-ds.zsh",
         "assets/key.env"
       ]
+    },
+    {
+      "name": "consistent-commit",
+      "description": "Before creating a git commit, match the author identity, email, and message style to the repo's existing history by sampling a group of past commits (not just HEAD). Asks the user when signals are ambiguous instead of guessing.",
+      "path": "consistent-commit",
+      "invoke": "/consistent-commit",
+      "triggers": ["commit", "git commit", "提交", "make a commit", "commit message"],
+      "dependencies": ["git"],
+      "files": [
+        "SKILL.md",
+        "reading-history.md"
+      ]
     }
   ]
 }
