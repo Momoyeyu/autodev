@@ -1,0 +1,391 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "How autodev Works",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "contract",
+      "type": "security",
+      "label": "Write the contract",
+      "sublabel": "goal, criterion, budget",
+      "pos": [
+        80,
+        130
+      ],
+      "size": [
+        212,
+        64
+      ]
+    },
+    {
+      "id": "scope",
+      "type": "security",
+      "label": "Fix the file set",
+      "sublabel": "may change, must not",
+      "pos": [
+        80,
+        232
+      ],
+      "size": [
+        212,
+        64
+      ]
+    },
+    {
+      "id": "confirm",
+      "type": "external",
+      "label": "Confirm",
+      "tag": "human gate",
+      "pos": [
+        80,
+        334
+      ],
+      "size": [
+        212,
+        64
+      ]
+    },
+    {
+      "id": "spec",
+      "type": "backend",
+      "label": "Write the tests",
+      "sublabel": "or build a benchmark",
+      "pos": [
+        380,
+        182
+      ],
+      "size": [
+        212,
+        64
+      ]
+    },
+    {
+      "id": "measure",
+      "type": "database",
+      "label": "Measure baseline",
+      "sublabel": "run once, note the noise",
+      "pos": [
+        380,
+        284
+      ],
+      "size": [
+        212,
+        64
+      ]
+    },
+    {
+      "id": "edit",
+      "type": "backend",
+      "label": "Edit allowed files",
+      "pos": [
+        700,
+        130
+      ],
+      "size": [
+        230,
+        64
+      ]
+    },
+    {
+      "id": "run",
+      "type": "messagebus",
+      "label": "Run the benchmark",
+      "pos": [
+        700,
+        232
+      ],
+      "size": [
+        230,
+        64
+      ]
+    },
+    {
+      "id": "verdict",
+      "type": "security",
+      "label": "Verdict",
+      "sublabel": "the script decides",
+      "pos": [
+        700,
+        334
+      ],
+      "size": [
+        230,
+        64
+      ]
+    },
+    {
+      "id": "accept",
+      "type": "backend",
+      "label": "Accept",
+      "sublabel": "commit + log",
+      "pos": [
+        830,
+        440
+      ],
+      "size": [
+        90,
+        64
+      ]
+    },
+    {
+      "id": "reject",
+      "type": "messagebus",
+      "label": "Reject",
+      "sublabel": "roll back + log",
+      "pos": [
+        720,
+        440
+      ],
+      "size": [
+        90,
+        64
+      ]
+    },
+    {
+      "id": "retest",
+      "type": "database",
+      "label": "Re-run all tests",
+      "sublabel": "on the final code",
+      "pos": [
+        1030,
+        182
+      ],
+      "size": [
+        230,
+        64
+      ]
+    },
+    {
+      "id": "report",
+      "type": "backend",
+      "label": "Refactor + report",
+      "sublabel": "what the loop gained",
+      "pos": [
+        1030,
+        284
+      ],
+      "size": [
+        230,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Contract",
+      "wraps": [
+        "contract",
+        "scope",
+        "confirm"
+      ],
+      "pad": 30
+    },
+    {
+      "kind": "region",
+      "label": "Baseline",
+      "wraps": [
+        "spec",
+        "measure"
+      ],
+      "pad": 30
+    },
+    {
+      "kind": "security-group",
+      "label": "Loop",
+      "wraps": [
+        "edit",
+        "run",
+        "verdict",
+        "accept",
+        "reject"
+      ],
+      "pad": 30
+    },
+    {
+      "kind": "region",
+      "label": "Review",
+      "wraps": [
+        "retest",
+        "report"
+      ],
+      "pad": 30
+    }
+  ],
+  "connections": [
+    {
+      "id": "c1",
+      "from": "contract",
+      "to": "scope",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c2",
+      "from": "scope",
+      "to": "confirm",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c3",
+      "from": "confirm",
+      "to": "spec",
+      "label": "agreed",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          345,
+          366
+        ],
+        [
+          345,
+          214
+        ]
+      ]
+    },
+    {
+      "id": "c4",
+      "from": "spec",
+      "to": "measure",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c5",
+      "from": "measure",
+      "to": "edit",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          640,
+          316
+        ],
+        [
+          640,
+          162
+        ]
+      ]
+    },
+    {
+      "id": "c6",
+      "from": "edit",
+      "to": "run",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c7",
+      "from": "run",
+      "to": "verdict",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c8",
+      "from": "verdict",
+      "to": "accept",
+      "label": "better",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          815,
+          415
+        ],
+        [
+          875,
+          415
+        ]
+      ],
+      "labelAt": [
+        960,
+        470
+      ]
+    },
+    {
+      "id": "c9",
+      "from": "verdict",
+      "to": "reject",
+      "label": "no gain",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          815,
+          425
+        ],
+        [
+          765,
+          425
+        ]
+      ],
+      "variant": "security",
+      "labelAt": [
+        690,
+        470
+      ]
+    },
+    {
+      "id": "c10",
+      "from": "verdict",
+      "to": "edit",
+      "label": "next attempt",
+      "fromSide": "left",
+      "toSide": "top",
+      "via": [
+        [
+          635,
+          366
+        ],
+        [
+          635,
+          96
+        ],
+        [
+          815,
+          96
+        ]
+      ],
+      "labelAt": [
+        600,
+        262
+      ]
+    },
+    {
+      "id": "c11",
+      "from": "verdict",
+      "to": "retest",
+      "label": "budget, target or plateau",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          990,
+          366
+        ],
+        [
+          990,
+          214
+        ]
+      ],
+      "labelAt": [
+        920,
+        312
+      ]
+    },
+    {
+      "id": "c12",
+      "from": "retest",
+      "to": "report",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ]
+}

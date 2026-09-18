@@ -1,6 +1,6 @@
-# The gate layer: Test-Driven Development
+# The correctness gate: Test-Driven Development
 
-This is the correctness gate for both lanes of the autodev loop. In the correctness lane it *is* the whole workflow. In the improvement lane it is the constraint the ratchet may never break: an attempt that makes the metric better but turns this gate red is reverted.
+This gate applies to both modes of autodev. For development work it *is* the whole workflow. For optimization it is the constraint the loop may never break: a change that improves the metric but turns these tests red gets reverted.
 
 Read this before writing production code or touching tests.
 
