@@ -1,68 +1,68 @@
 # Contracts
 
-Read this when drafting a contract — that is, at Phase 0 of any run, and any time the improvement lane starts.
+Read this when drafting a contract — that is, at Phase 0 of any run, and any time an optimization starts.
 
-A contract has six fields: `goal`, `criterion`, `budget`, `frozen`, `surface`, `reset`. Three of them are easy to get wrong, so they get the detail here.
+A contract has six fields: `goal`, `criterion`, `budget`, `frozen`, `surface`, `reset`. Three of them are easy to get wrong, which is why they get the detail here.
 
 ## Choosing the metric
 
-The metric decides whether the loop can work at all. Get it wrong and the ratchet either accepts noise or optimizes something nobody wanted.
+The metric decides whether the loop can work at all. Choose badly and the loop either chases noise or optimizes something nobody wanted.
 
-- **One scalar, one direction.** `p95_ms` lower, `requests_per_sec` higher, `bundle_kb` lower. Two metrics means one of them is a gate.
-- **Normalized against what varies.** Model quality is measured per byte, not per token, so a vocabulary change stays comparable. Ask: if the agent changes the shape of the thing, does the number still mean the same thing?
-- **Deterministic metrics need no repetition.** Bundle bytes, test count, binary size: `repeats: 1`, noise floor `0`.
-- **Noisy metrics need a measured floor.** Latency, throughput, memory, anything timed: `repeats ≥ 5`, median statistic, and the floor measured in Phase 1 rather than assumed.
-- **The metric must be reproducible by someone else** on the same machine from a clean checkout.
+- **One number, one direction.** `p95_ms` lower, `requests_per_sec` higher, `bundle_kb` lower. Two metrics means one of them is really a test.
+- **Normalize against what varies.** Model quality is measured per byte rather than per token, so a vocabulary change stays comparable. Ask: if the agent changes the shape of the thing, does the number still mean the same thing?
+- **Deterministic metrics need no repetition.** Bundle bytes, test count, binary size: `repeats: 1`, noise `0`.
+- **Noisy metrics need measured noise.** Latency, throughput, memory, anything timed: `repeats ≥ 5`, median, and the noise measured in Phase 1 rather than assumed.
+- **Someone else must be able to reproduce it** on the same machine from a clean checkout.
 
-When the goal admits several metrics, offer the two or three that fit this codebase and mark a recommendation. "优化首页刷新速度" could mean any of:
+When the request admits several metrics, offer the two or three that fit the codebase and mark a recommendation. "优化首页刷新速度" could mean any of:
 
-| Candidate | Measures | Good when |
+| Candidate | What it measures | Pick it when |
 |---|---|---|
-| `p95_ms` (navigation timing) | server + network + parse + paint | the page is slow to become usable |
-| Time-to-interactive | main-thread work, hydration | the page paints fast but responds late |
+| `p95_ms` (navigation timing) | server + network + parse + paint | the page takes too long to become usable |
+| Time to interactive | main-thread work, hydration | the page paints fast but responds late |
 | `bundle_kb` (gzipped) | shipped bytes | the payload is the suspected cause |
 
-## Freezing the fungible resource
+## Freezing what could be traded for the number
 
-Freeze **whatever could be exchanged for a better measurement**. The test is simple: if changing it would make two attempts incomparable, it belongs in `frozen`.
+Freeze the things that, if changed, would make two attempts incomparable.
 
-| Scenario | Must be frozen | Is time part of it? |
+| Scenario | Must be frozen | Is the clock part of it? |
 |---|---|---|
-| Model training | **Training wall clock** (e.g. 300s) | Yes — longer training wins otherwise |
-| Page load speed | Machine and CPU quota, dataset, cache warm-up, cold/warm definition | **No** — measuring faster does not make a page faster |
+| Model training | **Training wall clock** (e.g. 300s) | Yes — training longer wins otherwise |
+| Page load | Machine and CPU quota, dataset, cache warm-up, cold/warm definition | **No** — measuring faster doesn't make a page faster |
 | Database queries | Row counts, index state, hardware, concurrency | No |
 | Build time | Core count, concurrency, cache state | No |
 | Cost | Request volume, traffic shape, price table | No |
 | Test runtime | Suite contents, parallelism, machine | No |
 
-The model-training row is the one that proves the rule. There, the fixed budget *is* the objective: "the best model trainable in five minutes." Everything else on the list has no such property, and freezing the clock would be meaningless.
+The model-training row is the one that proves the rule: there, the fixed budget *is* the objective — "the best model trainable in five minutes." Nothing else on the list works that way, and freezing the clock for a web page would be meaningless.
 
-`frozen` normally includes, beyond the scenario-specific list:
+Beyond the scenario-specific list, `frozen` normally includes:
 
-- the benchmark or measurement harness itself
-- the gate — the existing test suite and its runner config
+- the benchmark itself
+- the tests and their runner config
 - the dependency lockfile
 
 ## Worked contracts
 
-Feature — correctness lane, no budget:
+Feature — development mode, no budget:
 
 ```yaml
 goal:      "export a filtered transaction list as CSV"
-criterion: { gate: "the new test fails, then passes; whole suite green" }
-surface:   ["src/export/**", "tests/export/**"]
+criterion: { tests: "the new test fails, then passes; whole suite green" }
 frozen:    ["tests/** (existing)", "vitest.config.ts"]
+surface:   ["src/export/**", "tests/export/**"]
 reset:     "git checkout <accepted> -- src/export"
 ```
 
-Optimization — improvement lane:
+Optimization:
 
 ```yaml
 goal:      "GET / first paint p95 under 200ms"
 criterion:
-  gate:      ["npm test"]                        # assertion count may not decrease
+  tests:     ["npm test"]                        # assertion count may not drop
   metric:    { name: p95_ms, direction: lower, repeats: 5, statistic: median }
-  accept:    "metric < baseline - max(5%, noise_floor)"
+  accept:    "metric < baseline - max(5%, noise)"
   target:    200
   tie_break: "smaller diff wins at equal metric"
 budget:    { attempts: 15, wall_clock: "8m" }
@@ -71,12 +71,12 @@ surface:   ["src/home/**"]
 reset:     "git checkout <accepted> -- src/home"
 ```
 
-Model training — improvement lane where the clock is part of the objective:
+Model training — the case where the clock is part of the objective:
 
 ```yaml
 goal:      "lowest validation loss trainable in 300s on this machine"
 criterion:
-  gate:      ["run completes without crashing or producing NaN"]
+  tests:     ["run completes without crashing or producing NaN"]
   metric:    { name: val_loss, direction: lower, repeats: 1 }
 budget:    { attempts: 100, wall_clock: "10h" }
 frozen:    ["prepare.py", "validation split", "training time budget constant"]
@@ -84,29 +84,29 @@ surface:   ["train.py"]
 reset:     "git checkout <accepted> -- train.py"
 ```
 
-## Building the yardstick
+## Building the benchmark
 
-When no measurement harness exists, Phase 0 spawns a sub-task to write one. That sub-task is "make something exist and work correctly", so it is pure correctness lane and runs under TDD like any other implementation work:
+When no benchmark exists, Phase 0 spawns a task to write one. That is "make something exist and work correctly", so it runs under TDD like any other implementation work:
 
-1. **RED** — write a test asserting the harness *discriminates*: a deliberately slow case must measure slower than a fast one. A benchmark that reports the same number for both is broken, and this test is the only thing that catches it.
-2. **GREEN** — implement the harness until that test passes.
-3. **Verify against reality** — confirm it reproduces a difference you already know exists, such as a before/after you measured by hand.
-4. **Baseline** — only now measure the current state and record the noise floor.
+1. **RED** — write a test asserting the benchmark *discriminates*: a deliberately slow case must measure slower than a fast one. A benchmark that reports the same number for both is broken, and this test is the only thing that catches it.
+2. **GREEN** — implement the benchmark until that test passes.
+3. **Check it against reality** — confirm it reproduces a difference you already know exists, such as a before/after you measured by hand.
+4. **Baseline** — only now measure the current state and record the noise.
 
-A harness that has never been shown to discriminate is not a yardstick; it is a random number generator with good manners.
+A benchmark that has never been shown to tell two cases apart is not a benchmark. It is a random number generator with good manners.
 
 ## Scenarios
 
-The same two layers, recombined. No new mechanism for any of these.
+The same two layers, recombined. No new machinery for any of these.
 
-| Scenario | Gate | Ratchet metric | Frozen |
+| Scenario | Tests | Metric | Frozen |
 |---|---|---|---|
-| Feature | new test false → true, suite green | — | existing suite |
-| Bug fix | reproduction test false → true | — | the reproduction test |
+| Feature | new test fails → passes, suite green | — | existing suite |
+| Bug fix | reproduction test fails → passes | — | the reproduction test |
 | Refactor | behavior suite green | complexity ↓ / coverage ↑ | behavior spec |
 | Performance | suite green | p95 ↓ | bench script, dataset, hardware |
 | Build time | suite green | build seconds ↓ | core count, concurrency, cache state |
 | Bundle size | suite green | bytes ↓ | build config, target browsers |
 | Cost | suite green | $/request ↓ | traffic shape, price table |
-| Model quality | no crash, no NaN | val loss ↓ | training harness, validation set, **time budget** |
+| Model quality | no crash, no NaN | val loss ↓ | harness, validation set, **time budget** |
 | Docs / config | validator or schema check passes | — | the validator |

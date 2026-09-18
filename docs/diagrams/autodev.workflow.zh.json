@@ -1,0 +1,392 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "autodev 工作流程",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "contract",
+      "type": "security",
+      "label": "写 contract",
+      "sublabel": "目标、验收标准、预算",
+      "pos": [
+        80,
+        130
+      ],
+      "size": [
+        212,
+        64
+      ]
+    },
+    {
+      "id": "scope",
+      "type": "security",
+      "label": "划定文件范围",
+      "sublabel": "哪些能改、哪些不能",
+      "pos": [
+        80,
+        232
+      ],
+      "size": [
+        212,
+        64
+      ]
+    },
+    {
+      "id": "confirm",
+      "type": "external",
+      "label": "确认",
+      "tag": "human gate",
+      "pos": [
+        80,
+        334
+      ],
+      "size": [
+        212,
+        64
+      ],
+      "sublabel": "唯一的 gate"
+    },
+    {
+      "id": "spec",
+      "type": "backend",
+      "label": "写 test 或 benchmark",
+      "sublabel": "先有量尺",
+      "pos": [
+        380,
+        182
+      ],
+      "size": [
+        212,
+        64
+      ]
+    },
+    {
+      "id": "measure",
+      "type": "database",
+      "label": "测出 baseline",
+      "sublabel": "跑一次，记下波动",
+      "pos": [
+        380,
+        284
+      ],
+      "size": [
+        212,
+        64
+      ]
+    },
+    {
+      "id": "edit",
+      "type": "backend",
+      "label": "改允许的文件",
+      "pos": [
+        700,
+        130
+      ],
+      "size": [
+        230,
+        64
+      ]
+    },
+    {
+      "id": "run",
+      "type": "messagebus",
+      "label": "跑 benchmark",
+      "pos": [
+        700,
+        232
+      ],
+      "size": [
+        230,
+        64
+      ]
+    },
+    {
+      "id": "verdict",
+      "type": "security",
+      "label": "脚本判定",
+      "sublabel": "不接受辩论",
+      "pos": [
+        700,
+        334
+      ],
+      "size": [
+        230,
+        64
+      ]
+    },
+    {
+      "id": "accept",
+      "type": "backend",
+      "label": "接受",
+      "sublabel": "commit + 记日志",
+      "pos": [
+        830,
+        440
+      ],
+      "size": [
+        90,
+        64
+      ]
+    },
+    {
+      "id": "reject",
+      "type": "messagebus",
+      "label": "拒绝",
+      "sublabel": "回滚 + 记日志",
+      "pos": [
+        720,
+        440
+      ],
+      "size": [
+        90,
+        64
+      ]
+    },
+    {
+      "id": "retest",
+      "type": "database",
+      "label": "重跑全部 test",
+      "sublabel": "在最终代码上",
+      "pos": [
+        1030,
+        182
+      ],
+      "size": [
+        230,
+        64
+      ]
+    },
+    {
+      "id": "report",
+      "type": "backend",
+      "label": "重构并汇报",
+      "sublabel": "这次拿到了多少",
+      "pos": [
+        1030,
+        284
+      ],
+      "size": [
+        230,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Contract",
+      "wraps": [
+        "contract",
+        "scope",
+        "confirm"
+      ],
+      "pad": 30
+    },
+    {
+      "kind": "region",
+      "label": "Baseline",
+      "wraps": [
+        "spec",
+        "measure"
+      ],
+      "pad": 30
+    },
+    {
+      "kind": "security-group",
+      "label": "Loop",
+      "wraps": [
+        "edit",
+        "run",
+        "verdict",
+        "accept",
+        "reject"
+      ],
+      "pad": 30
+    },
+    {
+      "kind": "region",
+      "label": "Review",
+      "wraps": [
+        "retest",
+        "report"
+      ],
+      "pad": 30
+    }
+  ],
+  "connections": [
+    {
+      "id": "c1",
+      "from": "contract",
+      "to": "scope",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c2",
+      "from": "scope",
+      "to": "confirm",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c3",
+      "from": "confirm",
+      "to": "spec",
+      "label": "agreed",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          345,
+          366
+        ],
+        [
+          345,
+          214
+        ]
+      ]
+    },
+    {
+      "id": "c4",
+      "from": "spec",
+      "to": "measure",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c5",
+      "from": "measure",
+      "to": "edit",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          640,
+          316
+        ],
+        [
+          640,
+          162
+        ]
+      ]
+    },
+    {
+      "id": "c6",
+      "from": "edit",
+      "to": "run",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c7",
+      "from": "run",
+      "to": "verdict",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "c8",
+      "from": "verdict",
+      "to": "accept",
+      "label": "更好",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          815,
+          415
+        ],
+        [
+          875,
+          415
+        ]
+      ],
+      "labelAt": [
+        960,
+        470
+      ]
+    },
+    {
+      "id": "c9",
+      "from": "verdict",
+      "to": "reject",
+      "label": "没变好",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          815,
+          425
+        ],
+        [
+          765,
+          425
+        ]
+      ],
+      "variant": "security",
+      "labelAt": [
+        690,
+        470
+      ]
+    },
+    {
+      "id": "c10",
+      "from": "verdict",
+      "to": "edit",
+      "label": "下一轮",
+      "fromSide": "left",
+      "toSide": "top",
+      "via": [
+        [
+          635,
+          366
+        ],
+        [
+          635,
+          96
+        ],
+        [
+          815,
+          96
+        ]
+      ],
+      "labelAt": [
+        600,
+        262
+      ]
+    },
+    {
+      "id": "c11",
+      "from": "verdict",
+      "to": "retest",
+      "label": "预算用完 / 达标 / 不再提升",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          990,
+          366
+        ],
+        [
+          990,
+          214
+        ]
+      ],
+      "labelAt": [
+        920,
+        312
+      ]
+    },
+    {
+      "id": "c12",
+      "from": "retest",
+      "to": "report",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ]
+}

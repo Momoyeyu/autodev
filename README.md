@@ -2,146 +2,187 @@
   <strong>English</strong> · <a href="./README_ZH.md">简体中文</a>
 </p>
 
-![Test-Driven Development — red, green, refactor](docs/assets/tdd-hero.svg)
+# autodev
 
-# Test-Driven Development
+**Stop letting your agent grade its own homework.**
 
-**Make your agent earn every line of production code with a test that failed first.**
+An agent can add a feature and call it done, or change some code and call it faster. autodev makes both claims checkable: agree on a benchmark first, stay inside an agreed list of files, and accept a change only when a script says it is better. Everything else gets rolled back.
 
-TDD is a single-folder Agent Skill for Claude Code, Cursor, Codex CLI, OpenCode, and any tool that reads `SKILL.md`. It ships the Iron Law, the full RED → GREEN → REFACTOR loop with mandatory verification gates, and pre-written answers to every excuse a model — or you — will reach for.
+![How autodev works: contract, baseline, loop, review](docs/assets/autodev-overview.png)
 
-- **A hard gate, not a style tip** — no production code without a failing test that the agent actually watched fail
-- **Both verifications are mandatory** — run the test and confirm it fails *for the expected reason*, then confirm it passes with the rest of the suite still green
-- **Every rationalization pre-answered** — "too simple to test", "I'll test after", "I already tested it manually", "deleting X hours is wasteful" → each one mapped to its counter-argument
-- **Mock hygiene built in** — a companion reference that catches tests asserting on mocks, test-only methods in production classes, and silently incomplete mocks
-- **Zero dependencies, zero scripts** — plain Markdown that any agent can follow today
+| Phase | What happens | What you do |
+|---|---|---|
+| **Contract** | Write down the goal, the criterion, the budget, and which files may change | Confirm once |
+| **Baseline** | Write the tests or build the benchmark, run it once, and hash the files that must not change | Nothing |
+| **Loop** | Edit the allowed files → run the benchmark → the script decides → commit or roll back → log the attempt | Wait for the budget you approved |
+| **Review** | Re-run all tests on the final code, then refactor, then report what the loop gained | Nothing |
 
 ![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)
-![Agent Skill](https://img.shields.io/badge/Agent-Skill-7C3AED?style=flat-square)
-![Version](https://img.shields.io/badge/version-1.0.0-0891b2?style=flat-square)
+![Agent Skill](https://img.shields.io/badge/skill-autodev-7C3AED?style=flat-square)
+![Version](https://img.shields.io/badge/version-3.0.3-0891b2?style=flat-square)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)
 
 ```bash
-npx skills add Momoyeyu/test-driven-development -g
+npx skills add Momoyeyu/autodev -g
 ```
+
+Works with Claude Code, Cursor, Codex CLI, OpenCode, and anything else that reads `SKILL.md`.
 
 ## The problem
 
-Coding agents write plausible code fast, and plausible is not the same as correct. The default failure mode is well documented by anyone who has reviewed agent output:
+Ask an agent to make something faster and it will happily make a change, declare victory, and move on. Three things go wrong, and none of them are about laziness:
 
-1. The agent writes the implementation.
-2. The agent writes tests that describe the implementation it just wrote.
-3. The tests pass immediately, so nothing was ever proven — no edge case was discovered, no bug was caught, and the suite now locks in the current behavior, bugs included.
+1. **It grades its own homework.** With no measurement taken before the edit, "faster" is an opinion. A test written after the code passes immediately and proves nothing. A benchmark number with no baseline proves just as little.
+2. **It optimizes the measurement instead of the code.** Cache the benchmark input, shrink the eval set, loosen the tolerance, run it five times and report the best one. In a diff, every one of these looks like progress.
+3. **It forgets.** Thirty attempts later, in a fresh context window, it retries the idea that already failed twice.
 
-Tests written after the code answer *"what does this do?"*. Tests written first answer *"what should this do?"*. Only the second question finds the cases you forgot.
+autodev prevents all three. It combines two ideas that already work:
 
-## The loop
+- **Test-driven development (TDD)** as the correctness gate: write a failing test first, then just enough code to pass it. A test that never failed proves nothing, so an untested feature does not count as done.
+- The **accept/reject loop** from [autoresearch](https://github.com/karpathy/autoresearch): freeze the benchmark, fix the budget, and let a script decide what survives.
 
-![The TDD cycle: RED, GREEN, REFACTOR](docs/assets/tdd-cycle.svg)
+## Two modes, same rules
 
-| Step | What the agent does | Verification that cannot be skipped |
-|---|---|---|
-| **RED** | Writes one minimal test with a clear name, asserting one behavior, against real code | Runs it and confirms it fails **because the feature is missing** — not from a typo or an import error |
-| **GREEN** | Writes the simplest code that passes that one test — no extra options, no speculative parameters | Runs it and confirms it passes, the rest of the suite still passes, and the output is clean |
-| **REFACTOR** | Removes duplication, improves names, extracts helpers — behavior unchanged | Stays green through every edit |
-| **Repeat** | Picks the next behavior and writes the next failing test | — |
+You never have to pick one. The shape of the request decides:
 
-The skill states the rule the loop exists to protect:
+| The request | How success is judged | Mode | Time budget |
+|---|---|---|---|
+| add / implement / fix X | a test goes from failing to passing | **development** (TDD) | **none** — it's done or it isn't |
+| make X faster / smaller / cheaper | a number beats the baseline | **optimization** | **required** |
+| both — "add X, and it has to be fast" | both | optimization | required |
 
-```
-NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
-```
+**TDD isn't optional in either mode.** Optimization adds a benchmark on top of TDD; it doesn't replace it. Tests still pass, new code still gets tests first. A change that improves the number but breaks a test is rolled back like any other failure — which is the entire answer to "the agent made the benchmark faster by breaking the feature."
 
-Code written before its test gets deleted, not "kept as reference" and not "adapted while writing tests". That is the part agents skip when they are being helpful, so the skill names the shortcut explicitly and forbids it.
+Development work gets no time budget. A feature isn't improved by being abandoned halfway. If it's too big to finish in one go, autodev splits it into several.
 
 ## Quick start
 
 ### 1. Install
 
 ```bash
-npx skills add Momoyeyu/test-driven-development -g
+npx skills add Momoyeyu/autodev -g
 ```
 
 Global, non-interactive, Claude Code only:
 
 ```bash
-npx -y skills add Momoyeyu/test-driven-development --skill tdd -a claude-code -g --copy -y
+npx -y skills add Momoyeyu/autodev --skill autodev -a claude-code -g --copy -y
 ```
 
 Try it without installing:
 
 ```bash
-npx skills use Momoyeyu/test-driven-development@tdd --agent claude-code
+npx skills use Momoyeyu/autodev@autodev --agent claude-code
 ```
 
-### 2. Ask for a feature or a bugfix
+### 2. Ask for the work
 
-The skill is written to trigger on implementation work, so plain requests are enough:
+**A feature** — no budget; the work is either done or it isn't:
 
 ```text
-Add rate limiting to the /login endpoint — 5 attempts per minute per IP.
+implement CSV export for the filtered transaction list
 ```
 
 ```text
-Bug: submitting an empty email is accepted by the signup form. Fix it.
+RED       test "exports filtered rows as csv"    → FAIL: exportCsv is not defined
+GREEN     minimal writer, 12 lines               → PASS (suite green)
+REFACTOR  extract CsvWriter                      → still PASS
 ```
 
-### 3. Watch the order of operations
-
-A correct run looks like this, and it is the reason to install the skill rather than to prompt for TDD in the moment:
+**An optimization** — note the contract you get to approve first:
 
 ```text
-RED       writes test "rejects empty email"          → npm test → FAIL: expected 'Email required', got undefined
-GREEN     adds the trim() guard                      → npm test → PASS (all green)
-REFACTOR  extracts shared field validation           → npm test → still PASS
+make the home page load faster
 ```
 
-If your agent's first move after the request is opening the implementation file, the skill is not installed — or it is being ignored, which is what the **Red Flags** section exists to catch.
+```text
+contract for approval:
+  metric   p95_ms ↓   target 200ms   5 runs, median (measured noise ±2.1%)
+  tests    npm test — assertion count may not drop
+  frozen   bench/**  tests/**  package-lock.json  vite.config.ts
+  surface  src/home/**
+  budget   15 attempts / ~8 min
+```
+
+```text
+attempt  commit   tests  metric  delta   verdict  note
+1        a1b2c3d  pass   184.2   —       baseline initial state
+2        b2c3d4e  pass   171.5   -12.7   accept   preload hero image
+3        c3d4e5f  fail   —       —       fail     inline critical css broke the suite
+4        d4e5f6g  pass   183.9   +12.4   reject   memoized fetch, no real gain
+```
+
+### 3. Watch what it refuses to do
+
+The interesting output is the rejections. A run that never rejects anything is either trivial or cheating, and the rules below are what tell the two apart.
+
+## What it asks before spending your time
+
+autodev never requires you to know how it works. It asks two questions at most, always with concrete options and a custom answer, and only about what your request doesn't already determine:
+
+```text
+优化首页刷新速度
+
+Q1  Which metric?
+    A. p95 navigation latency      (recommended — server + network + paint)
+    B. time to interactive         (paints fast, responds late)
+    C. gzipped bundle size         (payload is the suspect)
+    D. custom
+
+Q2  Budget? You're buying wall clock, so the price is shown:
+    A. quick try    ~5 attempts  / ~2 min
+    B. standard     ~15 attempts / ~8 min     (recommended)
+    C. until it converges — usually 30-60 attempts / ~30 min
+    D. custom
+```
+
+Then the whole contract is shown once for confirmation. That is the only point in the loop where a human is needed.
+
+Feature work asks nothing, because there's nothing to ask — the failing test *is* the acceptance criterion, and writing it is the first piece of work.
+
+`--dry-run` prints the contract and stops.
+
+## Why the loop can't be gamed
+
+Seven rules, enforced every attempt. They're the difference between optimizing the code and optimizing the measurement:
+
+1. **The protected files are hashed** before and after each attempt. A changed hash fails the attempt outright.
+2. **The tests only get stronger.** The assertion count may rise or hold, never fall.
+3. **No new dependencies, network calls, or hardware branches.**
+4. **No shrinking the workload to fake a gain** — fewer eval samples, cached results, memoized inputs, warm caches the contract didn't ask for.
+5. **No best-of-N.** Fixed repeat count, median statistic. Re-running until a lucky sample lands is cheating.
+6. **No `.skip`, no `xfail`, no loosened tolerances** to turn a test green.
+7. **At the same number, the simpler change wins.** A metric isn't a complete objective, and without a tie-break the loop just accumulates complexity.
 
 ## What's inside
 
-| File | Role |
-|---|---|
-| [`tdd/SKILL.md`](tdd/SKILL.md) | The skill itself: when to use it, the Iron Law, the three phases with their verification gates, good-test criteria, the rationalization table, red flags, a worked bug-fix example, and a pre-completion checklist |
-| [`tdd/testing-anti-patterns.md`](tdd/testing-anti-patterns.md) | Loaded when tests or mocks are being touched: five anti-patterns, each with the violation, why it is wrong, a gate function, and the fix |
+Progressive disclosure, because a skill that injects 9k tokens into every request gets uninstalled. Only the core loads up front; each reference loads when its trigger fires.
 
-## Why this holds up in practice
+| File | Loads when | Size | Contents |
+|---|---|---|---|
+| [`autodev/SKILL.md`](autodev/SKILL.md) | the skill is triggered | **~2.7k tok** | The three rules, the two modes, the four phases, the verdict, rolling back, the experiment log, stop conditions, anti-gaming |
+| [`references/gate.md`](autodev/references/gate.md) | writing production code or touching tests | ~2.5k tok | The full TDD gate: the Iron Law, both verification steps, the rationalization table, red flags, the checklist |
+| [`references/contracts.md`](autodev/references/contracts.md) | drafting a contract | ~1.5k tok | Choosing a metric, frozen files per scenario, worked contracts, how to build a benchmark |
+| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | adding mocks or test utilities | ~2.1k tok | Five anti-patterns, each with a gate function and the fix |
 
-- **It refuses the "tests after" compromise.** The skill does not ask for more tests; it changes the order. Order is the whole mechanism — a test that never failed proves nothing.
-- **It forces failure diagnosis.** "Test passes? You're testing existing behavior." "Test errors? Fix the error and re-run until it fails correctly." Two of the most common silent failures get an explicit instruction instead of a judgment call.
-- **It answers pushback in the model's own register.** Models are good at producing reasonable-sounding justifications. The rationalization table meets each one with a shorter, harder answer.
-- **It covers the second-order damage.** Passing tests over mocks are worse than no tests. The anti-pattern reference targets exactly the tests agents like to write.
-- **It stays honest about scope.** Throwaway prototypes, generated code, and configuration files are listed as exceptions that require asking a human — not as loopholes.
+A feature request loads the core plus the gate — about **5.2k tokens**. An optimization loads the core plus contracts and the gate — about **6.7k**. Nothing loads all four files at once unless the work genuinely spans everything.
 
-## Red flags the skill tells the agent to stop on
+## What it works on
 
-- Code written before the test
-- Tests added after implementation
-- A test that passes the very first time it runs
-- An inability to explain why the test failed
-- "I already tested it manually"
-- "Tests after achieve the same goal — it's spirit, not ritual"
-- "Keep it as reference and write the tests first"
-- "I already spent X hours, deleting it is wasteful"
-- "TDD is dogmatic, I'm being pragmatic"
-- "This case is different because…"
+The same two layers, recombined. No new machinery for any of these:
 
-Each of these resolves to the same instruction: **delete the code and start over with TDD.**
+| Scenario | Tests | Metric | Frozen |
+|---|---|---|---|
+| Feature | new test fails → passes, suite green | — | existing suite |
+| Bug fix | reproduction test fails → passes | — | the reproduction test |
+| Refactor | behavior suite green | complexity ↓ / coverage ↑ | behavior spec |
+| Performance | suite green | p95 ↓ | bench script, dataset, hardware |
+| Build time | suite green | build seconds ↓ | core count, concurrency, cache state |
+| Bundle size | suite green | bytes ↓ | build config, target browsers |
+| Cost | suite green | $/request ↓ | traffic shape, price table |
+| Model quality | no crash, no NaN | val loss ↓ | harness, validation set, **time budget** |
 
-## Common rationalizations, answered
-
-| Excuse | What the skill answers |
-|---|---|
-| "Too simple to test" | Simple code breaks. The test takes 30 seconds. |
-| "I'll test after" | Tests that pass immediately prove nothing. |
-| "Already manually tested" | Ad-hoc is not systematic. No record, can't re-run, forgotten under pressure. |
-| "Deleting X hours is wasteful" | Sunk cost. Keeping unverified code is the actual waste. |
-| "Keep as reference, write tests first" | You will adapt it. That is testing after. Delete means delete. |
-| "Need to explore first" | Fine — throw the exploration away and start with TDD. |
-| "The test is hard to write" | Listen to it. Hard to test means hard to use. |
-| "TDD will slow me down" | TDD is faster than debugging in production. |
-
-The full table lives in [`tdd/SKILL.md`](tdd/SKILL.md).
+That last row shows why the protected list has to be worked out per scenario rather than copied. There, the fixed wall clock *is* the objective — "the best model trainable in five minutes." For a web page it would be meaningless, and what needs protecting is the machine, the dataset, and the cache state instead.
 
 ## Works with
 
@@ -158,19 +199,21 @@ Any agent that supports the [Agent Skills specification](https://agentskills.io)
 | Windsurf | `windsurf` | `~/.codeium/windsurf/skills/` |
 | Amp / Replit / universal | `universal` | `~/.config/agents/skills/` |
 
-Manual install, if you would rather not use the CLI:
+Manual install, if you'd rather not use the CLI:
 
 ```bash
-git clone --depth 1 https://github.com/Momoyeyu/test-driven-development.git /tmp/_tdd
-cp -r /tmp/_tdd/tdd ~/.claude/skills/
-rm -rf /tmp/_tdd
+git clone --depth 1 https://github.com/Momoyeyu/autodev.git /tmp/_autodev
+cp -r /tmp/_autodev/autodev ~/.claude/skills/
+rm -rf /tmp/_autodev
 ```
 
-## Reference and scope
+## Scope
 
-- [Skill definition](tdd/SKILL.md) · [Testing anti-patterns](tdd/testing-anti-patterns.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
+autodev covers test-first implementation, bug fixes, refactors, and measurable optimization of a quantity you can name. It deliberately ships no scripts and no dependencies: the contract is generated at Phase 0 and the verdict reuses whatever your project already runs — `npm test`, `pytest`, your own benchmark script.
 
-This skill covers test-first implementation workflow: features, bug fixes, refactors, and behavior changes. It is not a test-framework tutorial, not a mocking library guide, and not a coverage-target tool — it deliberately has no language or framework requirements so it applies wherever your agent writes code.
+Framework-specific templates are out of scope on purpose. The moment the skill knows about Jest, it stops applying to Rust.
+
+- [Skill core](autodev/SKILL.md) · [Correctness gate](autodev/references/gate.md) · [Contracts](autodev/references/contracts.md) · [Anti-patterns](autodev/references/testing-anti-patterns.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
 
 ## License
 
@@ -178,14 +221,4 @@ This skill covers test-first implementation workflow: features, bug fixes, refac
 
 ## Contributing
 
-Issues and pull requests are welcome, especially real transcripts of the skill being ignored (or obeyed) by an agent. Start with the [contribution guide](CONTRIBUTING.md).
-
-## Star History
-
-<p align="center"><a href="https://star-history.com/#Momoyeyu/test-driven-development&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Momoyeyu/test-driven-development&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Momoyeyu/test-driven-development&type=Date" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Momoyeyu/test-driven-development&type=Date" width="600" />
-  </picture>
-</a></p>
+Issues and PRs are welcome, especially real transcripts of the loop running — including the runs where the agent tried to game its own benchmark. Start with the [contribution guide](CONTRIBUTING.md).

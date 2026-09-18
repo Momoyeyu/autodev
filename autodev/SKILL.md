@@ -1,171 +1,175 @@
 ---
 name: autodev
-description: Goal-gated development loop — freeze the yardstick, bound the edit surface, keep only what beats the baseline. Use for implementation work (feature, bugfix, refactor) where Test-Driven Development is the correctness gate, and for optimization work (latency, bundle size, memory, cost, build time, model quality).
+description: Develop and optimize code by measurement instead of opinion — agree on a benchmark first, edit only the files you are allowed to edit, and keep a change only when a script says it is better. Use for implementation work (feature, bugfix, refactor), where Test-Driven Development is the correctness gate, and for optimization work (latency, bundle size, memory, cost, build time, model quality).
 ---
 
 # autodev
 
-Develop and optimize under a goal-gated loop: **frozen yardstick + bounded edit surface + mechanical verdict + a ratchet that only keeps improvements.**
+Write code and improve it by measurement, not by opinion: **agree on a benchmark first, touch only the files you are allowed to touch, and accept a change only when a script says it is better.**
 
-## Three invariants
+Every attempt ends in one of two verdicts — accept and commit, or reject and roll back — so the accepted state only ever moves forward. That one-way rule is the ratchet.
 
-1. **Measurement precedes modification.** No touching the artifact until an objective way to judge the change exists and has been run.
-2. **The measured may not edit the yardstick.** Whatever reports the number is off limits to whoever chases the number.
-3. **The verdict is mechanical, never narrated.** A script decides. Read its output; do not argue with it.
+## Three rules
 
-## Route on the goal — never ask the user to pick a method
+1. **Measure before you change anything.** No editing until an objective way to tell whether the change helped exists, and has been run once.
+2. **Whoever chases the number doesn't get to change how it's measured.** The benchmark, the tests, and the environment are off limits to the code being optimized.
+3. **The script decides.** The verdict is a command's output. Reading it is fine; arguing with it is not.
 
-| The goal | Criterion | Lane | Budget |
+## Two modes
+
+| The request | How success is judged | Mode | Time budget |
 |---|---|---|---|
-| implement / add / support / fix X | binary predicate: a test goes false → true | gate only (**TDD**) | **none** — done or not done |
-| optimize / speed up / reduce / shrink X | scalar + direction, against a measured baseline | gate **+ ratchet** | **required** |
-| both ("add X, and it must be fast") | both | gate + ratchet | required |
-| neither ("make it cleaner") | none | **stop and clarify** | — |
+| add / implement / support / fix X | a test goes from failing to passing | **development** (TDD) | **none** — it's done or it isn't |
+| make X faster / smaller / cheaper | a number beats the baseline | **optimization** | **required** |
+| both ("add X, and it has to be fast") | both | optimization | required |
+| neither ("make it cleaner") | nothing measurable | **stop and ask** | — |
 
-- **The correctness lane never skips TDD.** TDD is the gate layer, and both lanes carry it. The improvement lane stacks a scalar on top; it does not replace the gate.
-- **The user never needs to know either name.** Feature-shaped goals route to gate-only, improvement-shaped goals route to gate + ratchet. Naming the lane is a convenience, not an input.
+- **Development always runs TDD.** It isn't a mode you opt into.
+- **Optimization adds a benchmark on top of TDD**, it does not replace it. Tests still pass, new code still gets tests first. A change that improves the number but breaks a test is reverted like any other failure.
+- **Never ask the user which mode.** The shape of the request decides. Naming the mode is a convenience, not an input.
+- Development work gets no time budget: a feature is not improved by being abandoned halfway. If it is too big for one done-or-not unit, split it into several.
 
 ## Phase 0 — the contract
 
-Six fields. The loop may not start until all six exist.
+Six fields, agreed before any code is written.
 
 | Field | Meaning |
 |---|---|
-| `goal` | One sentence, falsifiable |
-| `criterion` | The gate (must be true) and, in the improvement lane, the metric with direction, target, repeats, tie-break |
-| `budget` | Improvement lane only: attempts and wall clock |
-| `frozen` | Paths you must not edit — the yardstick |
-| `surface` | Paths you may edit — explicit allowlist |
-| `reset` | The exact command that undoes an attempt |
+| `goal` | One sentence, and it must be possible to be wrong about it |
+| `criterion` | The tests that must pass, plus — in optimization — the metric, its direction, target, and repeat count |
+| `budget` | Optimization only: how many attempts, and how much wall clock |
+| `frozen` | Files that must not change: the benchmark, the tests, the env |
+| `surface` | Files that may change: an explicit list |
+| `reset` | The exact command that undoes one attempt |
 
-**If the criterion cannot be written as a one-command script, the goal is not ready.** Write the yardstick first.
+**If the criterion can't be run as a single command, the goal isn't ready.** Build the benchmark first.
 
-### Freeze what could be traded for the number
+### Freeze whatever could be traded for the number
 
-Do not reflexively freeze wall-clock time. Freeze **whatever could be exchanged for a better measurement** — the things whose change would make the comparison meaningless. For most software work that is the environment and the workload: hardware, dataset, cache state, concurrency. Model training is the exception that proves the rule, because there the clock *is* the objective. Per-scenario sets: `references/contracts.md`.
+Don't reflexively freeze wall-clock time. Freeze the things that, if changed, would make two attempts incomparable — for most software work that's the machine, the dataset, the cache state, and the concurrency. Training a model is the exception that proves the rule, because there the clock *is* the objective. Per-scenario lists: `references/contracts.md`.
 
-### The clarify flow
+### Asking the user
 
-Ask only what the goal does not determine. Never ask what you can infer; never ask what you can measure yourself.
+Ask only what the request doesn't already determine. Never ask what you can infer, and never ask what you can measure yourself.
 
-- **At most two questions**, then one contract confirmation — the only mandatory human interaction in the loop.
-- **Every question offers concrete options plus a custom one.** Never present a blank prompt when a good default exists.
-- **Never ask about the method.** TDD versus loop is your inference, not their decision.
-- **Show the cost estimate with the contract** ("~15 rounds / about 8 minutes"). The human is buying wall-clock time and must see the price.
+- **Two questions at most**, then one confirmation of the whole contract — the only point where the loop needs a human.
+- **Every question offers concrete options plus a custom one.** Never hand someone a blank prompt when a sensible default exists.
+- **Never ask which mode.** That's your inference, not their decision.
+- **Show the cost with the contract** ("~15 attempts, about 8 minutes"). In optimization the user is buying wall clock, and they should see the price before agreeing to it.
 
-**Correctness lane: usually zero questions.** The failing test *is* the criterion, and writing it is the first act of work. Clarify only when "done" is genuinely ambiguous or the request is a TDD exception (throwaway prototype, generated code, config). **Scope is not a budget** — when a feature is too large for one done/not-done unit, split it into units and finish them one at a time; never cap the rounds of correctness work.
+**Development: usually zero questions.** The failing test *is* the criterion, and writing it is the first piece of work. Ask only when "done" is genuinely ambiguous, or when the request is one of the TDD exceptions (throwaway prototype, generated code, config).
 
-**Improvement lane: exactly two questions.** First the metric and target, and only when the goal admits several — offer the two or three that fit this codebase, mark your recommendation, allow a custom answer. Then the budget, always, because the human is buying time: offer attempts and wall clock as pairs with estimates attached, plus a custom option.
+**Optimization: exactly two questions.** First the metric and the target, and only when the request admits more than one — offer the two or three that fit this codebase, mark your recommendation, allow a custom answer. Then the budget, always, since that is what the user is paying: offer attempts and wall clock as pairs, with the estimate attached, plus a custom option.
 
-### Building the yardstick is gate-lane work
+### Building the benchmark is TDD work
 
-When no benchmark exists, Phase 0 spawns one sub-task: write the measurement harness. That is "make something exist and work correctly", so it runs under TDD — first assert the harness distinguishes a 100ms case from a 200ms case, then build it, then verify it reproduces a known baseline difference.
+When no benchmark exists, Phase 0 spawns one task: write it. That is "make something exist and work correctly", so it runs under TDD — first assert that the benchmark tells a 100ms case apart from a 200ms case, then build it, then check it reproduces a difference you already know exists.
 
-**Building the yardstick is gate work; using the yardstick is ratchet work.** That recursion is why no new mechanism is needed for any new scenario.
+**Building the benchmark is development work. Using it is optimization work.** That recursion is why no new machinery is needed for a new kind of target.
 
 ## Phase 1 — baseline
 
-1. Hash the `frozen` set and record it.
-2. Improvement lane: run the metric `repeats` times, take the median, and **measure the noise floor — never assume it.** If run-to-run spread is ±3%, an accept threshold below 3% makes the ratchet accept randomness.
-3. Correctness lane: the baseline is **RED** — the test exists, fails, and fails for the expected reason.
-4. Write the contract and the baseline into the ledger.
+1. Hash the `frozen` files and record the hash.
+2. Optimization: run the metric `repeats` times, take the median, and **measure the noise — never assume it.** If run-to-run spread is ±3%, an accept threshold below 3% means you are measuring noise rather than progress.
+3. Development: the baseline is **RED** — the test exists, fails, and fails for the right reason.
+4. Write the contract and the baseline into the experiment log.
 
-Deterministic metrics (bundle bytes, test count) take `repeats: 1` and a zero floor. Noisy ones (latency, throughput, memory) take `repeats ≥ 5` and a measured floor.
+Deterministic metrics (bundle bytes, test count) need `repeats: 1` and a zero noise floor. Noisy ones (latency, throughput, memory) need `repeats ≥ 5` and a measured one.
 
-## Phase 2 — the ratchet loop
+## Phase 2 — the loop
 
 ```
-1. Read the ledger, pick a hypothesis
-   (order: combine near-misses → simplify → try something new)
-2. Edit only within `surface`
-3. Run the frozen yardstick exactly as the contract specifies
-   (redirect output to a file; never flood your context with logs)
-4. Apply the verdict mechanically
-5. Append one row to the ledger
+1. Read the log, pick an idea
+   (combine near-misses first, then simplify, then try something new)
+2. Edit only inside `surface`
+3. Run the benchmark exactly as the contract says
+   (send output to a file; never flood your context with logs)
+4. Apply the verdict
+5. Append one row to the log
 6. Repeat
 ```
 
 ### The verdict
 
 ```
-crash                  → log crash, revert, next
-gate fail              → log gate-fail, revert, next      ← correctness is not tradeable
-metric ≤ baseline + δ  → log discard, revert, next
-metric > baseline + δ  → KEEP: commit, baseline = metric
+crash                  → log it, roll back, next
+tests fail             → log it, roll back, next     ← correctness is not tradeable
+metric ≤ baseline + δ  → log it, roll back, next
+metric > baseline + δ  → ACCEPT: commit, baseline = metric
 ```
 
-δ is the larger of the contract's minimum delta and the measured noise floor. Never compare one run against one run when the metric is noisy.
+δ is the larger of the contract's minimum improvement and the measured noise. Never compare one run against one run when the metric is noisy.
 
-### Revert the surface, not the repository
+### Rolling back one attempt
 
 ```bash
 git checkout <accepted-commit> -- <surface paths>
 ```
 
-`git reset --hard` destroys the ledger and the yardstick along with the attempt. The ledger and the frozen set survive every revert — that is the entire point of the ratchet.
+Roll back the files, not the repository. `git reset --hard` would throw away the log and the frozen files along with the attempt — and those are the two things that have to survive a rejection.
 
-### The ledger
+### The experiment log
 
-One untracked TSV at the repo root. It is the loop's memory across context windows: a fresh session reads it and resumes without re-deriving anything.
+One untracked TSV at the repo root. It is what survives a context reset: a new session reads it and continues without re-deriving anything.
 
 ```
-attempt	commit	gate	metric	delta	verdict	note
+attempt	commit	tests	metric	delta	verdict	note
 1	a1b2c3d	pass	184.2	—	baseline	initial state
-2	b2c3d4e	pass	171.5	-12.7	keep	preload hero image
-3	c3d4e5f	fail	—	—	gate-fail	inline critical css broke tests
-4	d4e5f6g	pass	183.9	+12.4	revert	memoized fetch, no real gain
+2	b2c3d4e	pass	171.5	-12.7	accept	preload hero image
+3	c3d4e5f	fail	—	—	fail	inline critical css broke the suite
+4	d4e5f6g	pass	183.9	+12.4	reject	memoized fetch, no real gain
 ```
 
-Log failures as carefully as successes: the rejected attempts are the record of what has been ruled out, and they are what stops the loop from retrying the same idea.
+Log failures as carefully as successes: they are the record of what has been ruled out, and they are what stops the next session from retrying a dead end.
 
-### Stop conditions are objective
+### Stop conditions
 
-There is no "this looks good enough."
+All objective. There is no "this looks good enough."
 
-- **Budget exhausted** — attempts or wall clock, whichever binds first
+- **Budget spent** — attempts or wall clock, whichever runs out first
 - **Target met** — `metric ≤ target`
-- **Converged** — three consecutive attempts improving by less than the noise floor
-- **Stuck** — four consecutive reversals; the hypothesis space is exhausted at this ambition
+- **Converged** — three attempts in a row that improve by less than the noise
+- **Stuck** — four reversals in a row; the ideas at this level of ambition are exhausted
 
-On any of these: **stop, report the ledger, and offer to continue.** Never interrupt mid-budget to ask whether to keep going; never continue past the budget because momentum feels good.
+On any of these: **stop, report the log, offer to continue.** Never interrupt mid-budget to ask whether to keep going, and never run past the budget because momentum feels good.
 
-## Phase 3 — land
+## Phase 3 — review
 
-- Re-run the full gate from a clean state on the frozen yardstick.
-- **Now** refactor if it helps — the metric is locked in and the gate protects it. A refactor that breaks the gate or worsens the metric is reverted like any other attempt. Equal metric with a smaller diff is a win, not a tie.
-- Report accepted, rejected, net improvement, cost, and the near-misses worth revisiting.
-- The human iterates on the **contract** next time, not on the artifact.
+- Re-run the full test suite from a clean state against the benchmark.
+- **Now** refactor if it helps. The metric is locked in and the tests protect it. A refactor that breaks a test or worsens the metric is rolled back like any other attempt, and the same metric in a smaller diff is a win rather than a tie.
+- Report what was accepted, what was rejected, the net improvement, what it cost, and the near-misses worth another look.
+- Next time, the human iterates on the **contract**, not on the code.
 
-## Anti-gaming invariants
+## Anti-gaming rules
 
-Without these, an agent optimizes the measurement instead of the code.
+Without these, the agent optimizes the measurement instead of the code.
 
-1. **Hash the frozen set** before and after every attempt; a changed hash fails the attempt outright.
-2. **The gate only gets stronger.** The assertion count may increase or stay equal, never decrease — this makes "fix the code, not the test" mechanically checkable.
+1. **Hash the frozen files** before and after every attempt. A changed hash fails the attempt outright.
+2. **The tests only get stronger.** The assertion count may rise or hold, never fall — "fix the code, not the test", made checkable.
 3. **No new dependencies, network calls, or hardware branches.**
-4. **No shrinking the workload to fake a gain** — fewer eval samples, cached results, memoized benchmark inputs, unrequested warm caches.
+4. **No shrinking the workload to fake a gain** — fewer eval samples, cached results, memoized benchmark inputs, warm caches the contract didn't ask for.
 5. **No best-of-N.** Fixed `repeats`, median statistic. Re-running until a lucky sample lands is cheating.
-6. **No `.skip`, `xfail`, or loosened tolerances** to turn the gate green.
-7. **At equal metric, simpler wins.** A metric is not a complete objective function; without a tie-break the ratchet accumulates complexity.
+6. **No `.skip`, no `xfail`, no loosened tolerances** to turn a test green.
+7. **At equal metric, the simpler change wins.** A metric is not a complete objective; without a tie-break the loop just accumulates complexity.
 
-## The gate layer: TDD
+## The correctness gate: TDD
 
-Mandatory in both lanes.
+Required in both modes.
 
 ```
 NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 ```
 
-- **RED** — one minimal test for one behavior, against real code. Run it. Confirm it fails because the feature is missing, not from a typo. A test that passes immediately is testing existing behavior: fix the test.
-- **GREEN** — the simplest code that passes that one test. No speculative options, no extra features. Run it. Confirm it passes and the suite stays green.
-- **REFACTOR** — clean up only while green.
+- **RED** — one minimal test for one behavior, against real code. Run it. Confirm it fails because the feature is missing, not because of a typo. A test that passes immediately is testing what already exists: fix the test.
+- **GREEN** — the simplest code that passes that one test. No speculative options, no extra features. Run it. Confirm it passes and the rest of the suite stays green.
+- **REFACTOR** — clean up, but only while green.
 
-Code written before its test is deleted, not kept as reference and not adapted while writing tests. The ratchet enforces this mechanically: an unverified edit is not the accepted state, so it gets reverted like anything else.
+Code written before its test gets deleted, not kept as reference and not adapted while writing tests. The loop enforces this without anyone having to be disciplined about it: an unverified edit is simply not the accepted state, so it gets rolled back.
 
 ## Reference files
 
 | Read | When |
 |---|---|
-| `references/gate.md` | Before writing production code or touching tests — the full Iron Law, both verification gates, the rationalization table, red flags, the pre-completion checklist |
+| `references/gate.md` | Before writing production code or touching tests — the full Iron Law, both verification steps, the rationalization table, red flags, the pre-completion checklist |
 | `references/testing-anti-patterns.md` | When adding mocks or test utilities |
-| `references/contracts.md` | When drafting a contract — metric selection, frozen sets per scenario, worked examples |
+| `references/contracts.md` | When drafting a contract — choosing a metric, frozen files per scenario, worked examples |
