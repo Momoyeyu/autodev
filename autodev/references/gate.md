@@ -1,9 +1,9 @@
----
-name: tdd
-description: Test-Driven Development (TDD) — write the test first, watch it fail, write minimal code to pass, then refactor. Use whenever implementing a new feature, fixing a bug, refactoring, or changing behavior, before writing any implementation code; also load when tempted to write tests after the code, to skip tests because the change is "too simple", to keep pre-written code "as reference", or when a test passes on the first run. Enforces the Iron Law (no production code without a failing test first), both mandatory verification gates, and mock hygiene.
----
+# The gate layer: Test-Driven Development
 
-# Test-Driven Development (TDD)
+This is the correctness gate for both lanes of the autodev loop. In the correctness lane it *is* the whole workflow. In the improvement lane it is the constraint the ratchet may never break: an attempt that makes the metric better but turns this gate red is reverted.
+
+Read this before writing production code or touching tests.
+
 
 ## Overview
 
