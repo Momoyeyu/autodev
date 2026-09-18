@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="260" viewBox="0 0 880 260" role="img" aria-label="The TDD cycle: RED write a failing test, verify it fails; GREEN write minimal code, verify it passes; REFACTOR clean up while staying green">
+  <defs>
+    <marker id="c-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#57606a"/>
+    </marker>
+  </defs>
+
+  <g font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+    <rect x="70" y="60" width="150" height="88" rx="12" fill="#fff0f0" stroke="#cf222e" stroke-width="1.5"/>
+    <text x="145" y="94" font-size="18" font-weight="800" fill="#cf222e" text-anchor="middle">RED</text>
+    <text x="145" y="118" font-size="12.5" fill="#57606a" text-anchor="middle">write a failing test</text>
+
+    <rect x="365" y="60" width="150" height="88" rx="12" fill="#eaf7ec" stroke="#1a7f37" stroke-width="1.5"/>
+    <text x="440" y="94" font-size="18" font-weight="800" fill="#1a7f37" text-anchor="middle">GREEN</text>
+    <text x="440" y="118" font-size="12.5" fill="#57606a" text-anchor="middle">minimal code to pass</text>
+
+    <rect x="660" y="60" width="150" height="88" rx="12" fill="#eef4ff" stroke="#0969da" stroke-width="1.5"/>
+    <text x="735" y="94" font-size="18" font-weight="800" fill="#0969da" text-anchor="middle">REFACTOR</text>
+    <text x="735" y="118" font-size="12.5" fill="#57606a" text-anchor="middle">clean up, stay green</text>
+
+    <g fill="none" stroke="#57606a" stroke-width="1.6" marker-end="url(#c-arrow)">
+      <path d="M224 104 H357"/>
+      <path d="M519 104 H652"/>
+      <path d="M735 152 V196 H145 V152"/>
+    </g>
+
+    <text x="290" y="94" font-size="12" fill="#57606a" text-anchor="middle">watch it fail</text>
+    <text x="585" y="94" font-size="12" fill="#57606a" text-anchor="middle">watch it pass</text>
+    <text x="440" y="216" font-size="12" fill="#57606a" text-anchor="middle">next failing test — one behavior at a time</text>
+    <text x="440" y="34" font-size="13" font-weight="700" letter-spacing="1.6" fill="#8c959f" text-anchor="middle">THE TDD CYCLE</text>
+  </g>
+</svg>

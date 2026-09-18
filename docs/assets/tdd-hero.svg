@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-label="Test-Driven Development: write the test first, watch it fail, write minimal code to pass, refactor">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="55%" stop-color="#111826"/>
+      <stop offset="100%" stop-color="#161b22"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f0f6fc"/>
+      <stop offset="100%" stop-color="#a5d6ff"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8b949e"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="420" fill="url(#bg)"/>
+  <rect width="1280" height="420" fill="url(#grid)"/>
+  <rect x="0" y="0" width="427" height="3" fill="#f85149"/>
+  <rect x="427" y="0" width="426" height="3" fill="#3fb950"/>
+  <rect x="853" y="0" width="427" height="3" fill="#58a6ff"/>
+
+  <g font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+    <text x="72" y="126" font-size="15" font-weight="700" letter-spacing="3.2" fill="#8b949e">AGENT SKILL · RED → GREEN → REFACTOR</text>
+    <text x="70" y="205" font-size="62" font-weight="800" fill="url(#title)">Test-Driven Development</text>
+    <text x="72" y="252" font-size="24" fill="#c9d1d9">Write the test first. Watch it fail. Write minimal code to pass.</text>
+
+    <rect x="72" y="292" width="706" height="66" rx="10" fill="#2a1113" stroke="#f85149" stroke-opacity="0.55"/>
+    <rect x="72" y="292" width="4" height="66" rx="2" fill="#f85149"/>
+    <text x="98" y="320" font-size="14" font-weight="700" letter-spacing="2.4" fill="#ff9d95">THE IRON LAW</text>
+    <text x="98" y="345" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace" font-size="17" fill="#f0f6fc">NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST</text>
+
+    <text x="72" y="390" font-size="14" fill="#6e7681">If you didn't watch the test fail, you don't know if it tests the right thing.</text>
+  </g>
+
+  <g font-family="ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" text-anchor="middle">
+    <circle cx="930" cy="110" r="60" fill="#2a1113" stroke="#f85149" stroke-width="2"/>
+    <text x="930" y="104" font-size="17" font-weight="800" fill="#ff9d95">RED</text>
+    <text x="930" y="126" font-size="12" fill="#c9a0a0">write test</text>
+
+    <circle cx="1021" cy="268" r="60" fill="#0f2f1a" stroke="#3fb950" stroke-width="2"/>
+    <text x="1021" y="262" font-size="17" font-weight="800" fill="#7ee787">GREEN</text>
+    <text x="1021" y="284" font-size="12" fill="#9fd6ae">make it pass</text>
+
+    <circle cx="839" cy="268" r="60" fill="#101f3d" stroke="#58a6ff" stroke-width="2"/>
+    <text x="839" y="262" font-size="17" font-weight="800" fill="#a5d6ff">REFACTOR</text>
+    <text x="839" y="284" font-size="12" fill="#9dc0e8">clean up</text>
+
+    <g fill="none" stroke="#8b949e" stroke-width="2" marker-end="url(#arrow)">
+      <path d="M961 163.7 Q1001.4 173.7 989.9 213.8"/>
+      <path d="M958.9 267.5 Q930 297.5 901.1 267.5"/>
+      <path d="M870.1 213.8 Q858.6 173.8 899 163.7"/>
+    </g>
+    <text x="1140" y="200" font-size="12" font-weight="600" fill="#8b949e" text-anchor="start">verify</text>
+    <text x="1140" y="218" font-size="12" font-weight="600" fill="#8b949e" text-anchor="start">every step</text>
+  </g>
+</svg>

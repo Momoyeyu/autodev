@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: Use when implementing any feature or bugfix, before writing implementation code
+description: Test-Driven Development (TDD) — write the test first, watch it fail, write minimal code to pass, then refactor. Use whenever implementing a new feature, fixing a bug, refactoring, or changing behavior, before writing any implementation code; also load when tempted to write tests after the code, to skip tests because the change is "too simple", to keep pre-written code "as reference", or when a test passes on the first run. Enforces the Iron Law (no production code without a failing test first), both mandatory verification gates, and mock hygiene.
 ---
 
 # Test-Driven Development (TDD)
