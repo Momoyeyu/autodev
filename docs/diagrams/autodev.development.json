@@ -1,0 +1,210 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "autodev · Feature development",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "lanes": [
+    {
+      "id": "clarify",
+      "label": "Clarify"
+    },
+    {
+      "id": "loop",
+      "label": "Loop"
+    },
+    {
+      "id": "handoff",
+      "label": "Handoff"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "input",
+      "lane": "clarify",
+      "col": 0,
+      "type": "external",
+      "label": "Feature",
+      "sublabel": "User input",
+      "width": 140
+    },
+    {
+      "id": "impact",
+      "lane": "clarify",
+      "col": 1,
+      "type": "security",
+      "label": "Confirm impact",
+      "sublabel": "architecture · workflows",
+      "width": 160
+    },
+    {
+      "id": "tests",
+      "lane": "clarify",
+      "col": 2,
+      "type": "security",
+      "label": "Prepare tests",
+      "sublabel": "query · update · add · run",
+      "width": 180
+    },
+    {
+      "id": "review",
+      "lane": "clarify",
+      "col": 3,
+      "type": "security",
+      "label": "Human review",
+      "tag": "until approved",
+      "width": 140
+    },
+    {
+      "id": "baseline",
+      "lane": "clarify",
+      "col": 4,
+      "type": "database",
+      "label": "Baseline",
+      "sublabel": "run approved tests",
+      "width": 160
+    },
+    {
+      "id": "implement",
+      "lane": "loop",
+      "col": 4,
+      "type": "backend",
+      "label": "Implement",
+      "sublabel": "within approved impact",
+      "width": 168
+    },
+    {
+      "id": "verify",
+      "lane": "loop",
+      "col": 5,
+      "type": "backend",
+      "label": "Run tests",
+      "sublabel": "the agreed set",
+      "width": 140
+    },
+    {
+      "id": "table",
+      "lane": "handoff",
+      "col": 5,
+      "type": "frontend",
+      "label": "Comparison table",
+      "sublabel": "baseline vs final results",
+      "width": 180
+    }
+  ],
+  "edges": [
+    {
+      "id": "in-impact",
+      "from": "input",
+      "to": "impact"
+    },
+    {
+      "id": "impact-tests",
+      "from": "impact",
+      "to": "tests"
+    },
+    {
+      "id": "tests-review",
+      "from": "tests",
+      "to": "review"
+    },
+    {
+      "id": "revise",
+      "from": "review",
+      "to": "tests",
+      "label": "revise",
+      "role": "return"
+    },
+    {
+      "id": "approved",
+      "from": "review",
+      "to": "baseline",
+      "label": "approved",
+      "variant": "security"
+    },
+    {
+      "id": "start-loop",
+      "from": "baseline",
+      "to": "implement",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "impl-verify",
+      "from": "implement",
+      "to": "verify"
+    },
+    {
+      "id": "retry",
+      "from": "verify",
+      "to": "implement",
+      "label": "failing",
+      "role": "return"
+    },
+    {
+      "id": "pass",
+      "from": "verify",
+      "to": "table",
+      "label": "all pass",
+      "variant": "emphasis"
+    }
+  ],
+  "semanticChecks": {
+    "allowedRoots": [
+      "input"
+    ],
+    "allowedTerminals": [
+      "table"
+    ],
+    "requiredEdges": [
+      {
+        "from": "input",
+        "to": "impact"
+      },
+      {
+        "from": "impact",
+        "to": "tests"
+      },
+      {
+        "from": "tests",
+        "to": "review"
+      },
+      {
+        "from": "review",
+        "to": "tests"
+      },
+      {
+        "from": "review",
+        "to": "baseline"
+      },
+      {
+        "from": "baseline",
+        "to": "implement"
+      },
+      {
+        "from": "implement",
+        "to": "verify"
+      },
+      {
+        "from": "verify",
+        "to": "implement"
+      },
+      {
+        "from": "verify",
+        "to": "table"
+      }
+    ],
+    "requiredPaths": [
+      {
+        "from": "input",
+        "to": "table"
+      }
+    ]
+  }
+}

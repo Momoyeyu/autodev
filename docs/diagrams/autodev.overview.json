@@ -1,0 +1,74 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "autodev · Clarify → Loop → Handoff",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "legend": { "mode": "hidden" }
+  },
+  "lanes": [
+    { "id": "development", "label": "Feature development" },
+    { "id": "optimization", "label": "Performance optimization" }
+  ],
+  "nodes": [
+    {
+      "id": "dev-input", "lane": "development", "col": 0,
+      "type": "external", "label": "Feature", "sublabel": "User requirement", "width": 128
+    },
+    {
+      "id": "dev-clarify", "lane": "development", "col": 1,
+      "type": "security", "label": "Clarify", "sublabel": "impact · tests · baseline", "width": 172
+    },
+    {
+      "id": "dev-loop", "lane": "development", "col": 2,
+      "type": "backend", "label": "Loop", "sublabel": "until all tests pass", "width": 172
+    },
+    {
+      "id": "dev-handoff", "lane": "development", "col": 3,
+      "type": "frontend", "label": "Handoff", "sublabel": "comparison table", "width": 172
+    },
+    {
+      "id": "opt-input", "lane": "optimization", "col": 0,
+      "type": "external", "label": "Optimize", "sublabel": "User goal", "width": 128
+    },
+    {
+      "id": "opt-clarify", "lane": "optimization", "col": 1,
+      "type": "security", "label": "Clarify", "sublabel": "one test · baseline · limits", "width": 196
+    },
+    {
+      "id": "opt-loop", "lane": "optimization", "col": 2,
+      "type": "backend", "label": "Loop", "sublabel": "until target or timeout", "width": 172
+    },
+    {
+      "id": "opt-handoff", "lane": "optimization", "col": 3,
+      "type": "frontend", "label": "Handoff", "sublabel": "progress chart", "width": 172
+    }
+  ],
+  "edges": [
+    { "id": "dev-in", "from": "dev-input", "to": "dev-clarify" },
+    { "id": "dev-cl", "from": "dev-clarify", "to": "dev-loop" },
+    { "id": "dev-lh", "from": "dev-loop", "to": "dev-handoff" },
+    { "id": "dev-back", "from": "dev-loop", "to": "dev-clarify", "label": "scope change", "variant": "dashed", "role": "return" },
+    { "id": "opt-in", "from": "opt-input", "to": "opt-clarify" },
+    { "id": "opt-cl", "from": "opt-clarify", "to": "opt-loop" },
+    { "id": "opt-lh", "from": "opt-loop", "to": "opt-handoff" },
+    { "id": "opt-back", "from": "opt-loop", "to": "opt-clarify", "label": "scope change", "variant": "dashed", "role": "return" }
+  ],
+  "semanticChecks": {
+    "allowedRoots": ["dev-input", "opt-input"],
+    "allowedTerminals": ["dev-handoff", "opt-handoff"],
+    "requiredEdges": [
+      { "from": "dev-input", "to": "dev-clarify" },
+      { "from": "dev-clarify", "to": "dev-loop" },
+      { "from": "dev-loop", "to": "dev-handoff" },
+      { "from": "opt-input", "to": "opt-clarify" },
+      { "from": "opt-clarify", "to": "opt-loop" },
+      { "from": "opt-loop", "to": "opt-handoff" }
+    ],
+    "requiredPaths": [
+      { "from": "dev-input", "to": "dev-handoff" },
+      { "from": "opt-input", "to": "opt-handoff" }
+    ]
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "autodev · 性能优化",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "lanes": [
+    {
+      "id": "clarify",
+      "label": "Clarify · 对齐"
+    },
+    {
+      "id": "loop",
+      "label": "Loop · 迭代"
+    },
+    {
+      "id": "handoff",
+      "label": "Handoff · 交付"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "input",
+      "lane": "clarify",
+      "col": 0,
+      "type": "external",
+      "label": "优化",
+      "sublabel": "用户目标",
+      "width": 120
+    },
+    {
+      "id": "benchmark",
+      "lane": "clarify",
+      "col": 1,
+      "type": "security",
+      "label": "共建基准",
+      "sublabel": "单一数值分数",
+      "width": 168
+    },
+    {
+      "id": "review",
+      "lane": "clarify",
+      "col": 2,
+      "type": "security",
+      "label": "人工确认",
+      "tag": "直到确认",
+      "width": 148
+    },
+    {
+      "id": "baseline",
+      "lane": "clarify",
+      "col": 3,
+      "type": "database",
+      "label": "Baseline",
+      "sublabel": "原始分数",
+      "width": 148
+    },
+    {
+      "id": "limits",
+      "lane": "clarify",
+      "col": 4,
+      "type": "security",
+      "label": "确认限制",
+      "sublabel": "目标 · 文件 · 时间",
+      "width": 172
+    },
+    {
+      "id": "optimize",
+      "lane": "loop",
+      "col": 4,
+      "type": "backend",
+      "label": "优化",
+      "sublabel": "仅允许文件",
+      "width": 168
+    },
+    {
+      "id": "measure",
+      "lane": "loop",
+      "col": 5,
+      "type": "backend",
+      "label": "测量",
+      "sublabel": "同一基准",
+      "width": 148
+    },
+    {
+      "id": "chart",
+      "lane": "handoff",
+      "col": 5,
+      "type": "frontend",
+      "label": "过程图",
+      "sublabel": "baseline → 尝试 → 结果",
+      "width": 208
+    }
+  ],
+  "edges": [
+    {
+      "id": "in-bench",
+      "from": "input",
+      "to": "benchmark"
+    },
+    {
+      "id": "bench-review",
+      "from": "benchmark",
+      "to": "review"
+    },
+    {
+      "id": "revise",
+      "from": "review",
+      "to": "benchmark",
+      "label": "修订",
+      "role": "return"
+    },
+    {
+      "id": "approved",
+      "from": "review",
+      "to": "baseline",
+      "label": "已确认",
+      "variant": "security"
+    },
+    {
+      "id": "base-limits",
+      "from": "baseline",
+      "to": "limits"
+    },
+    {
+      "id": "start-loop",
+      "from": "limits",
+      "to": "optimize",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "opt-measure",
+      "from": "optimize",
+      "to": "measure"
+    },
+    {
+      "id": "retry",
+      "from": "measure",
+      "to": "optimize",
+      "label": "继续",
+      "role": "return"
+    },
+    {
+      "id": "stop",
+      "from": "measure",
+      "to": "chart",
+      "label": "达标 / 超时",
+      "variant": "emphasis"
+    }
+  ],
+  "semanticChecks": {
+    "allowedRoots": [
+      "input"
+    ],
+    "allowedTerminals": [
+      "chart"
+    ],
+    "requiredEdges": [
+      {
+        "from": "input",
+        "to": "benchmark"
+      },
+      {
+        "from": "benchmark",
+        "to": "review"
+      },
+      {
+        "from": "review",
+        "to": "benchmark"
+      },
+      {
+        "from": "review",
+        "to": "baseline"
+      },
+      {
+        "from": "baseline",
+        "to": "limits"
+      },
+      {
+        "from": "limits",
+        "to": "optimize"
+      },
+      {
+        "from": "optimize",
+        "to": "measure"
+      },
+      {
+        "from": "measure",
+        "to": "optimize"
+      },
+      {
+        "from": "measure",
+        "to": "chart"
+      }
+    ],
+    "requiredPaths": [
+      {
+        "from": "input",
+        "to": "chart"
+      }
+    ]
+  }
+}

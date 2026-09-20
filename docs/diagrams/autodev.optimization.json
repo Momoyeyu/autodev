@@ -1,0 +1,78 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "autodev · Performance optimization",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "legend": { "mode": "hidden" }
+  },
+  "lanes": [
+    { "id": "clarify", "label": "Clarify" },
+    { "id": "loop", "label": "Loop" },
+    { "id": "handoff", "label": "Handoff" }
+  ],
+  "nodes": [
+    {
+      "id": "input", "lane": "clarify", "col": 0,
+      "type": "external", "label": "Optimize", "sublabel": "User goal", "width": 120
+    },
+    {
+      "id": "benchmark", "lane": "clarify", "col": 1,
+      "type": "security", "label": "Draft benchmark", "sublabel": "one numeric score", "width": 168
+    },
+    {
+      "id": "review", "lane": "clarify", "col": 2,
+      "type": "security", "label": "Human review", "tag": "until approved", "width": 148
+    },
+    {
+      "id": "baseline", "lane": "clarify", "col": 3,
+      "type": "database", "label": "Baseline", "sublabel": "original score", "width": 148
+    },
+    {
+      "id": "limits", "lane": "clarify", "col": 4,
+      "type": "security", "label": "Confirm limits", "sublabel": "target · files · time", "width": 172
+    },
+    {
+      "id": "optimize", "lane": "loop", "col": 4,
+      "type": "backend", "label": "Optimize", "sublabel": "allowed files only", "width": 168
+    },
+    {
+      "id": "measure", "lane": "loop", "col": 5,
+      "type": "backend", "label": "Measure", "sublabel": "same benchmark", "width": 148
+    },
+    {
+      "id": "chart", "lane": "handoff", "col": 5,
+      "type": "frontend", "label": "Progress chart", "sublabel": "baseline → attempts → final", "width": 208
+    }
+  ],
+  "edges": [
+    { "id": "in-bench", "from": "input", "to": "benchmark" },
+    { "id": "bench-review", "from": "benchmark", "to": "review" },
+    { "id": "revise", "from": "review", "to": "benchmark", "label": "revise", "role": "return" },
+    { "id": "approved", "from": "review", "to": "baseline", "label": "approved", "variant": "security" },
+    { "id": "base-limits", "from": "baseline", "to": "limits" },
+    { "id": "start-loop", "from": "limits", "to": "optimize", "route": "drop", "fromSide": "bottom", "toSide": "top" },
+    { "id": "opt-measure", "from": "optimize", "to": "measure" },
+    { "id": "retry", "from": "measure", "to": "optimize", "label": "retry", "role": "return" },
+    { "id": "stop", "from": "measure", "to": "chart", "label": "target / timeout", "variant": "emphasis" }
+  ],
+  "semanticChecks": {
+    "allowedRoots": ["input"],
+    "allowedTerminals": ["chart"],
+    "requiredEdges": [
+      { "from": "input", "to": "benchmark" },
+      { "from": "benchmark", "to": "review" },
+      { "from": "review", "to": "benchmark" },
+      { "from": "review", "to": "baseline" },
+      { "from": "baseline", "to": "limits" },
+      { "from": "limits", "to": "optimize" },
+      { "from": "optimize", "to": "measure" },
+      { "from": "measure", "to": "optimize" },
+      { "from": "measure", "to": "chart" }
+    ],
+    "requiredPaths": [
+      { "from": "input", "to": "chart" }
+    ]
+  }
+}

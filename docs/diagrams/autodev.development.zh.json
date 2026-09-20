@@ -1,0 +1,210 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "autodev · 功能开发",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    }
+  },
+  "lanes": [
+    {
+      "id": "clarify",
+      "label": "Clarify · 对齐"
+    },
+    {
+      "id": "loop",
+      "label": "Loop · 迭代"
+    },
+    {
+      "id": "handoff",
+      "label": "Handoff · 交付"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "input",
+      "lane": "clarify",
+      "col": 0,
+      "type": "external",
+      "label": "功能",
+      "sublabel": "用户需求",
+      "width": 140
+    },
+    {
+      "id": "impact",
+      "lane": "clarify",
+      "col": 1,
+      "type": "security",
+      "label": "确认影响",
+      "sublabel": "架构 · 流程",
+      "width": 160
+    },
+    {
+      "id": "tests",
+      "lane": "clarify",
+      "col": 2,
+      "type": "security",
+      "label": "共建测试",
+      "sublabel": "查询 · 更新 · 新增 · 运行",
+      "width": 180
+    },
+    {
+      "id": "review",
+      "lane": "clarify",
+      "col": 3,
+      "type": "security",
+      "label": "人工确认",
+      "tag": "直到确认",
+      "width": 140
+    },
+    {
+      "id": "baseline",
+      "lane": "clarify",
+      "col": 4,
+      "type": "database",
+      "label": "Baseline",
+      "sublabel": "运行已确认测试",
+      "width": 160
+    },
+    {
+      "id": "implement",
+      "lane": "loop",
+      "col": 4,
+      "type": "backend",
+      "label": "实现",
+      "sublabel": "在确认范围内",
+      "width": 168
+    },
+    {
+      "id": "verify",
+      "lane": "loop",
+      "col": 5,
+      "type": "backend",
+      "label": "运行测试",
+      "sublabel": "已确认集合",
+      "width": 140
+    },
+    {
+      "id": "table",
+      "lane": "handoff",
+      "col": 5,
+      "type": "frontend",
+      "label": "对比表",
+      "sublabel": "baseline vs 最终结果",
+      "width": 180
+    }
+  ],
+  "edges": [
+    {
+      "id": "in-impact",
+      "from": "input",
+      "to": "impact"
+    },
+    {
+      "id": "impact-tests",
+      "from": "impact",
+      "to": "tests"
+    },
+    {
+      "id": "tests-review",
+      "from": "tests",
+      "to": "review"
+    },
+    {
+      "id": "revise",
+      "from": "review",
+      "to": "tests",
+      "label": "修订",
+      "role": "return"
+    },
+    {
+      "id": "approved",
+      "from": "review",
+      "to": "baseline",
+      "label": "已确认",
+      "variant": "security"
+    },
+    {
+      "id": "start-loop",
+      "from": "baseline",
+      "to": "implement",
+      "route": "drop",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "impl-verify",
+      "from": "implement",
+      "to": "verify"
+    },
+    {
+      "id": "retry",
+      "from": "verify",
+      "to": "implement",
+      "label": "未通过",
+      "role": "return"
+    },
+    {
+      "id": "pass",
+      "from": "verify",
+      "to": "table",
+      "label": "全部通过",
+      "variant": "emphasis"
+    }
+  ],
+  "semanticChecks": {
+    "allowedRoots": [
+      "input"
+    ],
+    "allowedTerminals": [
+      "table"
+    ],
+    "requiredEdges": [
+      {
+        "from": "input",
+        "to": "impact"
+      },
+      {
+        "from": "impact",
+        "to": "tests"
+      },
+      {
+        "from": "tests",
+        "to": "review"
+      },
+      {
+        "from": "review",
+        "to": "tests"
+      },
+      {
+        "from": "review",
+        "to": "baseline"
+      },
+      {
+        "from": "baseline",
+        "to": "implement"
+      },
+      {
+        "from": "implement",
+        "to": "verify"
+      },
+      {
+        "from": "verify",
+        "to": "implement"
+      },
+      {
+        "from": "verify",
+        "to": "table"
+      }
+    ],
+    "requiredPaths": [
+      {
+        "from": "input",
+        "to": "table"
+      }
+    ]
+  }
+}
