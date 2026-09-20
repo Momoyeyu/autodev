@@ -1,64 +1,85 @@
 # Contributing
 
-Improve alignment between agents and humans, not just the amount of code an agent can produce. Changes should make delivery more verifiable, measurable, and visible, reduce rework, and help the human understand and take over the project.
+Improve alignment between agents and humans. Changes should reduce misunderstanding and rework, improve quality, stability, and efficiency, and help the human understand and take over the project.
 
 ## Keep the protocol faithful
 
-The skill supports two scenarios through **Define → Anchor → Ratchet → Prove**:
+Use **Clarify → Loop → Handoff** as the only top-level working stages. User input triggers the workflow.
 
-- **Feature development:** confirm architecture/workflow impact; obtain human approval of test definitions; inspect and reconcile existing tests; verify execution; record baseline; develop until all agreed tests pass; compare baseline and final results.
-- **Performance optimization:** obtain human approval of one numeric benchmark test; record baseline; confirm target, editable files, and wall-clock budget; optimize until the target is met or time expires; compare baseline and final score.
+- **Development Clarify:** confirm architecture/workflow impact, then query, update/remove, add, and trial-run tests with the human until the executable set is approved; record the formal baseline afterward.
+- **Optimization Clarify:** agree on one runnable numeric benchmark or fixed weighted score, record baseline, then confirm target, editable files, and wall-clock budget.
+- **Loop:** develop until all agreed tests pass, or optimize until target/time limit. Preserve the measuring agreement and record actual outcomes.
+- **Handoff:** one baseline/final comparison table for development; one chart of the measured optimization process for optimization.
 
-Review these distinctions explicitly:
+Do not move test preparation outside the human review cycle, equate executable tests with already-passing tests, replace the optimization chart with a table, or add convergence/attempt-count exits. Changes to test meaning or permitted scope return to Clarify.
 
-- Human approval is about test meaning, not a fixed number of questions.
-- Test construction follows approval of the definition; baseline precedes implementation.
-- Outdated feature tests may be changed or removed to match approved behavior before baseline. During iteration, tests must not be weakened to manufacture success.
-- Executable feature tests may fail for unimplemented behavior; a broken runner is not a useful baseline.
-- A composite benchmark is one fixed weighted score, not several independent optimization targets.
-- Optimization limits are confirmed after the baseline; no automatic convergence or attempt-count stop replaces the wall-clock limit.
-- Final claims use comparable test versions and real evidence, including honest timeout or incomplete outcomes.
+## Progressive disclosure
 
-## Organize by stage
+`autodev/SKILL.md` is the compact entry point. `references/clarify.md` contains shared alignment rules and routes to exactly one of `clarify-development.md` or `clarify-optimization.md`. `loop.md` and `handoff.md` load when those stages are reached.
 
-`autodev/SKILL.md` holds purpose, principles, scenario selection, and stage routing. Operational detail belongs in `references/define.md`, `anchor.md`, `ratchet.md`, and `prove.md`.
+Keep shared rules with the selected scenario; do not preload the whole directory. Every reference needs a clear trigger and a reachable link inside the installed skill. Preserve framework independence and reuse the target project's tools.
 
-Keep a stage's instructions together. Read the current stage's shared instructions and applicable scenario; do not prefetch the entire reference directory. `references/test-design.md` is optional support for acceptance cases and composite benchmark design, not another primary workflow.
-
-Every reference must be reachable from the skill entry point with a clear reading trigger. Links must resolve within the installed `autodev/` directory. Keep wording imperative and framework-independent; reuse the target project's tools rather than requiring a particular test runner.
-
-Measure Markdown cost when editing, but do not optimize bytes by removing human approval, baseline comparability, or handover evidence:
+Measure the Markdown cost without removing approval, comparable measurement, or the required handoff artifact:
 
 ```bash
 for f in autodev/SKILL.md autodev/references/*.md; do
-  printf '%-50s ' "$f"
+  printf '%-52s ' "$f"
   wc -l -w -c < "$f"
 done
 ```
 
-## Keep both READMEs synchronized
+## README and core diagram
 
-`README.md` and `README_ZH.md` describe the same protocol. Update their stage tables, scenario ordering, file inventories, and delivery expectations together.
+Keep English and Chinese README ordering, scenario sequences, reference inventories, and handoff requirements equivalent. Place the core flow image immediately below the title, before installation and explanatory sections.
 
-The current workflow diagrams are inline Mermaid in the READMEs. Keep their node identities, transitions, human-review loops, and stage boundaries equivalent across languages. In particular, performance baseline must precede confirmation of loop limits.
+The current core diagrams are generated with [Archify](https://github.com/tt-a1i/archify):
 
-Static assets under `docs/` belong to earlier versions. They are not the current workflow definition or evidence for this version; do not reuse their historical fixture results as new measurements.
+| Source | README image |
+|---|---|
+| `docs/diagrams/autodev.workflow.json` | `docs/assets/autodev-overview.png` |
+| `docs/diagrams/autodev.workflow.zh.json` | `docs/assets/autodev-overview.zh.png` |
+
+Both sources use workflow schema v2, `quality_profile: showcase`, the same node/edge IDs, three phases, and two scenario lanes. The baseline/test/limit ordering is protected by `semanticChecks`; do not weaken those checks to resolve a layout failure. Loop boxes summarize repeated work and explicitly state its stop condition; ordinary sequential edges need no redundant label.
+
+Keep the PNGs opaque and dark regardless of the README viewer's color scheme. Use Archify's Classic preset and canonical PNG export, not a screenshot containing viewer controls or manually recolored output. These are workflow illustrations, not test-result charts; do not reintroduce the removed result screenshot.
+
+### Regenerate with Archify
+
+Use the installed skill root containing `SKILL.md` and `bin/archify.mjs`. The checked workflow was generated with Archify `2.17.0-dev.1`, checkout `72c750b`.
+
+```bash
+ARCHIFY_SKILL=/path/to/archify/archify
+OUT=$(mktemp -d)
+for locale in '' '.zh'; do
+  source="docs/diagrams/autodev.workflow${locale}.json"
+  output="$OUT/autodev-overview${locale}.html"
+  node "$ARCHIFY_SKILL/bin/archify.mjs" validate workflow "$source" --quality showcase --json &&
+  node "$ARCHIFY_SKILL/bin/archify.mjs" deliver workflow "$source" "$output" --quality showcase --json &&
+  node "$ARCHIFY_SKILL/bin/archify.mjs" visual-check "$output" --json || break
+done
+```
+
+Require all nine artifact checks, zero composition errors, and zero warnings. Never inspect stale HTML after a failed delivery. Browser evidence and perceptual review are separate from deterministic validation.
+
+Open each successfully delivered HTML with `?theme=dark`, keep Classic selected, and use Export → PNG. Save the canonical downloads to the corresponding image paths above. Inspect both exported PNGs for legibility, correct sequence, unclipped labels, no viewer UI, and an opaque dark background. Keep validation and export receipts with the generation artifacts; source JSON and final images belong in Git.
+
+Archify renders this repository's explanatory workflow. It is not a mandatory dependency for producing a target project's optimization-result chart.
 
 ## Verify changes
 
-The legacy unit/evaluation suite has been retired. Do not cite its results as verification of the new protocol or link to removed runners and fixtures.
+The legacy unit/evaluation suite remains retired. Do not cite its results as proof of this protocol.
 
 Before committing:
 
-- Walk through both scenario sequences against the skill and both README diagrams.
-- Check local Markdown links, anchors, code fences, and frontmatter.
-- Verify all references have stage-appropriate triggers and remain inside the installed skill.
-- Check that retained-test maintenance, the single-score rule, baseline ordering, deadlines, and takeover evidence remain explicit.
-- Review the full diff for unintended changes and run `git diff --check`.
-- Confirm `git ls-files -- tests evals` is empty; ignored historical run artifacts are not a current test suite.
-- If no live agent evaluation was run, say so. Document validation is not proof of model adherence.
-
-Record real behavior evidence when evaluating the skill in a target project: approved definitions, commands, before/after outputs, relevant decisions, and actual agent/model identity. Never invent a passing run to fill a report.
+- Walk through both scenario paths against the skill, READMEs, and diagram sources.
+- Check local links, anchors, frontmatter, and code fences; verify the deleted reference names are no longer used.
+- Check that runnable-test approval precedes formal baseline and optimization limits follow baseline.
+- Verify the feature table and optimization process chart are mandatory everywhere, not optional presentation choices.
+- Confirm bilingual diagram topology matches and both PNGs are dark canonical exports.
+- Run Archify validation/browser checks and review the actual images; retain the evidence.
+- Run `git diff --check` and confirm `git ls-files -- tests evals` is empty.
+- Keep ignored historical run artifacts and unrelated user work untouched.
+- State whether model behavior was evaluated; document and image checks do not prove agent adherence.
 
 ## Commits and license
 
