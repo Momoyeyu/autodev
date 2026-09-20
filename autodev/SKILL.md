@@ -1,188 +1,74 @@
 ---
 name: autodev
-description: Develop and optimize code by measurement instead of opinion — agree on a benchmark first, edit only the files you are allowed to edit, and keep a change only when a script says it is better. Use for implementation work (feature, bugfix, refactor), where Test-Driven Development is the correctness gate, and for optimization work (latency, bundle size, memory, cost, build time, model quality).
+description: Use for features, bug fixes, refactoring, and optimization of latency, throughput, size, memory, cost, build time, or model quality. Prove correctness with TDD and improvement against frozen benchmarks.
 ---
 
 # autodev
 
-Write code and improve it by measurement, not by opinion: **agree on a benchmark first, touch only the files you are allowed to touch, and accept a change only when a script says it is better.**
-
-Every attempt ends in one of two verdicts — accept and advance, or reject and restore — so the accepted state only ever moves forward. That one-way rule is the ratchet.
+TDD is the **correctness gate**; the ratchet is the **progress gate**. Follow **Define → Anchor → Ratchet → Prove** and deliver evidence the user can run again.
 
 ## Three rules
 
-1. **Measure before you change anything.** No editing until an objective way to tell whether the change helped exists, and has been run once.
-2. **Whoever chases the number doesn't get to change how it's measured.** The benchmark, the tests, and the environment are off limits to the code being optimized.
-3. **The script decides.** The verdict is a command's output. Reading it is fine; arguing with it is not.
+1. **Measure first.** Establish a runnable criterion and verify the starting state before implementation.
+2. **Protect the ruler.** Edit only the agreed `surface`; keep tests, benchmarks, and other `frozen` inputs protected.
+3. **The script decides.** Accept verified progress; otherwise restore the last accepted state. Prose cannot override a verdict.
 
 ## Two modes
 
-| The request | How success is judged | Mode | Time budget |
+| Request | Mode | Success | Budget |
 |---|---|---|---|
-| add / implement / support / fix X | a test goes from failing to passing | **development** (TDD) | **none** — it's done or it isn't |
-| make X faster / smaller / cheaper | a number beats the baseline | **optimization** | **required** |
-| both ("add X, and it has to be fast") | both | optimization | required |
-| neither ("make it cleaner") | nothing measurable | **stop and ask** | — |
+| add / implement / fix X | development | relevant test RED → GREEN; suite green | none |
+| make X faster / smaller / cheaper | optimization | tests green; metric beats baseline beyond noise | required |
+| add X with a measurable limit | optimization | both gates pass | required |
+| make X “better” without a runnable criterion | stop and ask | agree on a measurable outcome before editing | — |
 
-- **Development always runs TDD.** It isn't a mode you opt into.
-- **Optimization adds a benchmark on top of TDD**, it does not replace it. Tests still pass, new code still gets tests first. A change that improves the number but breaks a test is restored like any other failure.
-- **Never ask the user which mode.** The shape of the request decides. Naming the mode is a convenience, not an input.
-- Development work gets no time budget: a feature is not improved by being abandoned halfway. If it is too big for one done-or-not unit, split it into several.
-
-## Four stages
-
-| Stage | Exit condition |
-|---|---|
-| **Define** | Falsifiable goal, executable gate, boundaries, budget, and reset agreed |
-| **Anchor** | Measuring stick frozen; verified RED or measured baseline recorded |
-| **Ratchet** | Every attempt measured, accepted or restored, and logged |
-| **Prove** | Clean verification passes and evidence is reported |
-
-## Phase 0 — Define
-
-Produce a six-field contract before writing code.
-
-| Field | Meaning |
-|---|---|
-| `goal` | One sentence, and it must be possible to be wrong about it |
-| `criterion` | The tests that must pass, plus — in optimization — the metric, its direction, target, and repeat count |
-| `budget` | Optimization only: how many attempts, and how much wall clock |
-| `frozen` | Files that must not change: the benchmark, the tests, the env |
-| `surface` | Files that may change: an explicit list |
-| `reset` | The exact command that undoes one attempt |
-
-**If the criterion can't be run as a single command, the goal isn't ready.** Build the benchmark first.
-
-### Freeze whatever could be traded for the number
-
-Don't reflexively freeze wall-clock time. Freeze the things that, if changed, would make two attempts incomparable — for most software work that's the machine, the dataset, the cache state, and the concurrency. Training a model is the exception that proves the rule, because there the clock *is* the objective. Per-scenario lists: `references/contracts.md`.
-
-### Asking the user
-
-Ask only what the request doesn't already determine. Never ask what you can infer, and never ask what you can measure yourself.
-
-- **Two questions at most**, then one confirmation of the whole contract — the only point where the run needs a human.
-- **Every question offers concrete options plus a custom one.** Never hand someone a blank prompt when a sensible default exists.
-- **Never ask which mode.** That's your inference, not their decision.
-- **Show the cost with the contract** ("~15 attempts, about 8 minutes"). In optimization the user is buying wall clock, and they should see the price before agreeing to it.
-
-**Development: usually zero questions.** The failing test *is* the criterion, and writing it is the first piece of work. Ask only when "done" is genuinely ambiguous, or when the request is one of the TDD exceptions (throwaway prototype, generated code, config).
-
-**Optimization: exactly two questions.** First the metric and the target, and only when the request admits more than one — offer the two or three that fit this codebase, mark your recommendation, allow a custom answer. Then the budget, always, since that is what the user is paying: offer attempts and wall clock as pairs, with the estimate attached, plus a custom option.
-
-### Building the benchmark is TDD work
-
-When no benchmark exists, Define spawns one task: write it. That is "make something exist and work correctly", so it runs under TDD — first assert that the benchmark tells a 100ms case apart from a 200ms case, then build it, then check it reproduces a difference you already know exists.
-
-**Building the benchmark is development work. Using it is optimization work.** That recursion is why no new machinery is needed for a new kind of target.
-
-## Phase 1 — Anchor
-
-1. Hash the `frozen` files and record the hash.
-2. Optimization: run the metric `repeats` times, take the median, and **measure the noise — never assume it.** This measured value is the baseline.
-3. Development: verify **RED** — the test exists, fails, and fails for the right reason.
-4. Write the contract and this anchored starting state into the experiment log.
-
-If run-to-run spread is ±3%, an accept threshold below 3% means you are measuring noise rather than progress.
-
-Deterministic metrics (bundle bytes, test count) need `repeats: 1` and a zero noise floor. Noisy ones (latency, throughput, memory) need `repeats ≥ 5` and a measured one.
-
-## Phase 2 — Ratchet
-
-Run this cycle against the anchored state:
-
-```
-1. Read the log, pick an idea
-   (combine near-misses first, then simplify, then try something new)
-2. Edit only inside `surface`
-3. Run the gate exactly as the contract says
-   (send output to a file; never flood your context with logs)
-4. Apply the verdict
-5. Append one row to the log
-6. Repeat
-```
-
-### The verdict
-
-```
-crash                  → log it, restore, next
-tests fail             → log it, restore, next       ← correctness is not tradeable
-improvement ≤ δ         → log it, restore, next
-improvement > δ         → ACCEPT: commit, baseline = result
-```
-
-Normalize improvement to the contract's direction: positive means better. δ is max(minimum improvement, measured noise). Never compare single noisy runs.
-
-### Restoring one attempt
-
-```bash
-git checkout <accepted-commit> -- <surface paths>
-```
-
-Restore the files, not the repository. `git reset --hard` would throw away the log and the frozen files along with the attempt — and those are the two things that have to survive a rejection.
-
-### The experiment log
-
-One untracked TSV at the repo root. It is what survives a context reset: a new session reads it and continues without re-deriving anything.
-
-```
-attempt	commit	tests	metric	delta	verdict	note
-1	a1b2c3d	pass	184.2	—	baseline	initial state
-2	b2c3d4e	pass	171.5	-12.7	accept	preload hero image
-3	c3d4e5f	fail	—	—	fail	inline critical css broke the suite
-4	d4e5f6g	pass	183.9	+12.4	reject	memoized fetch, no real gain
-```
-
-Log failures as carefully as successes: they are the record of what has been ruled out, and they are what stops the next session from retrying a dead end.
-
-### Stop conditions
-
-All objective. There is no "this looks good enough."
-
-- **Budget spent** — attempts or wall clock, whichever runs out first
-- **Target met** — the metric crosses the target in the contract's direction
-- **Converged** — three attempts in a row that improve by less than the noise
-- **Stuck** — four reversals in a row; the ideas at this level of ambition are exhausted
-
-On any of these: **stop, report the log, offer to continue.** Never interrupt mid-budget to ask whether to keep going, and never run past the budget because momentum feels good.
-
-## Phase 3 — Prove
-
-- Re-run the full gate from a clean state: all tests, plus the benchmark in optimization.
-- **Now** refactor if it helps. The metric is locked in and the tests protect it. A refactor that breaks a test or worsens the metric is restored like any other attempt, and the same metric in a smaller diff is a win rather than a tie.
-- Report the final test result, accepted and rejected attempts, net improvement, cost, and near-misses worth another look.
-- Deliver the runnable evidence. Next time, the human iterates on the **contract**, not on the code.
-
-## Anti-gaming rules
-
-Without these, the agent optimizes the measurement instead of the code.
-
-1. **Hash the frozen files** before and after every attempt. A changed hash fails the attempt outright.
-2. **The tests only get stronger.** The assertion count may rise or hold, never fall — "fix the code, not the test", made checkable.
-3. **No new dependencies, network calls, or hardware branches.**
-4. **No shrinking the workload to fake a gain** — fewer eval samples, cached results, memoized benchmark inputs, warm caches the contract didn't ask for.
-5. **No best-of-N.** Fixed `repeats`, median statistic. Re-running until a lucky sample lands is cheating.
-6. **No `.skip`, no `xfail`, no loosened tolerances** to turn a test green.
-7. **At equal metric, the simpler change wins.** A metric is not a complete objective; without a tie-break the ratchet just accumulates complexity.
-
-## The correctness gate: TDD
-
-Required in both modes.
-
-```
-NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
-```
-
-- **RED** — one minimal test for one behavior, against real code. Run it. Confirm it fails because the feature is missing, not because of a typo. A test that passes immediately is testing what already exists: fix the test.
-- **GREEN** — the simplest code that passes that one test. No speculative options, no extra features. Run it. Confirm it passes and the rest of the suite stays green.
-- **REFACTOR** — clean up, but only while green.
-
-Code written before its test gets deleted, not kept as reference and not adapted while writing tests. The ratchet enforces this without anyone having to be disciplined about it: an unverified edit is simply not the accepted state, so it gets rolled back.
+Infer the mode; never ask the user to choose it. Both modes require TDD for new behavior. Split large development tasks into verifiable units, not timed attempts.
 
 ## Reference files
 
+Do not preload references. Read only the file needed for the next action; paths are relative to this skill directory.
+
 | Read | When |
 |---|---|
-| `references/gate.md` | Before writing production code or touching tests — the full Iron Law, both verification steps, the rationalization table, red flags, the pre-completion checklist |
-| `references/testing-anti-patterns.md` | When adding mocks or test utilities |
-| `references/contracts.md` | When drafting a contract — choosing a metric, frozen files per scenario, worked examples |
+| [Correctness gate](references/gate.md) | Before changing production code or tests, in either mode |
+| [Define: the contract](references/contracts.md) | During Define for optimization, or when contract design needs detail |
+| [Progress gate](references/progress-gate.md) | Before Anchor in optimization; use through Ratchet and Prove |
+| [Testing anti-patterns](references/testing-anti-patterns.md) | Only when adding or changing mocks, test utilities, or test-only APIs |
+| [Worked testing examples](references/testing-examples.md) | Only when the TDD sequence needs an example; read the relevant section |
+
+## Phase 0 — Define
+
+Confirm six fields: `goal` (falsifiable outcome), `criterion` (one gate command), `budget` (optimization attempts/time; none for development), `frozen` (protected files/conditions), `surface` (editable paths), `reset` (exact scoped restore).
+
+Ask only for missing information: at most two questions, then one contract confirmation. In optimization, ask ambiguous metric/target and absent budget. Offer concrete choices, a recommendation, and a custom option; include attempt/time limits. Never ask what you can infer or measure.
+
+Wait for confirmation before Anchor or implementation. If the gate is missing, build and verify it with TDD first, then confirm the optimization contract.
+
+## Phase 1 — Anchor
+
+Hash `frozen` files. Development: verify RED for the expected missing behavior. Optimization: record a fixed-repeat median baseline and measured noise. Deterministic metrics: `repeats: 1`, noise `0`; noisy metrics: `repeats ≥ 5`.
+
+Keep one untracked root-level TSV with contract, hashes, and starting evidence. Columns: `attempt, commit, tests, metric, delta, verdict, note`; metric/delta stay blank in development. Freeze verified acceptance tests before implementation; never weaken assertions.
+
+## Phase 2 — Ratchet
+
+Read the log, choose an idea, edit only `surface`, and run the gate. Save output to artifacts. Check frozen hashes before/after every attempt; log every verdict, including failures.
+
+| Result after implementation | Verdict |
+|---|---|
+| crash, failing tests, or changed frozen inputs | reject and restore |
+| development: verified RED → GREEN and full suite passes | accept |
+| optimization: improvement exceeds `δ = max(minimum improvement, measured noise)` | accept; advance baseline |
+| optimization: improvement does not exceed δ | reject and restore |
+
+Commit accepted states. Normalize improvement so positive means better; compare it and δ in the same units. Restore only the attempt's implementation paths, preserving tests, log, and pre-existing user work. Never use `git reset --hard`.
+
+**Anti-gaming:** assertion count must not fall; no `.skip`, `xfail`, or loosened tolerances. No new dependencies, network calls, or hardware branches. No smaller workload, cached answers, memoized benchmark inputs, or undeclared cache warming. Fix repetitions and use medians, never best-of-N.
+
+**Optimization stops** at the first of: attempt/time limit, target met, three improvements below measured noise in a row, or four consecutive restorations. Report and offer to continue; do not ask mid-budget or exceed it. Development has no attempt/time budget.
+
+## Phase 3 — Prove
+
+Rerun the full gate from clean conditions. Refactor only while green, then remeasure. Equal metric with a simpler diff wins only under the agreed tie-break; restore regressions.
+
+Deliver runnable evidence: tests, baseline/final metric and noise, accepted/rejected attempts, net improvement, actual cost, stop reason, and near-misses. Omit metric fields for development.

@@ -186,10 +186,14 @@ python3 -m unittest discover -s tests -v
 
 | 文件 | 何时加载 | 作用 |
 |---|---|---|
-| [`autodev/SKILL.md`](autodev/SKILL.md) | 每次 autodev 运行 | Define、Anchor、Ratchet、Prove、判定、停止条件和反作弊规则 |
-| [`references/gate.md`](autodev/references/gate.md) | 修改生产代码或测试之前 | 完整的 RED → GREEN → REFACTOR 正确性 gate |
-| [`references/contracts.md`](autodev/references/contracts.md) | 定义优化任务时 | 指标选择、frozen 变量、contract 示例和 benchmark 构建方法 |
-| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | 测试需要 mock 或 helper 时 | 确保测试验证真实行为，而不是验证替身本身 |
+| [`autodev/SKILL.md`](autodev/SKILL.md) | 每次 autodev 运行 | 两种模式、四阶段、两个 gate、必要判定与保护规则、按需文档路由 |
+| [`references/gate.md`](autodev/references/gate.md) | 修改生产代码或测试之前 | 正确性 gate：RED → GREEN → REFACTOR、借口辨析和完成清单 |
+| [`references/contracts.md`](autodev/references/contracts.md) | Define 中定义优化任务，或需要设计 contract 时 | 六个 contract 字段、指标选择、frozen 变量和 benchmark 构建方法 |
+| [`references/progress-gate.md`](autodev/references/progress-gate.md) | 优化任务进入 Anchor 之前 | 进展 gate：测量、Ratchet 判定、局部恢复、日志、停止条件和 Prove 证据 |
+| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | 仅在新增或修改 mock、helper、测试专用 API 时 | 确保测试验证真实行为，而不是验证替身本身 |
+| [`references/testing-examples.md`](autodev/references/testing-examples.md) | 仅在需要具体 TDD 示例时 | 重试与 bug 修复的示范流程，只读相关章节 |
+
+先加载入口，不要预加载整个目录。普通开发任务补充读取正确性 gate；优化任务再读取 contract 和进展 gate。Mock 指南与示例始终按需读取。入口直接链接每个子文档，无须沿多层引用链寻找规则。
 
 Skill 本身不绑定语言和测试框架。它不要求项目使用 Jest、pytest 或额外 runtime，而是复用目标仓库已经信任的命令。
 

@@ -186,10 +186,14 @@ python3 -m unittest discover -s tests -v
 
 | File | Loaded when | Purpose |
 |---|---|---|
-| [`autodev/SKILL.md`](autodev/SKILL.md) | every autodev run | Define, Anchor, Ratchet, Prove, verdicts, stop conditions, anti-gaming rules |
-| [`references/gate.md`](autodev/references/gate.md) | before changing production code or tests | the complete RED → GREEN → REFACTOR correctness gate |
-| [`references/contracts.md`](autodev/references/contracts.md) | while defining an optimization | metric choice, frozen variables, contract examples, benchmark construction |
-| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | when tests need mocks or helpers | checks that tests exercise real behavior instead of their doubles |
+| [`autodev/SKILL.md`](autodev/SKILL.md) | every autodev run | two modes, four stages, both gates, essential verdicts and safeguards, reference routing |
+| [`references/gate.md`](autodev/references/gate.md) | before changing production code or tests | correctness gate: RED → GREEN → REFACTOR, rationalizations, completion checklist |
+| [`references/contracts.md`](autodev/references/contracts.md) | during Define for optimization or contract-design questions | six contract fields, metric choice, frozen variables, benchmark construction |
+| [`references/progress-gate.md`](autodev/references/progress-gate.md) | before Anchor in optimization | progress gate: measurement, Ratchet verdicts, scoped restore, log, stops, Prove evidence |
+| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | only when adding or changing mocks, helpers, or test-only APIs | checks that tests exercise real behavior instead of their doubles |
+| [`references/testing-examples.md`](autodev/references/testing-examples.md) | only when a TDD step needs an example | illustrative retry and bug-fix sequences; read the relevant section |
+
+Load the core first, not the entire directory. Ordinary development adds the correctness gate; optimization also loads the contract and progress gate. Mock guidance and worked examples stay conditional. Every reference is linked directly from the core, so none requires a chain of document loads to discover.
 
 The skill itself remains language- and framework-agnostic. It does not require Jest, pytest, or a custom runtime; it reuses the commands the target repository already trusts.
 

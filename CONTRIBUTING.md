@@ -14,18 +14,21 @@ Thanks for wanting to improve autodev. The whole skill is Markdown, so contribut
 
 Progressive disclosure is load-bearing here, not decoration. A skill that injects 9k tokens into every request gets uninstalled, so:
 
-- **`SKILL.md` is the always-loaded core and stays around 2.5k tokens.** It holds only what every run needs: the three rules, the two modes, Define → Anchor → Ratchet → Prove, the verdict, restoring, the experiment log, stop conditions, and the anti-gaming rules.
-- **Everything else goes in `references/`.** Long tables, worked examples, per-scenario detail, and anything read conditionally belong there.
-- **Every reference file needs an entry in the "Reference files" table in `SKILL.md`** stating when to read it. A reference with no trigger never gets loaded, which makes it dead weight.
-- **Check the cost before and after a change:**
+- **Keep `SKILL.md` within 5,500 UTF-8 bytes.** It holds mode selection, Define → Anchor → Ratchet → Prove, both gates, essential verdicts and safeguards, and load routing. Details belong in references, not duplicated in the core.
+- **Keep the full skill within 24,000 bytes and the ordinary development path (`SKILL.md` + `gate.md`) within 10,000.** Moving prose between files must reduce the relevant load path, not merely hide growth.
+- **Every reference needs a direct Markdown link and a specific trigger in the core's "Reference files" table.** Do not preload the directory. Keep examples optional and references self-contained within the installed skill.
+- **Use README terminology:** four stages, the TDD **correctness gate**, and the ratchet **progress gate**. A gate is not another workflow.
+- **Measure before and after:**
 
 ```bash
 for f in autodev/SKILL.md autodev/references/*.md; do
-  printf '%-46s ~%s tok\n' "$f" "$(( $(wc -c < "$f") / 4 ))"
+  printf '%-50s ' "$f"
+  wc -l -w -c < "$f"
 done
+python3 -B -m unittest discover -s tests -p test_terminology.py -v
 ```
 
-If a change to `SKILL.md` pushes it past roughly 2.8k tokens, move something out rather than accepting the growth.
+The checks cover byte budgets, load triggers, local links, terminology, required safeguards, and both README inventories. Bytes are reproducible; bytes/4 is only a rough token estimate, not a tokenizer measurement.
 
 ## Editing the skill
 
@@ -65,12 +68,12 @@ For model runs, use `python3 evals/run.py run`, review the ignored artifacts, an
 
 ## Before you open a PR
 
-- [ ] `SKILL.md` still near 2.5k tokens, with new detail pushed into `references/`
-- [ ] Every new reference file has a trigger in the "Reference files" table
-- [ ] The correctness gate is intact and no rule was weakened
-- [ ] Both READMEs updated, including the size column in "What's inside"
-- [ ] `CHANGELOG.md` updated under `## [Unreleased]`
-- [ ] The change would actually change what an agent does — not just how the repo reads
+- [ ] Core, full skill, and ordinary development path meet their byte budgets
+- [ ] Every reference has a direct link and conditional load trigger
+- [ ] The correctness gate, progress gate, and anti-gaming rules remain intact
+- [ ] Both README inventories and load descriptions match the skill
+- [ ] The full unit suite passes; behavior changes have an evaluation regression case
+- [ ] The change improves agent behavior or reduces context cost, not just repository prose
 
 ## Commits
 
