@@ -4,18 +4,7 @@
 
 # autodev
 
-**Stop letting your agent grade its own homework.**
-
-An agent can add a feature and call it done, or change some code and call it faster. autodev makes both claims checkable: agree on a benchmark first, stay inside an agreed list of files, and accept a change only when a script says it is better. Everything else gets rolled back.
-
-![How autodev works: contract, baseline, loop, review](docs/assets/autodev-overview.png)
-
-| Phase | What happens | What you do |
-|---|---|---|
-| **Contract** | Write down the goal, the criterion, the budget, and which files may change | Confirm once |
-| **Baseline** | Write the tests or build the benchmark, run it once, and hash the files that must not change | Nothing |
-| **Loop** | Edit the allowed files → run the benchmark → the script decides → commit or roll back → log the attempt | Wait for the budget you approved |
-| **Review** | Re-run all tests on the final code, then refactor, then report what the loop gained | Nothing |
+**autodev is an Agent Skill that makes coding agents prove their work: features must turn a failing test green, and optimizations must beat a frozen benchmark.**
 
 ![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)
 ![Agent Skill](https://img.shields.io/badge/skill-autodev-7C3AED?style=flat-square)
@@ -26,222 +15,188 @@ An agent can add a feature and call it done, or change some code and call it fas
 npx skills add Momoyeyu/autodev -g
 ```
 
-Works with Claude Code, Cursor, Codex CLI, OpenCode, and anything else that reads `SKILL.md`.
+It works with Claude Code, Cursor, Codex CLI, OpenCode, and any agent that reads `SKILL.md`.
 
-## Why this exists
+## Why autodev exists
 
-Today's coding models are strong and fast. One pass is enough to add a feature or rewrite a hot path, and what comes back is a paragraph describing what happened. That paragraph is the only evidence you get. You cannot read the diff as fast as the model writes it, so "done" quietly turns into something you accept rather than something you check.
+Coding agents can produce changes faster than people can review them. The hard part is no longer getting code written; it is deciding whether the result deserves to stay.
 
-autodev's answer is to stop reading the report and ask for the artifact instead:
+Without a measurement protocol, the most important claims are impossible to verify:
 
-- **A feature is shown by a case.** Not "CSV export implemented", but a test that failed before and passes now, together with the input and the exact rows it produces.
-- **An optimization is shown by a number.** Not "the home page is faster", but a before-and-after on a frozen benchmark, with the target and the noise floor written next to it.
+| The agent says | What is missing |
+|---|---|
+| “The feature is done.” | A test that failed before the implementation and passes after it |
+| “The page is faster.” | A baseline, a stable benchmark, and a measured noise floor |
+| “This was the best attempt.” | A record of rejected ideas and the rule used to compare them |
 
-In both cases the model's prose stops being the deliverable. What you get instead is something you can run yourself, run again tomorrow, and compare across attempts.
+autodev changes the deliverable. The agent's explanation is useful context, but it is no longer the evidence. The evidence is an artifact you can run again:
 
-## The problem
+- a feature comes with a **RED → GREEN** test case;
+- an optimization comes with a **before → after** measurement;
+- every failed idea is **logged and restored** to the last accepted state instead of being quietly accumulated;
+- tests, benchmarks, datasets, and other protected inputs are frozen so the agent cannot improve the score by changing the ruler.
 
-Ask an agent to make something faster and it will happily make a change, declare victory, and move on. Three things go wrong, and none of them are about laziness:
+The result is a ratchet: accepted code only moves in a direction that a script can verify.
 
-1. **It grades its own homework.** With no measurement taken before the edit, "faster" is an opinion. A test written after the code passes immediately and proves nothing. A benchmark number with no baseline proves just as little.
-2. **It optimizes the measurement instead of the code.** Cache the benchmark input, shrink the eval set, loosen the tolerance, run it five times and report the best one. In a diff, every one of these looks like progress.
-3. **It forgets.** Thirty attempts later, in a fresh context window, it retries the idea that already failed twice.
+## See it work
 
-autodev prevents all three. It combines two ideas that already work:
+The repository ships small, dependency-free fixtures for each scenario below. The outputs in this image were reproduced from those fixtures, not written as illustrative numbers.
 
-- **Test-driven development (TDD)** as the correctness gate: write a failing test first, then just enough code to pass it. A test that never failed proves nothing, so an untested feature does not count as done.
-- The **accept/reject loop** from [autoresearch](https://github.com/karpathy/autoresearch): freeze the benchmark, fix the budget, and let a script decide what survives.
+![Reproduced feature and optimization results](docs/assets/autodev-evidence.png)
 
-## Two modes, same rules
+### 1. Add a feature
 
-You never have to pick one. The shape of the request decides:
+```text
+Add Invoice.total_with_tax(rate).
+```
 
-| The request | How success is judged | Mode | Time budget |
+autodev does not start by implementing the method. It first writes one focused test, runs it, and checks that it fails for the expected reason. Only then does it add the smallest passing implementation and run the whole suite.
+
+| Checkpoint | Reproduced result |
+|---|---|
+| RED | `test_total_with_tax_applies_rate ... FAIL` |
+| GREEN | both invoice tests pass |
+| Evidence | the new test demonstrates the input, rate, and exact total |
+
+This is the **development mode**: there is no attempt budget. The behavior is either implemented and protected by a test, or it is not done.
+
+### 2. Optimize a measurable target
+
+```text
+Bring API p95 latency below 200 ms; use 7 runs and the median.
+```
+
+Before editing, autodev writes a contract:
+
+```yaml
+goal:      "API p95 latency below 200 ms"
+criterion: "tests pass; 7 benchmark runs; compare medians"
+frozen:    ["tests/**", "bench/**"]
+surface:   ["src/api.py"]
+budget:    "12 attempts or 20 minutes"
+reset:     "restore src/api.py from the accepted commit"
+```
+
+The bundled fixture reproduced this outcome:
+
+| | p95 | Tests | Verdict |
+|---|---:|---|---|
+| Baseline | 224.305 ms | pass | — |
+| Attempt 1 | 163.196 ms | pass | **accept** |
+| Net change | **−27.2%** | still green | target met |
+
+A faster number alone is not enough. If the tests fail, or if the attempt edits the benchmark, the dataset, or another frozen input, autodev rejects the attempt and restores the last accepted state.
+
+### 3. Stop when “better” has no meaning
+
+```text
+Make this code cleaner.
+```
+
+There is no runnable success criterion here, so autodev does not guess and does not edit. It asks for a measurable outcome—preserved behavior with lower complexity, higher coverage, a smaller binary, or another criterion that fits the repository.
+
+The same rule blocks fake wins. For a throughput task, for example, autodev freezes the tests, benchmark, dataset, runner configuration, and lockfile. Reducing the dataset or loosening an assertion is a failed attempt even when the reported throughput rises.
+
+## How it works
+
+![How autodev works: Define, Anchor, Ratchet, Prove](docs/assets/autodev-overview.png)
+
+| Stage | Purpose | Complete when |
+|---|---|---|
+| **Define** | Turn the request into a falsifiable goal, executable gate, boundaries, budget, and reset | The contract is explicit and confirmed |
+| **Anchor** | Freeze the measuring stick and establish a trustworthy starting state | RED is verified, or the baseline and noise are recorded |
+| **Ratchet** | Measure every attempt, then accept it or restore the last accepted state | Every attempt has a mechanical verdict and log entry |
+| **Prove** | Verify the accepted state from clean conditions and package the evidence | Tests, measurements, cost, and rejected attempts are reported |
+
+Two established practices do the work:
+
+1. **Test-Driven Development is the correctness gate.** New behavior starts with a failing test. Optimization never trades correctness for a better number.
+2. **The ratchet is the progress gate.** The benchmark is fixed, the budget is explicit, and each attempt must be accepted or restored by a script. This mechanism is inspired by the accept/reject loop in [autoresearch](https://github.com/karpathy/autoresearch).
+
+### Two modes, selected from the request
+
+| Request | Success condition | Mode | Budget |
 |---|---|---|---|
-| add / implement / fix X | a test goes from failing to passing | **development** (TDD) | **none** — it's done or it isn't |
-| make X faster / smaller / cheaper | a number beats the baseline | **optimization** | **required** |
-| both — "add X, and it has to be fast" | both | optimization | required |
+| add / implement / fix X | a relevant test goes from RED to GREEN | **development** | none |
+| make X faster / smaller / cheaper | tests stay green and a metric beats the baseline beyond noise | **optimization** | required |
+| add X and keep it under a limit | both conditions pass | **optimization** | required |
+| make X “better” or “cleaner” | no executable criterion | **stop and ask** | — |
 
-**TDD isn't optional in either mode.** Optimization adds a benchmark on top of TDD; it doesn't replace it. Tests still pass, new code still gets tests first. A change that improves the number but breaks a test is rolled back like any other failure — which is the entire answer to "the agent made the benchmark faster by breaking the feature."
+You never choose a mode manually. autodev infers it from the shape of the request and asks only for information that is genuinely missing. Optimization gets at most two questions—metric/target when ambiguous, then budget—and one confirmation of the complete contract.
 
-Development work gets no time budget. A feature isn't improved by being abandoned halfway. If it's too big to finish in one go, autodev splits it into several.
+## Get started
 
-## Quick start
-
-### 1. Install
+### Install
 
 ```bash
 npx skills add Momoyeyu/autodev -g
 ```
 
-Global, non-interactive, Claude Code only:
+Install only for Claude Code, globally and non-interactively:
 
 ```bash
 npx -y skills add Momoyeyu/autodev --skill autodev -a claude-code -g --copy -y
 ```
 
-Try it without installing:
+Try it once without installing:
 
 ```bash
 npx skills use Momoyeyu/autodev@autodev --agent claude-code
 ```
 
-### 2. Ask for the work
+### Ask normally
 
-**A feature** — no budget; the work is either done or it isn't:
+No special prompt template is required:
 
 ```text
-implement CSV export for the filtered transaction list
+Implement CSV export for the filtered transaction list.
 ```
 
 ```text
-RED       test "exports filtered rows as csv"    → FAIL: exportCsv is not defined
-GREEN     minimal writer, 12 lines               → PASS (suite green)
-REFACTOR  extract CsvWriter                      → still PASS
+Reduce CLI startup time by at least 5%. Use at most 10 attempts or 15 minutes.
 ```
 
-**An optimization** — note the contract you get to approve first:
+For feature work, autodev starts with the failing test. For optimization, it presents the contract before spending the approved budget.
 
-```text
-make the home page load faster
-```
+## Run the evaluation suite
 
-```text
-contract for approval:
-  metric   p95_ms ↓   target 200ms   5 runs, median (measured noise ±2.1%)
-  tests    npm test — assertion count may not drop
-  frozen   bench/**  tests/**  package-lock.json  vite.config.ts
-  surface  src/home/**
-  budget   15 attempts / ~8 min
-```
-
-```text
-attempt  commit   tests  metric  delta   verdict  note
-1        a1b2c3d  pass   184.2   —       baseline initial state
-2        b2c3d4e  pass   171.5   -12.7   accept   preload hero image
-3        c3d4e5f  fail   —       —       fail     inline critical css broke the suite
-4        d4e5f6g  pass   183.9   +12.4   reject   memoized fetch, no real gain
-```
-
-### 3. Watch what it refuses to do
-
-The interesting output is the rejections. A run that never rejects anything is either trivial or cheating, and the rules below are what tell the two apart.
-
-## What it asks before spending your time
-
-autodev never requires you to know how it works. It asks two questions at most, always with concrete options and a custom answer, and only about what your request doesn't already determine:
-
-```text
-优化首页刷新速度
-
-Q1  Which metric?
-    A. p95 navigation latency      (recommended — server + network + paint)
-    B. time to interactive         (paints fast, responds late)
-    C. gzipped bundle size         (payload is the suspect)
-    D. custom
-
-Q2  Budget? You're buying wall clock, so the price is shown:
-    A. quick try    ~5 attempts  / ~2 min
-    B. standard     ~15 attempts / ~8 min     (recommended)
-    C. until it converges — usually 30-60 attempts / ~30 min
-    D. custom
-```
-
-Then the whole contract is shown once for confirmation. That is the only point in the loop where a human is needed.
-
-Feature work asks nothing, because there's nothing to ask — the failing test *is* the acceptance criterion, and writing it is the first piece of work.
-
-`--dry-run` prints the contract and stops.
-
-## Why the loop can't be gamed
-
-Seven rules, enforced every attempt. They're the difference between optimizing the code and optimizing the measurement:
-
-1. **The protected files are hashed** before and after each attempt. A changed hash fails the attempt outright.
-2. **The tests only get stronger.** The assertion count may rise or hold, never fall.
-3. **No new dependencies, network calls, or hardware branches.**
-4. **No shrinking the workload to fake a gain** — fewer eval samples, cached results, memoized inputs, warm caches the contract didn't ask for.
-5. **No best-of-N.** Fixed repeat count, median statistic. Re-running until a lucky sample lands is cheating.
-6. **No `.skip`, no `xfail`, no loosened tolerances** to turn a test green.
-7. **At the same number, the simpler change wins.** A metric isn't a complete objective, and without a tie-break the loop just accumulates complexity.
-
-## What's inside
-
-Progressive disclosure, because a skill that injects 9k tokens into every request gets uninstalled. Only the core loads up front; each reference loads when its trigger fires.
-
-| File | Loads when | Size | Contents |
-|---|---|---|---|
-| [`autodev/SKILL.md`](autodev/SKILL.md) | the skill is triggered | **~2.7k tok** | The three rules, the two modes, the four phases, the verdict, rolling back, the experiment log, stop conditions, anti-gaming |
-| [`references/gate.md`](autodev/references/gate.md) | writing production code or touching tests | ~2.5k tok | The full TDD gate: the Iron Law, both verification steps, the rationalization table, red flags, the checklist |
-| [`references/contracts.md`](autodev/references/contracts.md) | drafting a contract | ~1.5k tok | Choosing a metric, frozen files per scenario, worked contracts, how to build a benchmark |
-| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | adding mocks or test utilities | ~2.1k tok | Five anti-patterns, each with a gate function and the fix |
-
-A feature request loads the core plus the gate — about **5.2k tokens**. An optimization loads the core plus contracts and the gate — about **6.7k**. Nothing loads all four files at once unless the work genuinely spans everything.
-
-## What it works on
-
-The same two layers, recombined. No new machinery for any of these:
-
-| Scenario | Tests | Metric | Frozen |
-|---|---|---|---|
-| Feature | new test fails → passes, suite green | — | existing suite |
-| Bug fix | reproduction test fails → passes | — | the reproduction test |
-| Refactor | behavior suite green | complexity ↓ / coverage ↑ | behavior spec |
-| Performance | suite green | p95 ↓ | bench script, dataset, hardware |
-| Build time | suite green | build seconds ↓ | core count, concurrency, cache state |
-| Bundle size | suite green | bytes ↓ | build config, target browsers |
-| Cost | suite green | $/request ↓ | traffic shape, price table |
-| Model quality | no crash, no NaN | val loss ↓ | harness, validation set, **time budget** |
-
-That last row shows why the protected list has to be worked out per scenario rather than copied. There, the fixed wall clock *is* the objective — "the best model trainable in five minutes." For a web page it would be meaningless, and what needs protecting is the machine, the dataset, and the cache state instead.
-
-## Works with
-
-Any agent that supports the [Agent Skills specification](https://agentskills.io). Global install paths for the common ones:
-
-| Agent | `--agent` | Global path |
-|---|---|---|
-| Claude Code | `claude-code` | `~/.claude/skills/` |
-| Cursor | `cursor` | `~/.cursor/skills/` |
-| Codex CLI | `codex` | `~/.codex/skills/` |
-| OpenCode | `opencode` | `~/.config/opencode/skills/` |
-| GitHub Copilot | `github-copilot` | `~/.copilot/skills/` |
-| Gemini CLI | `gemini-cli` | `~/.gemini/skills/` |
-| Windsurf | `windsurf` | `~/.codeium/windsurf/skills/` |
-| Amp / Replit / universal | `universal` | `~/.config/agents/skills/` |
-
-Manual install, if you'd rather not use the CLI:
+The same scenarios used above are versioned under [`evals/`](evals/README.md):
 
 ```bash
-git clone --depth 1 https://github.com/Momoyeyu/autodev.git /tmp/_autodev
-cp -r /tmp/_autodev/autodev ~/.claude/skills/
-rm -rf /tmp/_autodev
-```
-
-## Scope
-
-autodev covers test-first implementation, bug fixes, refactors, and measurable optimization of a quantity you can name. It deliberately ships no scripts and no dependencies: the contract is generated at Phase 0 and the verdict reuses whatever your project already runs — `npm test`, `pytest`, your own benchmark script.
-
-Framework-specific templates are out of scope on purpose. The moment the skill knows about Jest, it stops applying to Rust.
-
-## Evaluating the skill
-
-The versioned evaluation corpus in [`evals/cases.json`](evals/cases.json) covers development, bug fixes, optimization contracts, noisy metrics, scope failures, and anti-gaming behavior. Run each case in a clean agent session, record its observable assertions, then score the report deterministically:
-
-```bash
+python3 evals/run.py list
 python3 evals/run.py run --case development-feature
+python3 evals/run.py run
+```
+
+Each case runs in an isolated Git repository with the current skill installed as `.devin/skills/autodev`. Responses, transcripts, diffs, command output, and mutated workspaces are kept under the ignored `.autodev-evals/` directory for review.
+
+After review, remove every generated artifact with one guarded command:
+
+```bash
 python3 evals/run.py clean
+```
+
+Validate the fixtures, runner, cleanup guard, corpus, and scorer without invoking a model:
+
+```bash
 python3 -m unittest discover -s tests -v
 ```
 
-Runs copy the current skill and fixtures into the ignored `.autodev-evals/` directory, preserving transcripts and diffs for review. See [`evals/README.md`](evals/README.md) for scoring and the repeatable workflow.
+## What is in the skill
 
-- [Skill core](autodev/SKILL.md) · [Correctness gate](autodev/references/gate.md) · [Contracts](autodev/references/contracts.md) · [Anti-patterns](autodev/references/testing-anti-patterns.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
+| File | Loaded when | Purpose |
+|---|---|---|
+| [`autodev/SKILL.md`](autodev/SKILL.md) | every autodev run | Define, Anchor, Ratchet, Prove, verdicts, stop conditions, anti-gaming rules |
+| [`references/gate.md`](autodev/references/gate.md) | before changing production code or tests | the complete RED → GREEN → REFACTOR correctness gate |
+| [`references/contracts.md`](autodev/references/contracts.md) | while defining an optimization | metric choice, frozen variables, contract examples, benchmark construction |
+| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | when tests need mocks or helpers | checks that tests exercise real behavior instead of their doubles |
 
-## License
-
-[MIT](LICENSE) — free to use, modify, and distribute.
+The skill itself remains language- and framework-agnostic. It does not require Jest, pytest, or a custom runtime; it reuses the commands the target repository already trusts.
 
 ## Contributing
 
-Issues and PRs are welcome, especially real transcripts of the loop running — including the runs where the agent tried to game its own benchmark. Start with the [contribution guide](CONTRIBUTING.md).
+Behavior changes should come with a regression case in `evals/cases.json`. Keep the core skill compact, put conditional detail in `references/`, and keep the English and Chinese READMEs synchronized. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)

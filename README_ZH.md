@@ -4,18 +4,7 @@
 
 # autodev
 
-**别再让 Agent 自己给自己打分。**
-
-Agent 说「feature 做完了」，或者说「性能优化好了」，这两句话你其实都没法验证。autodev 把它们变成可验证的：先把 benchmark 定下来，只让它改指定的文件，最后由脚本判定这次改动到底有没有变好。没变好的一律回滚。
-
-![autodev 的工作流程：contract、baseline、loop、review](docs/assets/autodev-overview.zh.png)
-
-| 阶段 | 发生什么 | 你要做什么 |
-|---|---|---|
-| **contract** | 写下目标、验收标准、预算，以及哪些文件能改、哪些不能 | 确认一次 |
-| **baseline** | 先写 test 或搭 benchmark，跑一次得到 baseline，并给不许改的文件算哈希 | 不用管 |
-| **loop** | 改文件 → 跑 benchmark → 脚本判定 → 接受就 commit、拒绝就回滚 → 记一条日志 | 等它用完你批准的预算 |
-| **review** | 对最终代码重跑全部 test，再重构，最后汇报这次拿到了多少收益 | 不用管 |
+**autodev 是一个要求编程 Agent 用结果证明工作的 Skill：开发功能，要让一个失败的测试变绿；做优化，要在冻结的 benchmark 上真正超过 baseline。**
 
 ![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)
 ![Agent Skill](https://img.shields.io/badge/skill-autodev-7C3AED?style=flat-square)
@@ -26,222 +15,188 @@ Agent 说「feature 做完了」，或者说「性能优化好了」，这两句
 npx skills add Momoyeyu/autodev -g
 ```
 
-支持 Claude Code、Cursor、Codex CLI、OpenCode，以及任何能读 `SKILL.md` 的工具。
+支持 Claude Code、Cursor、Codex CLI、OpenCode，以及任何能够读取 `SKILL.md` 的 Agent。
 
-## 为什么要有 autodev
+## 为什么要做 autodev
 
-现在的模型又强又快。它一口气就能加完一个 feature、或者把热路径重写一遍，然后给你一段文字说明 —— 而这段说明就是你拿到的全部证据。你读 diff 的速度赶不上它写 diff 的速度，于是「做完了」慢慢变成一件只能接受、无法核对的事。
+编程 Agent 写代码的速度，已经超过了人逐行 review 的速度。现在真正困难的，不再是让代码被写出来，而是判断这次改动究竟值不值得留下。
 
-autodev 的答案是：别听它汇报，让它把东西拿出来看。
+如果没有一套测量规则，Agent 最重要的几句话都无法核实：
 
-- **feature 用 case 展示。** 不是「实现了 CSV 导出」，而是一个改之前会失败、现在通过的 test，连同输入和它产出的确切内容一起摆在你面前。
-- **优化用数字展示。** 不是「首页变快了」，而是在一个冻结的 benchmark 上给出前后对比，旁边写着目标和噪声下限。
+| Agent 说 | 缺少的证据 |
+|---|---|
+| “功能已经做完了。” | 一个实现前失败、实现后通过的测试 |
+| “页面已经变快了。” | baseline、稳定的 benchmark，以及实测的噪声范围 |
+| “这是最好的方案。” | 被拒绝的尝试记录，以及统一的比较规则 |
 
-不管哪种，模型那段文字都不再是交付物。你拿到的是能自己跑一遍、明天再跑一遍、还能逐次尝试横向对比的东西。
+autodev 改变的是交付物。Agent 的解释仍然有参考价值，但它不再是证据；证据必须是你明天还能重新运行的东西：
 
-## 要解决的问题
+- 开发功能，交付一个 **RED → GREEN** 的测试用例；
+- 做性能优化，交付一组 **before → after** 的测量结果；
+- 失败的方案会被**记录，并恢复到上一个已接受状态**，而不是悄悄堆进最终代码；
+- 测试、benchmark、数据集等测量依据会被冻结，Agent 不能靠修改尺子来提高分数。
 
-你让 Agent「把这里弄快点」，它会痛快地改一通、宣布搞定、然后继续下一件事。有三件事会出错，而且都不是因为它偷懒：
+最终得到的是一个只向前移动的棘轮：只有脚本能够证明更好的代码，才会进入已接受状态。
 
-1. **自己给自己打分。** 改之前没有测量，「更快」就只是一种说法。先写代码后补的 test 一次就过，什么也证明不了；没有 baseline 的性能数字也一样。
-2. **优化的是测量，不是代码。** 缓存 benchmark 输入、缩小评测集、放松容差、跑五遍只报最好的一次。这些在 diff 里看起来全都像进步。
-3. **它会忘。** 三十次尝试之后换了个上下文窗口，它会把已经失败过两次的想法再试一遍。
+## 看看它实际怎么工作
 
-autodev 就是来堵这三个洞的。它把两个已经被验证过的做法拼在一起：
+仓库为下面的场景提供了不依赖第三方库的可重复 fixture。图中的结果都来自这些 fixture 的实际运行，不是为了说明概念而虚构的数字。
 
-- **测试驱动开发（TDD）**当正确性 gate：先写一个会失败的 test，再写刚好能让它通过的代码。从没失败过的 test 什么也证明不了，所以没有 test 的 feature 不算做完。
-- 来自 [autoresearch](https://github.com/karpathy/autoresearch) 的**接受 / 拒绝 loop**：冻结 benchmark、固定预算，由脚本决定留下什么。
+![可重复的功能开发与性能优化结果](docs/assets/autodev-evidence.png)
 
-## 两种模式，同一套规则
+### 1. 开发一个新功能
 
-不需要你来选，看需求长什么样就行：
+```text
+为 Invoice 增加 total_with_tax(rate) 方法。
+```
 
-| 你说的话 | 怎么算成功 | 模式 | 时间预算 |
+autodev 不会先写实现。它先写一个只描述目标行为的测试，亲自运行并确认失败原因正确；之后才补上最小实现，再运行目标测试和完整测试套件。
+
+| 检查点 | fixture 实测结果 |
+|---|---|
+| RED | `test_total_with_tax_applies_rate ... FAIL` |
+| GREEN | Invoice 的两个测试全部通过 |
+| 交付证据 | 新测试明确展示了输入、税率和精确结果 |
+
+这就是**开发模式**。它不设置尝试预算：功能要么已经实现并受到测试保护，要么就还没有完成。
+
+### 2. 优化一个可测量的目标
+
+```text
+把 API 的 p95 延迟降到 200 ms 以下；固定运行 7 次并取中位数。
+```
+
+动代码之前，autodev 会先写出 contract：
+
+```yaml
+goal:      "API p95 延迟低于 200 ms"
+criterion: "测试通过；benchmark 跑 7 次；比较中位数"
+frozen:    ["tests/**", "bench/**"]
+surface:   ["src/api.py"]
+budget:    "最多 12 次尝试或 20 分钟"
+reset:     "从已接受的 commit 恢复 src/api.py"
+```
+
+仓库中的 fixture 可以重复得到下面的结果：
+
+| | p95 | 测试 | 判定 |
+|---|---:|---|---|
+| Baseline | 224.305 ms | 通过 | — |
+| 第 1 次尝试 | 163.196 ms | 通过 | **接受** |
+| 总收益 | **−27.2%** | 仍然全绿 | 达到目标 |
+
+数字变快还不够。如果测试失败，或者这次尝试修改了 benchmark、数据集及其他 frozen 输入，autodev 也会拒绝这次尝试并恢复到上一个已接受状态，即使新的跑分看起来更好。
+
+### 3. “更好”没有定义时，先停下来
+
+```text
+把这块代码重构得更优雅一些。
+```
+
+这句话没有可执行的验收标准，所以 autodev 不会自行猜测，也不会直接改代码。它会请你选择一个能够运行的目标，例如：保持行为不变并降低复杂度、提高覆盖率、缩小产物体积，或者采用更符合当前仓库的指标。
+
+同一条规则也会拦住虚假的优化。比如提高批量导入吞吐量时，autodev 会冻结测试、benchmark、数据集、runner 配置和 lockfile。删掉一半数据或者放宽断言，即使吞吐量上涨，也只会得到一次失败的尝试。
+
+## 工作流程
+
+![autodev 工作流程：Define、Anchor、Ratchet、Prove](docs/assets/autodev-overview.zh.png)
+
+| 阶段 | 作用 | 完成标志 |
+|---|---|---|
+| **Define · 定义** | 把需求变成可证伪目标、可执行 gate、边界、预算和回滚方式 | contract 已明确并确认 |
+| **Anchor · 锚定** | 冻结量尺，建立可信的起点 | 已验证 RED，或已记录 baseline 与噪声 |
+| **Ratchet · 棘轮** | 测量每次尝试，然后接受，或者恢复到上一个已接受状态 | 每次尝试都有机械判定和日志 |
+| **Prove · 证明** | 从干净条件验证最终状态，并整理证据 | 测试、测量结果、成本和失败记录都已交付 |
+
+真正起作用的是两种已经被反复验证的方法：
+
+1. **TDD 是正确性 gate。** 新行为从失败测试开始。性能数字再漂亮，也不能拿正确性做交换。
+2. **Ratchet 是进展 gate。** benchmark 被固定，预算提前约定，每次尝试都必须由脚本决定是接受还是恢复。这套机制受到 [autoresearch](https://github.com/karpathy/autoresearch) 接受 / 拒绝 loop 的启发。
+
+### 根据需求自动选择模式
+
+| 需求 | 成功条件 | 模式 | 预算 |
 |---|---|---|---|
-| 加 / 实现 / 修 X | 一个 test 从失败变成通过 | **开发**（TDD） | **没有** —— 只有做完和没做完 |
-| 让 X 更快 / 更小 / 更便宜 | 一个数字打败 baseline | **优化** | **必需** |
-| 两个都要：「加 X，而且得快」 | 两个都算 | 优化 | 必需 |
+| 增加 / 实现 / 修复 X | 相关测试从 RED 变成 GREEN | **开发** | 无 |
+| 让 X 更快 / 更小 / 更便宜 | 测试保持全绿，指标超过 baseline 和噪声 | **优化** | 必须有 |
+| 增加 X，同时不能超过某个上限 | 正确性和指标同时达标 | **优化** | 必须有 |
+| 让 X “更好”或“更干净” | 没有可执行标准 | **停止并询问** | — |
 
-**两种模式都绕不开 TDD。** 优化是在 TDD 之上再加一个 benchmark，而不是把它替换掉：test 照样要过，新代码照样先写 test。如果一次改动让数字变好了、却把 test 弄红了，它会和其他失败一样被回滚 —— 这就是「Agent 靠弄坏 feature 把跑分刷上去」的完整答案。
-
-开发模式没有时间预算。一个 feature 不会因为做到一半被放弃而变得更好；真要是大到一次做不完，autodev 会把它拆成几个小单元。
+你不需要手动选择模式。autodev 会根据需求本身判断，只询问真正缺失的信息。优化任务最多问两个问题——指标与目标不明确时问一次，预算问一次——然后只需要你确认一遍完整 contract。
 
 ## 快速开始
 
-### 1. 安装
+### 安装
 
 ```bash
 npx skills add Momoyeyu/autodev -g
 ```
 
-只装到 Claude Code、全局、免交互：
+只安装到 Claude Code、全局、免交互：
 
 ```bash
 npx -y skills add Momoyeyu/autodev --skill autodev -a claude-code -g --copy -y
 ```
 
-不想安装，只想试一次：
+不安装，只试用一次：
 
 ```bash
 npx skills use Momoyeyu/autodev@autodev --agent claude-code
 ```
 
-### 2. 直接提需求
+### 像平常一样描述任务
 
-**开发 feature** —— 没有预算，只有做完和没做完：
+不需要学习特殊的 prompt 模板：
 
 ```text
-实现筛选后交易列表的 CSV 导出
+实现筛选后交易列表的 CSV 导出。
 ```
 
 ```text
-RED       写 test "exports filtered rows as csv"   → FAIL: exportCsv is not defined
-GREEN     最小实现，12 行                          → PASS（test 全绿）
-REFACTOR  抽出 CsvWriter                          → 仍然 PASS
+把 CLI 启动时间至少缩短 5%，最多尝试 10 次或运行 15 分钟。
 ```
 
-**做优化** —— 注意你会先拿到一份待确认的 contract：
+开发任务会直接从失败测试开始；优化任务会先展示 contract，得到确认后才会使用你批准的预算。
 
-```text
-让首页加载更快
-```
+## 运行评测样例
 
-```text
-待确认的 contract：
-  metric   p95_ms ↓   目标 200ms   测 5 次取中位数（实测噪声 ±2.1%）
-  tests    npm test —— 断言数量只增不减
-  frozen   bench/**  tests/**  package-lock.json  vite.config.ts
-  surface  src/home/**
-  budget   15 次尝试 / 约 8 分钟
-```
-
-```text
-attempt  commit   tests  metric  delta   verdict   note
-1        a1b2c3d  pass   184.2   —       baseline  初始状态
-2        b2c3d4e  pass   171.5   -12.7   accept    预加载首屏图
-3        c3d4e5f  fail   —       —       fail      内联关键 CSS 弄挂了 test
-4        d4e5f6g  pass   183.9   +12.4   reject    memo 化请求，没有实际收益
-```
-
-### 3. 重点看它拒绝做什么
-
-真正有信息量的是那些被拒绝的尝试。一次从不回滚的运行，要么任务太平凡，要么它在作弊 —— 下面这些规则就是用来分辨这两种情况的。
-
-## 动手之前，它先问什么
-
-autodev 不要求你懂它的内部机制。它最多问两个问题，每个都给出具体选项加自定义项，而且只问需求里还没确定的部分：
-
-```text
-优化首页刷新速度
-
-Q1  用哪个指标？
-    A. p95 导航延迟        （推荐 —— 覆盖服务端 + 网络 + 渲染）
-    B. 可交互时间          （画得快，但响应慢）
-    C. gzip 后的包体积     （怀疑是载荷问题）
-    D. 自定义
-
-Q2  预算？你在为实际耗时付费，所以价格一并给出：
-    A. 快试      ~5 次尝试  / 约 2 分钟
-    B. 标准      ~15 次尝试 / 约 8 分钟      （推荐）
-    C. 跑到收敛   通常 30-60 次 / 约 30 分钟
-    D. 自定义
-```
-
-然后完整 contract 给你确认一次。这是整个 loop 里唯一需要人的地方。
-
-开发 feature 什么都不问，因为没什么可问的 —— 那个失败的 test 本身就是验收标准，写下它就是第一件工作。
-
-`--dry-run` 只打印 contract，然后停下。
-
-## 为什么这套 loop 没法作弊
-
-每次尝试都会检查这七条。它们就是「优化代码」和「优化测量」之间的分界线：
-
-1. **不许改的文件在每次尝试前后都算哈希。** 哈希变了，这次尝试直接判失败。
-2. **test 只能变强。** 断言数量只许增加或持平，绝不减少。
-3. **不许新增依赖、网络调用或硬件分支。**
-4. **不许靠缩小工作量造假收益** —— 减少评测样本、缓存结果、memo 化输入、contract 里没要求的预热。
-5. **不许 best-of-N。** 固定重复次数，取中位数。跑到某次走运为止就是作弊。
-6. **不许用 `.skip`、`xfail` 或放松容差**把 test 刷绿。
-7. **数字一样时，改动更小的赢。** 指标不是完整的目标函数，没有这条兜底，loop 只会不断堆复杂度。
-
-## 仓库内容
-
-按需加载 —— 一个每次请求都灌 9k token 的 skill 会被卸载。只有核心是默认加载的，其他文件在触发条件满足时才读。
-
-| 文件 | 何时加载 | 体积 | 内容 |
-|---|---|---|---|
-| [`autodev/SKILL.md`](autodev/SKILL.md) | skill 被触发时 | **~2.7k tok** | 三条规则、两种模式、四个阶段、判定逻辑、回滚、实验日志、停止条件、反作弊 |
-| [`references/gate.md`](autodev/references/gate.md) | 写生产代码或碰 test 时 | ~2.5k tok | 完整的 TDD gate：铁律、两道验证、借口对照表、危险信号、完成前清单 |
-| [`references/contracts.md`](autodev/references/contracts.md) | 起草 contract 时 | ~1.5k tok | 怎么选指标、各场景该冻结什么、contract 范例、怎么搭 benchmark |
-| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | 加 mock 或 test 工具时 | ~2.1k tok | 五个反模式，每个都配自查步骤和正确写法 |
-
-开发一个 feature 大约加载 **5.2k token**（核心 + 正确性 gate）；做一次优化大约 **6.7k**（核心 + contract + gate）。除非任务真的横跨全部内容，否则不会四个文件一起加载 —— 而全塞进一个文件的话，每次调用都是 8.7k。
-
-## 适用场景
-
-同样的两层结构换个组合，不需要任何新机制：
-
-| 场景 | test | 指标 | 不许改的文件 |
-|---|---|---|---|
-| 开发 feature | 新 test 失败 → 通过，套件全绿 | — | 既有 test suite |
-| 修 bug | 复现 test 失败 → 通过 | — | 复现 test 本身 |
-| 重构 | 行为 test 全绿 | 复杂度 ↓ / 覆盖率 ↑ | 行为规格 |
-| 性能 | 全绿 | p95 ↓ | benchmark 脚本、数据集、硬件 |
-| 构建耗时 | 全绿 | 构建秒数 ↓ | 核数、并发度、缓存状态 |
-| 包体积 | 全绿 | 字节数 ↓ | 构建配置、目标浏览器 |
-| 成本 | 全绿 | $/请求 ↓ | 流量形态、价格表 |
-| 模型质量 | 不崩、不出 NaN | 验证损失 ↓ | 训练脚本、验证集、**时间预算** |
-
-最后一行正好说明为什么不许改的文件必须按场景推理、不能照抄：在模型训练那里，固定的训练时长**就是**目标本身 —— 「五分钟内能训出来的最好模型」。换成网页就毫无意义，该保护的是机器、数据集和缓存状态。
-
-## 支持的 Agent
-
-任何支持 [Agent Skills 规范](https://agentskills.io)的 Agent 都能用。常见工具的全局安装路径：
-
-| Agent | `--agent` | 全局路径 |
-|---|---|---|
-| Claude Code | `claude-code` | `~/.claude/skills/` |
-| Cursor | `cursor` | `~/.cursor/skills/` |
-| Codex CLI | `codex` | `~/.codex/skills/` |
-| OpenCode | `opencode` | `~/.config/opencode/skills/` |
-| GitHub Copilot | `github-copilot` | `~/.copilot/skills/` |
-| Gemini CLI | `gemini-cli` | `~/.gemini/skills/` |
-| Windsurf | `windsurf` | `~/.codeium/windsurf/skills/` |
-| Amp / Replit / 通用 | `universal` | `~/.config/agents/skills/` |
-
-不想用 CLI 的话，手动安装：
+上面的场景都以可重复样例的形式保存在 [`evals/`](evals/README.md)：
 
 ```bash
-git clone --depth 1 https://github.com/Momoyeyu/autodev.git /tmp/_autodev
-cp -r /tmp/_autodev/autodev ~/.claude/skills/
-rm -rf /tmp/_autodev
-```
-
-## 范围
-
-autodev 覆盖测试先行的实现、bug 修复、重构，以及优化任何一个你能明确说出来的指标。它刻意不带任何脚本和依赖：contract 在 Phase 0 现场生成，判定复用你项目里已有的命令 —— `npm test`、`pytest`、你自己的 benchmark 脚本。
-
-框架专用模板是有意排除的。一旦这个 skill 认识了 Jest，它就不再适用于 Rust。
-
-## 测试 skill
-
-版本化的评测语料位于 [`evals/cases.json`](evals/cases.json)，覆盖开发、bug 修复、优化 contract、噪声指标、范围不明确和反作弊行为。每个 case 都在干净的 Agent session 中运行，记录可观察断言，再用固定脚本评分：
-
-```bash
+python3 evals/run.py list
 python3 evals/run.py run --case development-feature
+python3 evals/run.py run
+```
+
+每个 case 都会创建独立的 Git 仓库，并把当前版本的 skill 安装到 `.devin/skills/autodev`。Agent 的回复、完整 transcript、diff、命令输出和修改后的 workspace 都会保存在已忽略的 `.autodev-evals/` 目录，方便逐项 review。
+
+Review 完成后，一条受保护的命令即可删除全部运行产物：
+
+```bash
 python3 evals/run.py clean
+```
+
+不调用模型，也可以验证 fixture、runner、清理保护、语料结构和评分器：
+
+```bash
 python3 -m unittest discover -s tests -v
 ```
 
-每次运行都会把当前 skill 和 fixture 复制到已忽略的 `.autodev-evals/`，保留 transcript 和 diff 供 review。评分方式和可重复执行流程见 [`evals/README.md`](evals/README.md)。
+## Skill 里有什么
 
-- [Skill 核心](autodev/SKILL.md) · [正确性 gate](autodev/references/gate.md) · [contract](autodev/references/contracts.md) · [反模式](autodev/references/testing-anti-patterns.md) · [更新日志](CHANGELOG.md) · [贡献指南](CONTRIBUTING.md)
+| 文件 | 何时加载 | 作用 |
+|---|---|---|
+| [`autodev/SKILL.md`](autodev/SKILL.md) | 每次 autodev 运行 | Define、Anchor、Ratchet、Prove、判定、停止条件和反作弊规则 |
+| [`references/gate.md`](autodev/references/gate.md) | 修改生产代码或测试之前 | 完整的 RED → GREEN → REFACTOR 正确性 gate |
+| [`references/contracts.md`](autodev/references/contracts.md) | 定义优化任务时 | 指标选择、frozen 变量、contract 示例和 benchmark 构建方法 |
+| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | 测试需要 mock 或 helper 时 | 确保测试验证真实行为，而不是验证替身本身 |
+
+Skill 本身不绑定语言和测试框架。它不要求项目使用 Jest、pytest 或额外 runtime，而是复用目标仓库已经信任的命令。
+
+## 参与贡献
+
+行为变更应该同时在 `evals/cases.json` 中增加回归 case。请保持核心 Skill 紧凑，把按条件加载的细节放入 `references/`，并同步维护中英文 README。完整约定见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
 
 ## 许可
 
-[MIT](LICENSE) —— 可自由使用、修改与分发。
-
-## 贡献
-
-欢迎提 Issue 和 PR，尤其欢迎真实的 loop 运行记录 —— 包括 Agent 试图糊弄自己 benchmark 的那些。请先看[贡献指南](CONTRIBUTING.md)。
+[MIT](LICENSE)

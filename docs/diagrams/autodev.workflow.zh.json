@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "autodev 工作流程",
+    "title": "Define · Anchor · Ratchet · Prove",
     "visual_preset": "signal-flow",
     "quality_profile": "showcase"
   },
@@ -10,8 +10,8 @@
     {
       "id": "contract",
       "type": "security",
-      "label": "写 contract",
-      "sublabel": "目标、验收标准、预算",
+      "label": "产出 contract",
+      "sublabel": "目标、gate、预算",
       "pos": [
         80,
         130
@@ -24,8 +24,8 @@
     {
       "id": "scope",
       "type": "security",
-      "label": "划定文件范围",
-      "sublabel": "哪些能改、哪些不能",
+      "label": "划定边界",
+      "sublabel": "frozen、surface、reset",
       "pos": [
         80,
         232
@@ -53,8 +53,8 @@
     {
       "id": "spec",
       "type": "backend",
-      "label": "写 test 或 benchmark",
-      "sublabel": "先有量尺",
+      "label": "建立 gate",
+      "sublabel": "失败测试或 benchmark",
       "pos": [
         380,
         182
@@ -67,8 +67,8 @@
     {
       "id": "measure",
       "type": "database",
-      "label": "测出 baseline",
-      "sublabel": "跑一次，记下波动",
+      "label": "锚定起点",
+      "sublabel": "验证 RED 或测量噪声",
       "pos": [
         380,
         284
@@ -94,7 +94,7 @@
     {
       "id": "run",
       "type": "messagebus",
-      "label": "跑 benchmark",
+      "label": "运行 gate",
       "pos": [
         700,
         232
@@ -122,7 +122,7 @@
       "id": "accept",
       "type": "backend",
       "label": "接受",
-      "sublabel": "commit + 记日志",
+      "sublabel": "推进 + 记日志",
       "pos": [
         830,
         440
@@ -135,8 +135,8 @@
     {
       "id": "reject",
       "type": "messagebus",
-      "label": "拒绝",
-      "sublabel": "回滚 + 记日志",
+      "label": "恢复",
+      "sublabel": "还原 + 记日志",
       "pos": [
         720,
         440
@@ -149,8 +149,8 @@
     {
       "id": "retest",
       "type": "database",
-      "label": "重跑全部 test",
-      "sublabel": "在最终代码上",
+      "label": "从干净状态验证",
+      "sublabel": "tests + benchmark",
       "pos": [
         1030,
         182
@@ -163,8 +163,8 @@
     {
       "id": "report",
       "type": "backend",
-      "label": "重构并汇报",
-      "sublabel": "这次拿到了多少",
+      "label": "交付证据",
+      "sublabel": "结果、成本、失败记录",
       "pos": [
         1030,
         284
@@ -178,7 +178,7 @@
   "boundaries": [
     {
       "kind": "region",
-      "label": "Contract",
+      "label": "Define · 定义",
       "wraps": [
         "contract",
         "scope",
@@ -188,7 +188,7 @@
     },
     {
       "kind": "region",
-      "label": "Baseline",
+      "label": "Anchor · 锚定",
       "wraps": [
         "spec",
         "measure"
@@ -197,7 +197,7 @@
     },
     {
       "kind": "security-group",
-      "label": "Loop",
+      "label": "Ratchet · 棘轮",
       "wraps": [
         "edit",
         "run",
@@ -209,7 +209,7 @@
     },
     {
       "kind": "region",
-      "label": "Review",
+      "label": "Prove · 证明",
       "wraps": [
         "retest",
         "report"
@@ -363,7 +363,7 @@
       "id": "c11",
       "from": "verdict",
       "to": "retest",
-      "label": "预算用完 / 达标 / 不再提升",
+      "label": "满足停止条件",
       "fromSide": "right",
       "toSide": "left",
       "via": [

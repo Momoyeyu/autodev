@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "How autodev Works",
+    "title": "Define · Anchor · Ratchet · Prove",
     "visual_preset": "signal-flow",
     "quality_profile": "showcase"
   },
@@ -11,7 +11,7 @@
       "id": "contract",
       "type": "security",
       "label": "Write the contract",
-      "sublabel": "goal, criterion, budget",
+      "sublabel": "goal, gate, budget",
       "pos": [
         80,
         130
@@ -24,8 +24,8 @@
     {
       "id": "scope",
       "type": "security",
-      "label": "Fix the file set",
-      "sublabel": "may change, must not",
+      "label": "Set the boundaries",
+      "sublabel": "frozen, surface, reset",
       "pos": [
         80,
         232
@@ -52,8 +52,8 @@
     {
       "id": "spec",
       "type": "backend",
-      "label": "Write the tests",
-      "sublabel": "or build a benchmark",
+      "label": "Build the gate",
+      "sublabel": "failing test or benchmark",
       "pos": [
         380,
         182
@@ -66,8 +66,8 @@
     {
       "id": "measure",
       "type": "database",
-      "label": "Measure baseline",
-      "sublabel": "run once, note the noise",
+      "label": "Anchor starting state",
+      "sublabel": "verify RED or measure noise",
       "pos": [
         380,
         284
@@ -93,7 +93,7 @@
     {
       "id": "run",
       "type": "messagebus",
-      "label": "Run the benchmark",
+      "label": "Run the gate",
       "pos": [
         700,
         232
@@ -121,7 +121,7 @@
       "id": "accept",
       "type": "backend",
       "label": "Accept",
-      "sublabel": "commit + log",
+      "sublabel": "advance + log",
       "pos": [
         830,
         440
@@ -134,8 +134,8 @@
     {
       "id": "reject",
       "type": "messagebus",
-      "label": "Reject",
-      "sublabel": "roll back + log",
+      "label": "Restore",
+      "sublabel": "revert + log",
       "pos": [
         720,
         440
@@ -148,8 +148,8 @@
     {
       "id": "retest",
       "type": "database",
-      "label": "Re-run all tests",
-      "sublabel": "on the final code",
+      "label": "Verify from clean state",
+      "sublabel": "tests + benchmark",
       "pos": [
         1030,
         182
@@ -162,8 +162,8 @@
     {
       "id": "report",
       "type": "backend",
-      "label": "Refactor + report",
-      "sublabel": "what the loop gained",
+      "label": "Deliver the evidence",
+      "sublabel": "results, cost, rejections",
       "pos": [
         1030,
         284
@@ -177,7 +177,7 @@
   "boundaries": [
     {
       "kind": "region",
-      "label": "Contract",
+      "label": "Define",
       "wraps": [
         "contract",
         "scope",
@@ -187,7 +187,7 @@
     },
     {
       "kind": "region",
-      "label": "Baseline",
+      "label": "Anchor",
       "wraps": [
         "spec",
         "measure"
@@ -196,7 +196,7 @@
     },
     {
       "kind": "security-group",
-      "label": "Loop",
+      "label": "Ratchet",
       "wraps": [
         "edit",
         "run",
@@ -208,7 +208,7 @@
     },
     {
       "kind": "region",
-      "label": "Review",
+      "label": "Prove",
       "wraps": [
         "retest",
         "report"
@@ -362,7 +362,7 @@
       "id": "c11",
       "from": "verdict",
       "to": "retest",
-      "label": "budget, target or plateau",
+      "label": "stop condition met",
       "fromSide": "right",
       "toSide": "left",
       "via": [

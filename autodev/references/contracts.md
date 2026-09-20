@@ -1,17 +1,17 @@
 # Contracts
 
-Read this when drafting a contract — that is, at Phase 0 of any run, and any time an optimization starts.
+Read this during Define when drafting the contract, and any time an optimization starts.
 
 A contract has six fields: `goal`, `criterion`, `budget`, `frozen`, `surface`, `reset`. Three of them are easy to get wrong, which is why they get the detail here.
 
 ## Choosing the metric
 
-The metric decides whether the loop can work at all. Choose badly and the loop either chases noise or optimizes something nobody wanted.
+The metric decides whether the ratchet can work at all. Choose badly and it either chases noise or optimizes something nobody wanted.
 
 - **One number, one direction.** `p95_ms` lower, `requests_per_sec` higher, `bundle_kb` lower. Two metrics means one of them is really a test.
 - **Normalize against what varies.** Model quality is measured per byte rather than per token, so a vocabulary change stays comparable. Ask: if the agent changes the shape of the thing, does the number still mean the same thing?
 - **Deterministic metrics need no repetition.** Bundle bytes, test count, binary size: `repeats: 1`, noise `0`.
-- **Noisy metrics need measured noise.** Latency, throughput, memory, anything timed: `repeats ≥ 5`, median, and the noise measured in Phase 1 rather than assumed.
+- **Noisy metrics need measured noise.** Latency, throughput, memory, anything timed: `repeats ≥ 5`, median, and the noise measured during Anchor rather than assumed.
 - **Someone else must be able to reproduce it** on the same machine from a clean checkout.
 
 When the request admits several metrics, offer the two or three that fit the codebase and mark a recommendation. "优化首页刷新速度" could mean any of:
@@ -86,12 +86,12 @@ reset:     "git checkout <accepted> -- train.py"
 
 ## Building the benchmark
 
-When no benchmark exists, Phase 0 spawns a task to write one. That is "make something exist and work correctly", so it runs under TDD like any other implementation work:
+When no benchmark exists, Define spawns a task to write one. That is "make something exist and work correctly", so it runs under TDD like any other implementation work:
 
 1. **RED** — write a test asserting the benchmark *discriminates*: a deliberately slow case must measure slower than a fast one. A benchmark that reports the same number for both is broken, and this test is the only thing that catches it.
 2. **GREEN** — implement the benchmark until that test passes.
 3. **Check it against reality** — confirm it reproduces a difference you already know exists, such as a before/after you measured by hand.
-4. **Baseline** — only now measure the current state and record the noise.
+4. **Anchor** — only now measure the current state and record the baseline and noise.
 
 A benchmark that has never been shown to tell two cases apart is not a benchmark. It is a random number generator with good manners.
 

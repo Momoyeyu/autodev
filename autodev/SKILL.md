@@ -7,7 +7,7 @@ description: Develop and optimize code by measurement instead of opinion — agr
 
 Write code and improve it by measurement, not by opinion: **agree on a benchmark first, touch only the files you are allowed to touch, and accept a change only when a script says it is better.**
 
-Every attempt ends in one of two verdicts — accept and commit, or reject and roll back — so the accepted state only ever moves forward. That one-way rule is the ratchet.
+Every attempt ends in one of two verdicts — accept and advance, or reject and restore — so the accepted state only ever moves forward. That one-way rule is the ratchet.
 
 ## Three rules
 
@@ -25,13 +25,22 @@ Every attempt ends in one of two verdicts — accept and commit, or reject and r
 | neither ("make it cleaner") | nothing measurable | **stop and ask** | — |
 
 - **Development always runs TDD.** It isn't a mode you opt into.
-- **Optimization adds a benchmark on top of TDD**, it does not replace it. Tests still pass, new code still gets tests first. A change that improves the number but breaks a test is reverted like any other failure.
+- **Optimization adds a benchmark on top of TDD**, it does not replace it. Tests still pass, new code still gets tests first. A change that improves the number but breaks a test is restored like any other failure.
 - **Never ask the user which mode.** The shape of the request decides. Naming the mode is a convenience, not an input.
 - Development work gets no time budget: a feature is not improved by being abandoned halfway. If it is too big for one done-or-not unit, split it into several.
 
-## Phase 0 — the contract
+## Four stages
 
-Six fields, agreed before any code is written.
+| Stage | Exit condition |
+|---|---|
+| **Define** | Falsifiable goal, executable gate, boundaries, budget, and reset agreed |
+| **Anchor** | Measuring stick frozen; verified RED or measured baseline recorded |
+| **Ratchet** | Every attempt measured, accepted or restored, and logged |
+| **Prove** | Clean verification passes and evidence is reported |
+
+## Phase 0 — Define
+
+Produce a six-field contract before writing code.
 
 | Field | Meaning |
 |---|---|
@@ -52,7 +61,7 @@ Don't reflexively freeze wall-clock time. Freeze the things that, if changed, wo
 
 Ask only what the request doesn't already determine. Never ask what you can infer, and never ask what you can measure yourself.
 
-- **Two questions at most**, then one confirmation of the whole contract — the only point where the loop needs a human.
+- **Two questions at most**, then one confirmation of the whole contract — the only point where the run needs a human.
 - **Every question offers concrete options plus a custom one.** Never hand someone a blank prompt when a sensible default exists.
 - **Never ask which mode.** That's your inference, not their decision.
 - **Show the cost with the contract** ("~15 attempts, about 8 minutes"). In optimization the user is buying wall clock, and they should see the price before agreeing to it.
@@ -63,26 +72,30 @@ Ask only what the request doesn't already determine. Never ask what you can infe
 
 ### Building the benchmark is TDD work
 
-When no benchmark exists, Phase 0 spawns one task: write it. That is "make something exist and work correctly", so it runs under TDD — first assert that the benchmark tells a 100ms case apart from a 200ms case, then build it, then check it reproduces a difference you already know exists.
+When no benchmark exists, Define spawns one task: write it. That is "make something exist and work correctly", so it runs under TDD — first assert that the benchmark tells a 100ms case apart from a 200ms case, then build it, then check it reproduces a difference you already know exists.
 
 **Building the benchmark is development work. Using it is optimization work.** That recursion is why no new machinery is needed for a new kind of target.
 
-## Phase 1 — baseline
+## Phase 1 — Anchor
 
 1. Hash the `frozen` files and record the hash.
-2. Optimization: run the metric `repeats` times, take the median, and **measure the noise — never assume it.** If run-to-run spread is ±3%, an accept threshold below 3% means you are measuring noise rather than progress.
-3. Development: the baseline is **RED** — the test exists, fails, and fails for the right reason.
-4. Write the contract and the baseline into the experiment log.
+2. Optimization: run the metric `repeats` times, take the median, and **measure the noise — never assume it.** This measured value is the baseline.
+3. Development: verify **RED** — the test exists, fails, and fails for the right reason.
+4. Write the contract and this anchored starting state into the experiment log.
+
+If run-to-run spread is ±3%, an accept threshold below 3% means you are measuring noise rather than progress.
 
 Deterministic metrics (bundle bytes, test count) need `repeats: 1` and a zero noise floor. Noisy ones (latency, throughput, memory) need `repeats ≥ 5` and a measured one.
 
-## Phase 2 — the loop
+## Phase 2 — Ratchet
+
+Run this cycle against the anchored state:
 
 ```
 1. Read the log, pick an idea
    (combine near-misses first, then simplify, then try something new)
 2. Edit only inside `surface`
-3. Run the benchmark exactly as the contract says
+3. Run the gate exactly as the contract says
    (send output to a file; never flood your context with logs)
 4. Apply the verdict
 5. Append one row to the log
@@ -92,21 +105,21 @@ Deterministic metrics (bundle bytes, test count) need `repeats: 1` and a zero no
 ### The verdict
 
 ```
-crash                  → log it, roll back, next
-tests fail             → log it, roll back, next     ← correctness is not tradeable
-metric ≤ baseline + δ  → log it, roll back, next
-metric > baseline + δ  → ACCEPT: commit, baseline = metric
+crash                  → log it, restore, next
+tests fail             → log it, restore, next       ← correctness is not tradeable
+improvement ≤ δ         → log it, restore, next
+improvement > δ         → ACCEPT: commit, baseline = result
 ```
 
-δ is the larger of the contract's minimum improvement and the measured noise. Never compare one run against one run when the metric is noisy.
+Normalize improvement to the contract's direction: positive means better. δ is max(minimum improvement, measured noise). Never compare single noisy runs.
 
-### Rolling back one attempt
+### Restoring one attempt
 
 ```bash
 git checkout <accepted-commit> -- <surface paths>
 ```
 
-Roll back the files, not the repository. `git reset --hard` would throw away the log and the frozen files along with the attempt — and those are the two things that have to survive a rejection.
+Restore the files, not the repository. `git reset --hard` would throw away the log and the frozen files along with the attempt — and those are the two things that have to survive a rejection.
 
 ### The experiment log
 
@@ -127,18 +140,18 @@ Log failures as carefully as successes: they are the record of what has been rul
 All objective. There is no "this looks good enough."
 
 - **Budget spent** — attempts or wall clock, whichever runs out first
-- **Target met** — `metric ≤ target`
+- **Target met** — the metric crosses the target in the contract's direction
 - **Converged** — three attempts in a row that improve by less than the noise
 - **Stuck** — four reversals in a row; the ideas at this level of ambition are exhausted
 
 On any of these: **stop, report the log, offer to continue.** Never interrupt mid-budget to ask whether to keep going, and never run past the budget because momentum feels good.
 
-## Phase 3 — review
+## Phase 3 — Prove
 
-- Re-run the full test suite from a clean state against the benchmark.
-- **Now** refactor if it helps. The metric is locked in and the tests protect it. A refactor that breaks a test or worsens the metric is rolled back like any other attempt, and the same metric in a smaller diff is a win rather than a tie.
-- Report what was accepted, what was rejected, the net improvement, what it cost, and the near-misses worth another look.
-- Next time, the human iterates on the **contract**, not on the code.
+- Re-run the full gate from a clean state: all tests, plus the benchmark in optimization.
+- **Now** refactor if it helps. The metric is locked in and the tests protect it. A refactor that breaks a test or worsens the metric is restored like any other attempt, and the same metric in a smaller diff is a win rather than a tie.
+- Report the final test result, accepted and rejected attempts, net improvement, cost, and near-misses worth another look.
+- Deliver the runnable evidence. Next time, the human iterates on the **contract**, not on the code.
 
 ## Anti-gaming rules
 
@@ -150,7 +163,7 @@ Without these, the agent optimizes the measurement instead of the code.
 4. **No shrinking the workload to fake a gain** — fewer eval samples, cached results, memoized benchmark inputs, warm caches the contract didn't ask for.
 5. **No best-of-N.** Fixed `repeats`, median statistic. Re-running until a lucky sample lands is cheating.
 6. **No `.skip`, no `xfail`, no loosened tolerances** to turn a test green.
-7. **At equal metric, the simpler change wins.** A metric is not a complete objective; without a tie-break the loop just accumulates complexity.
+7. **At equal metric, the simpler change wins.** A metric is not a complete objective; without a tie-break the ratchet just accumulates complexity.
 
 ## The correctness gate: TDD
 
@@ -164,7 +177,7 @@ NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 - **GREEN** — the simplest code that passes that one test. No speculative options, no extra features. Run it. Confirm it passes and the rest of the suite stays green.
 - **REFACTOR** — clean up, but only while green.
 
-Code written before its test gets deleted, not kept as reference and not adapted while writing tests. The loop enforces this without anyone having to be disciplined about it: an unverified edit is simply not the accepted state, so it gets rolled back.
+Code written before its test gets deleted, not kept as reference and not adapted while writing tests. The ratchet enforces this without anyone having to be disciplined about it: an unverified edit is simply not the accepted state, so it gets rolled back.
 
 ## Reference files
 
