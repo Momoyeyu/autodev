@@ -56,7 +56,11 @@ def prepare_case(case, fixture, skill, artifacts, run_id):
     if case_dir.exists():
         raise FileExistsError(f"case already prepared: {case_dir}")
     workspace = case_dir / "workspace"
-    shutil.copytree(fixture, workspace)
+    shutil.copytree(
+        fixture,
+        workspace,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo", "*.pyd"),
+    )
     installed_skill = workspace / ".devin" / "skills" / "autodev"
     shutil.copytree(skill, installed_skill)
     git(workspace, "init", "-q")

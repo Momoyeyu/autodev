@@ -25,6 +25,9 @@ class EvalRunTest(unittest.TestCase):
             fixture.mkdir()
             skill.mkdir()
             (fixture / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
+            cache = fixture / "__pycache__"
+            cache.mkdir()
+            (cache / "app.pyc").write_bytes(b"cache")
             (skill / "SKILL.md").write_text("# autodev\n", encoding="utf-8")
             case = {
                 "id": "sample",
@@ -40,6 +43,7 @@ class EvalRunTest(unittest.TestCase):
             self.assertEqual(
                 (workspace / "app.py").read_text(encoding="utf-8"), "VALUE = 1\n"
             )
+            self.assertFalse((workspace / "__pycache__").exists())
             installed = workspace / ".devin" / "skills" / "autodev" / "SKILL.md"
             self.assertEqual(installed.read_text(encoding="utf-8"), "# autodev\n")
             manifest = json.loads(
