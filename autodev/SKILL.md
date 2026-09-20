@@ -1,61 +1,52 @@
 ---
 name: autodev
-description: Align agents and humans through approved tests, measured baselines, and visible delivery evidence. Use for feature development, bug fixes, and performance optimization when requirements, allowed changes, and success must be made explicit before implementation.
+description: A clarify-first Agent Skill for feature development and performance optimization. Align human intent, runnable tests, baselines, and allowed changes before implementation; then iterate and hand off a feature comparison table or an optimization progress chart.
 ---
 
 # autodev
 
-Reduce misunderstanding and rework between the human and the agent. Improve delivery quality, stability, and overall efficiency while making the project easier for the human to understand and take over.
+Align the agent and the human to reduce natural-language misunderstanding and rework. Improve delivery quality, stability, and overall efficiency while helping the human understand and take over the project.
 
-**Verifiable & measurable & visible:** agree on what will be tested, record where the project starts, and make the final difference easy to inspect and reproduce.
+**Verifiable & measurable & visible:** the result must be easy to verify, possible to measure, and clear to inspect.
 
-## Two scenarios, four stages
+## Clarify → Loop → Handoff
+
+User input starts the workflow; it is not another stage. Clarify is the core capability: test preparation, human review, and baseline measurement belong here, not in the implementation loop.
 
 | Stage | Feature development | Performance optimization |
 |---|---|---|
-| **Define** | Confirm architecture/workflow impact; iterate on tests with the human until approved | Iterate with the human until one numeric benchmark test is approved |
-| **Anchor** | Inspect existing tests, update/remove outdated ones, add missing ones, verify execution, record baseline | Make the benchmark executable, record baseline, then confirm target, editable files, and time budget |
-| **Ratchet** | Implement and run the agreed tests until all pass | Optimize and measure until the target is reached or time expires |
-| **Prove** | Compare baseline and final test results; deliver the feature and handover evidence | Compare baseline and final score; deliver the best verified result and stop reason |
+| **Clarify** | Confirm architecture/workflow impact; maintain and run tests with the human until approved; record baseline | Agree with the human on one runnable numeric test; record baseline; then confirm target, editable files, and time budget |
+| **Loop** | Develop until all agreed tests pass | Optimize until the target is met or the time budget expires |
+| **Handoff** | One table comparing baseline and final test results | One chart showing the process from baseline through attempts to the final result |
 
-A feature test is an executable acceptance case; the feature may need a set of them. An optimization test is exactly one numeric objective: one benchmark or a fixed weighted sum of several benchmarks. Component readings are diagnostics, not separate acceptance targets.
+## Read only what is needed now
 
-## Progressive disclosure
+| Reference | Load when |
+|---|---|
+| [Clarify](references/clarify.md) | Starting a task or revisiting its agreement |
+| [Clarify: development](references/clarify-development.md) | Clarifying a feature request; do not load the optimization branch |
+| [Clarify: optimization](references/clarify-optimization.md) | Clarifying a performance goal; do not load the development branch |
+| [Loop](references/loop.md) | Agreement and baseline are ready; read shared rules and the relevant scenario |
+| [Handoff](references/handoff.md) | Preparing the required result table or chart |
 
-Use the current stage as the reading key. On entry, read its shared instructions and the applicable scenario; do not preload later stages. Read [test design](references/test-design.md) only when acceptance cases or a composite benchmark need more detail.
+Do not preload the directory. Follow the current stage and scenario, keeping shared instructions with the selected branch.
 
-## Define
+## Clarify
 
-Read [Define](references/define.md).
+For features, first confirm the permitted architecture and workflow impact, including whether modules may be added or removed and existing flows changed. Then query existing tests, remove or update outdated ones, add missing ones, and verify execution as part of the human-in-the-loop test-design cycle. Repeat until the human confirms the runnable tests; only then record the formal baseline.
 
-For a feature, establish whether modules may be added or removed and whether existing workflows may change. Then draft tests with the human and revise until the human confirms what they should prove.
+For optimization, the test is exactly one numeric benchmark or one fixed weighted sum of benchmarks. Agree on the executable test with the human, measure baseline, then confirm the target, editable implementation files, and wall-clock limit.
 
-For optimization, first agree on the single benchmark, its inputs, numeric output, direction, and measurement method. Do not substitute the easiest metric to improve.
+Use decisions already supplied; do not impose a question count or assume approval. Tests that can execute may still fail because the requested feature is absent. Preparing tests and measuring baseline are not permission to implement the requested change early.
 
-Reuse explicit decisions already supplied by the human. Confirmation concerns test meaning, not merely permission to write code; there is no fixed question count. Do not begin implementation while acceptance remains ambiguous.
+## Loop
 
-## Anchor
+Change the implementation within the agreed boundaries and run the same test. Feature work ends only when all agreed tests pass. Optimization ends at the target or time limit, retaining the best valid measured state and recording every attempt for the final chart.
 
-Read [Anchor](references/anchor.md).
+Do not weaken tests, shrink workloads, alter benchmark weights, or change the measuring conditions to manufacture progress. Changes to intent, test meaning, or permitted scope return to Clarify and require a comparable new baseline.
 
-For a feature, reconcile the existing suite with the approved behavior before recording the baseline. Outdated tests may be changed or removed; still-relevant tests stay. “Tests can run” means execution produces meaningful results, not that the unimplemented feature already passes.
+## Handoff
 
-For optimization, run the approved benchmark to obtain the baseline **before confirming loop limits**: target, editable files, and wall-clock budget. Separate benchmark preparation from optimization work.
+The primary deliverable is mandatory: **a comparison table for a feature; a progress chart for an optimization**. A final number, prose summary, or table alone does not replace the optimization chart.
 
-Preserve the approved test version, command, conditions, and raw baseline results. Implementation starts only after this evidence and the required permissions exist.
-
-## Ratchet
-
-Read [Ratchet](references/ratchet.md).
-
-Develop within the approved feature scope until all agreed tests pass. For optimization, keep the best valid measured candidate and stop when the target is met or the time budget expires; neither invent a convergence stop nor extend the budget silently.
-
-Keep the measuring test stable during iteration. Never weaken assertions, shrink workloads, alter weights, or edit the benchmark to manufacture success. A changed requirement, scope, or test meaning returns to Define and requires a new baseline, not a rewritten history.
-
-## Prove
-
-Read [Prove](references/prove.md).
-
-Deliver the actual baseline/final comparison, reproduction commands, changed modules and workflows, known limitations, and the evidence needed to continue the work. Use a readable test matrix or score/history table; add a diagram or chart when it explains the change better.
-
-All feature tests must pass to claim completion. An optimization that times out must state whether its target was met and what improvement, if any, was verified. Never substitute an explanation or an illustrative chart for measured results.
+Use actual recorded results, the original baseline, and the delivered source state. Include concise reproduction details and relevant changes so the human can verify and take over. Report missed targets, blocked checks, and missing evidence honestly; do not label an incomplete handoff complete.
