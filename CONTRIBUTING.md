@@ -32,14 +32,15 @@ done
 
 Keep English and Chinese README ordering, scenario sequences, reference inventories, and handoff requirements equivalent. Place the core flow image immediately below the title, before installation and explanatory sections.
 
-The current core diagrams are generated with [Archify](https://github.com/tt-a1i/archify):
+The README diagrams are generated with [Archify](https://github.com/tt-a1i/archify), each in English and Chinese:
 
-| Source | README image |
-|---|---|
-| `docs/diagrams/autodev.workflow.json` | `docs/assets/autodev-overview.png` |
-| `docs/diagrams/autodev.workflow.zh.json` | `docs/assets/autodev-overview.zh.png` |
+| Source | README image | Role |
+|---|---|---|
+| `docs/diagrams/autodev.overview(.zh).json` | `docs/assets/autodev-overview(.zh).png` | Hero: only the big three steps per scenario lane |
+| `docs/diagrams/autodev.development(.zh).json` | `docs/assets/autodev-development(.zh).png` | Feature flow inside the workflow section |
+| `docs/diagrams/autodev.optimization(.zh).json` | `docs/assets/autodev-optimization(.zh).png` | Optimization flow inside the workflow section |
 
-Both sources use workflow schema v2, `quality_profile: showcase`, the same node/edge IDs, three phases, and two scenario lanes. The baseline/test/limit ordering is protected by `semanticChecks`; do not weaken those checks to resolve a layout failure. Loop boxes summarize repeated work and explicitly state its stop condition; ordinary sequential edges need no redundant label.
+All sources use workflow schema v2, `quality_profile: showcase`, and per-locale identical node/edge IDs. The overview keeps two scenario lanes and collapses each stage to one node. The detail diagrams use three stage lanes (Clarify / Loop / Handoff) so the columns can show full detail: the human-review revise edge and the implement-verify retry edge are `role: "return"` cycles, stage transitions drop between lanes, and `semanticChecks` protect the ordering — do not weaken those checks to resolve a layout failure. Self-loops (`from == to`) are not routable; express a cycle as a return edge between two nodes.
 
 Keep the PNGs opaque and dark regardless of the README viewer's color scheme. Use Archify's Classic preset and canonical PNG export, not a screenshot containing viewer controls or manually recolored output. These are workflow illustrations, not test-result charts; do not reintroduce the removed result screenshot.
 
@@ -50,12 +51,14 @@ Use the installed skill root containing `SKILL.md` and `bin/archify.mjs`. The ch
 ```bash
 ARCHIFY_SKILL=/path/to/archify/archify
 OUT=$(mktemp -d)
-for locale in '' '.zh'; do
-  source="docs/diagrams/autodev.workflow${locale}.json"
-  output="$OUT/autodev-overview${locale}.html"
-  node "$ARCHIFY_SKILL/bin/archify.mjs" validate workflow "$source" --quality showcase --json &&
-  node "$ARCHIFY_SKILL/bin/archify.mjs" deliver workflow "$source" "$output" --quality showcase --json &&
-  node "$ARCHIFY_SKILL/bin/archify.mjs" visual-check "$output" --json || break
+for name in overview development optimization; do
+  for locale in '' '.zh'; do
+    source="docs/diagrams/autodev.${name}${locale}.json"
+    output="$OUT/autodev-${name}${locale}.html"
+    node "$ARCHIFY_SKILL/bin/archify.mjs" validate workflow "$source" --quality showcase --json &&
+    node "$ARCHIFY_SKILL/bin/archify.mjs" deliver workflow "$source" "$output" --quality showcase --json &&
+    node "$ARCHIFY_SKILL/bin/archify.mjs" visual-check "$output" --json || break 2
+  done
 done
 ```
 

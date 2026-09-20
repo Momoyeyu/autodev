@@ -6,7 +6,7 @@
 
 ![autodev core workflow: Clarify, Loop, Handoff for feature development and performance optimization](docs/assets/autodev-overview.png)
 
-[Diagram source](docs/diagrams/autodev.workflow.json) · Drawn with [Archify](https://github.com/tt-a1i/archify), in dark mode.
+[Diagram source](docs/diagrams/autodev.overview.json) · Drawn with [Archify](https://github.com/tt-a1i/archify), in dark mode.
 
 **autodev is a clarify-first Agent Skill: align with the human, implement within the agreement, and hand off visible evidence.**
 
@@ -48,17 +48,11 @@ Clarify is not just a conversation. Inspecting code, maintaining tests, trial ru
 
 ### Feature development
 
-1. **User input:** a feature requirement.
-2. **Clarify:**
-   1. Confirm the impact on the overall architecture and existing workflows. Establish whether modules may be added or removed and whether those workflows may change.
-   2. Co-create tests with the human until the human confirms them:
-      - query existing tests;
-      - remove or update outdated tests;
-      - add missing tests;
-      - verify the tests can execute, review their meaning and results with the human, and revise as needed.
-   3. Run the confirmed tests and record baseline.
-3. **Loop:** develop within the agreed impact and run the tests until all agreed tests pass.
-4. **Handoff:** deliver one table comparing baseline and final results for the same tests.
+![Feature development flow: impact, human-reviewed tests, baseline, implement-test loop, comparison table](docs/assets/autodev-development.png)
+
+[Diagram source](docs/diagrams/autodev.development.json)
+
+Clarify confirms the architecture/workflow impact, builds runnable tests with the human (query → update outdated → add missing → verify execution, revised until approved), then records the baseline. Loop implements within the approved impact and reruns the agreed set until everything passes. Handoff delivers one table comparing baseline and final results for the same tests.
 
 Test maintenance belongs **inside the human-in-the-loop review**, not after test approval. Keep still-relevant coverage and explain why outdated expectations changed. Approval concerns runnable tests, not just a test plan.
 
@@ -66,18 +60,11 @@ Test maintenance belongs **inside the human-in-the-loop review**, not after test
 
 ### Performance optimization
 
-1. **User input:** an optimization goal.
-2. **Clarify:**
-   1. Co-create a test with the human until confirmed:
-      - **quantifiable:** an executable benchmark produces a numeric result;
-      - **single:** exactly one test, either one benchmark or a fixed weighted sum of several benchmarks.
-   2. Run the confirmed test and record baseline.
-   3. Confirm the limits against that baseline:
-      - **target:** the score threshold that permits early exit;
-      - **editable files:** the implementation paths allowed to change, excluding ways to game the benchmark;
-      - **time budget:** a wall-clock limit that prevents an unbounded loop.
-3. **Loop:** optimize allowed files and run the same test until the target is met or time expires.
-4. **Handoff:** deliver one chart showing the process from baseline through optimization attempts to the final delivered result.
+![Performance optimization flow: one approved benchmark, baseline, limits, optimize-measure loop, progress chart](docs/assets/autodev-optimization.png)
+
+[Diagram source](docs/diagrams/autodev.optimization.json)
+
+Clarify builds one runnable numeric test with the human — **quantifiable** (an executable benchmark producing a number) and **single** (one benchmark, or a fixed weighted sum of several) — then records the baseline and confirms the limits against it: the **target** that permits early exit, the **editable files** that bound implementation, and the **time budget** that prevents an unbounded loop. Loop optimizes allowed files and reruns the same test until the target is met or time expires. Handoff delivers one chart showing the process from baseline through attempts to the final result.
 
 Agree on the workload, unit, direction, measurement method, and any weights or normalization before baseline. Multiple benchmark components still produce **one score**, not separate optimization targets. Do not change the ruler during Loop.
 
@@ -126,7 +113,7 @@ The first request starts with architecture/workflow alignment and collaborative 
 
 Read the current stage's shared rules and the applicable scenario only. Do not preload later stages or the other Clarify branch. Progressive disclosure is about providing detail when it is needed, even when a task eventually visits all three stages.
 
-This repository distributes the skill, not a bundled test runner or evaluation suite. Tests are prepared with the human in the project where the skill is used. The README illustration shows the core workflow, not example test results.
+This repository distributes the skill, not a bundled test runner or evaluation suite. Tests are prepared with the human in the project where the skill is used. The README illustrations show the workflow itself, not example test results.
 
 ## Contributing
 

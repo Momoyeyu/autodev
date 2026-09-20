@@ -6,7 +6,7 @@
 
 ![autodev 核心流程：功能开发与性能优化的 Clarify、Loop、Handoff](docs/assets/autodev-overview.zh.png)
 
-[流程图源文件](docs/diagrams/autodev.workflow.zh.json) · 使用 [Archify](https://github.com/tt-a1i/archify) 以暗色模式绘制。
+[流程图源文件](docs/diagrams/autodev.overview.zh.json) · 使用 [Archify](https://github.com/tt-a1i/archify) 以暗色模式绘制。
 
 **autodev 是一个以 clarify 为核心的 Agent Skill：先与人对齐，在共识内执行，再交付直观的证据。**
 
@@ -48,17 +48,11 @@ Clarify 不只是问问题。查代码、维护测试、试运行和测量 basel
 
 ### 功能开发
 
-1. **User input：** 功能需求。
-2. **Clarify：**
-   1. 确认对整体架构和已有流程的影响，明确是否允许增加或减少模块、是否允许修改已有流程。
-   2. Human-in-the-loop 制定 test，直到用户确认：
-      - 查询现有 test；
-      - 删除或修改过时 test；
-      - 新增缺失 test；
-      - 确认 test 能执行，与人审阅其含义和结果，并按反馈继续修订。
-   3. 运行确认后的 test，记录 baseline。
-3. **Loop：** 在确认后的影响范围内开发、运行 test，直到全部通过。
-4. **Handoff：** 交付一张表，对比同一套 test 的 baseline 与最终运行结果。
+![功能开发流程：确认影响、人工共建测试、baseline、实现-测试循环、对比表](docs/assets/autodev-development.zh.png)
+
+[流程图源文件](docs/diagrams/autodev.development.zh.json)
+
+Clarify 先确认架构与流程影响，再与人共建可执行 test（查询 → 更新过时 → 新增缺失 → 验证执行，反复修订直到用户确认），然后记录 baseline。Loop 在确认后的影响范围内开发，反复运行已确认的测试集直到全部通过。Handoff 交付一张表，对比同一套 test 的 baseline 与最终结果。
 
 测试维护属于 **human-in-the-loop 审阅过程内部**，不是用户确认 test 之后才开始的另一个阶段。保留仍有效的覆盖，说明过时期望为何被修改。用户确认的是可执行 test，而不只是测试计划。
 
@@ -66,18 +60,11 @@ Clarify 不只是问问题。查代码、维护测试、试运行和测量 basel
 
 ### 性能优化
 
-1. **User input：** 优化目标。
-2. **Clarify：**
-   1. Human-in-the-loop 制定 test，直到用户确认：
-      - **可量化：** 使用输出数值结果的可执行 benchmark；
-      - **单一性：** 只能有一项 test，可以是一个 benchmark，也可以是多个 benchmark 的固定加权和。
-   2. 运行确认后的 test，记录 baseline。
-   3. 根据 baseline 确认限制：
-      - **优化目标：** 达到哪个分数阈值后可以提前退出；
-      - **修改范围：** 哪些实现文件可编辑，排除通过修改测量依据刷榜的空间；
-      - **时间限制：** 用实际经过的时间限制循环，避免无限优化。
-3. **Loop：** 仅在允许的文件中优化并运行同一个 test，直到达到目标或时间耗尽。
-4. **Handoff：** 交付一张图，展示从 baseline、经过各次优化尝试，到最终交付结果的过程。
+![性能优化流程：共建数值基准、baseline、确认限制、优化-测量循环、过程图](docs/assets/autodev-optimization.zh.png)
+
+[流程图源文件](docs/diagrams/autodev.optimization.zh.json)
+
+Clarify 与人共建唯一的可执行数值 test——**可量化**（benchmark 输出数值结果）、**单一性**（一个 benchmark 或多个 benchmark 的固定加权和）——然后记录 baseline，并据此确认限制：可以提前退出的**优化目标**、限定实现改动的**可编辑文件**、防止无限循环的**时间预算**。Loop 只在允许的文件中优化、反复运行同一个 test，直到达标或时间耗尽。Handoff 交付一张图，展示从 baseline、经过各次尝试到最终结果的过程。
 
 工作负载、单位、改善方向、测量方法，以及可能涉及的权重和归一化方式，都在 baseline 之前确认。多个 benchmark 分项仍只产生**一个分数**，不是多个独立优化目标。Loop 中不能换尺子。
 
@@ -126,7 +113,7 @@ Clarify 不只是问问题。查代码、维护测试、试运行和测量 basel
 
 只读当前阶段的共用规则与对应场景，不要预加载后续阶段或另一条 Clarify 分支。渐进式披露的含义是需要时才提供细节，即使一个任务最终会经过全部三个阶段。
 
-本仓库分发 skill，不附带测试运行器或评测套件。测试由 Agent 与人共同在使用 skill 的目标项目中准备。README 配图只展示核心流程，不展示示例测试结果。
+本仓库分发 skill，不附带测试运行器或评测套件。测试由 Agent 与人共同在使用 skill 的目标项目中准备。README 配图只展示流程本身，不展示示例测试结果。
 
 ## 参与贡献
 
