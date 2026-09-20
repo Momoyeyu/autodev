@@ -4,202 +4,168 @@
 
 # autodev
 
-**autodev is an Agent Skill that makes coding agents prove their work: features must turn a failing test green, and optimizations must beat a frozen benchmark.**
-
-![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)
-![Agent Skill](https://img.shields.io/badge/skill-autodev-7C3AED?style=flat-square)
-![Version](https://img.shields.io/badge/version-3.0.3-0891b2?style=flat-square)
-![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)
+**Align the agent and the human before implementation. Deliver work that is verifiable, measurable, and visible.**
 
 ```bash
 npx skills add Momoyeyu/autodev -g
 ```
 
-It works with Claude Code, Cursor, Codex CLI, OpenCode, and any agent that reads `SKILL.md`.
+An Agent Skill for **feature development** and **performance optimization**. It works with agents that load `SKILL.md` and reuses the target project's test and benchmark tools.
 
 ## Why autodev exists
 
-Coding agents can produce changes faster than people can review them. The hard part is no longer getting code written; it is deciding whether the result deserves to stay.
+Natural-language agreement is easy to mistake for shared understanding. An agent can implement the wrong behavior, change a workflow the human wanted to preserve, or optimize a number that does not represent the actual goal.
 
-Without a measurement protocol, the most important claims are impossible to verify:
+autodev turns that uncertainty into a shared test definition before implementation. The human confirms what success means; the agent records a baseline, iterates against the agreed test, and shows the final difference. The purpose is less misunderstanding and rework, not simply more autonomous coding.
 
-| The agent says | What is missing |
+The intended result is better **quality, stability, and overall efficiency**, with a human who can **understand the project and take over the work**.
+
+## Verifiable & measurable & visible
+
+| Principle | What the agent delivers |
 |---|---|
-| “The feature is done.” | A test that failed before the implementation and passes after it |
-| “The page is faster.” | A baseline, a stable benchmark, and a measured noise floor |
-| “This was the best attempt.” | A record of rejected ideas and the rule used to compare them |
+| **Verifiable** | Human-approved tests, exact reproduction commands, and actual execution evidence |
+| **Measurable** | Comparable baseline and final results: acceptance-case outcomes or one numeric benchmark score |
+| **Visible** | A readable comparison, the impact on architecture and workflows, and enough context for handover |
 
-autodev changes the deliverable. The agent's explanation is useful context, but it is no longer the evidence. The evidence is an artifact you can run again:
-
-- a feature comes with a **RED → GREEN** test case;
-- an optimization comes with a **before → after** measurement;
-- every failed idea is **logged and restored** to the last accepted state instead of being quietly accumulated;
-- tests, benchmarks, datasets, and other protected inputs are frozen so the agent cannot improve the score by changing the ruler.
-
-The result is a ratchet: accepted code only moves in a direction that a script can verify.
-
-## See it work
-
-The repository ships small, dependency-free fixtures for each scenario below. The outputs in this image were reproduced from those fixtures, not written as illustrative numbers.
-
-![Reproduced feature and optimization results](docs/assets/autodev-evidence.png)
-
-### 1. Add a feature
-
-```text
-Add Invoice.total_with_tax(rate).
-```
-
-autodev does not start by implementing the method. It first writes one focused test, runs it, and checks that it fails for the expected reason. Only then does it add the smallest passing implementation and run the whole suite.
-
-| Checkpoint | Reproduced result |
-|---|---|
-| RED | `test_total_with_tax_applies_rate ... FAIL` |
-| GREEN | both invoice tests pass |
-| Evidence | the new test demonstrates the input, rate, and exact total |
-
-This is the **development mode**: there is no attempt budget. The behavior is either implemented and protected by a test, or it is not done.
-
-### 2. Optimize a measurable target
-
-```text
-Bring API p95 latency below 200 ms; use 7 runs and the median.
-```
-
-Before editing, autodev writes a contract:
-
-```yaml
-goal:      "API p95 latency below 200 ms"
-criterion: "tests pass; 7 benchmark runs; compare medians"
-frozen:    ["tests/**", "bench/**"]
-surface:   ["src/api.py"]
-budget:    "12 attempts or 20 minutes"
-reset:     "restore src/api.py from the accepted commit"
-```
-
-The bundled fixture reproduced this outcome:
-
-| | p95 | Tests | Verdict |
-|---|---:|---|---|
-| Baseline | 224.305 ms | pass | — |
-| Attempt 1 | 163.196 ms | pass | **accept** |
-| Net change | **−27.2%** | still green | target met |
-
-A faster number alone is not enough. If the tests fail, or if the attempt edits the benchmark, the dataset, or another frozen input, autodev rejects the attempt and restores the last accepted state.
-
-### 3. Stop when “better” has no meaning
-
-```text
-Make this code cleaner.
-```
-
-There is no runnable success criterion here, so autodev does not guess and does not edit. It asks for a measurable outcome—preserved behavior with lower complexity, higher coverage, a smaller binary, or another criterion that fits the repository.
-
-The same rule blocks fake wins. For a throughput task, for example, autodev freezes the tests, benchmark, dataset, runner configuration, and lockfile. Reducing the dataset or loosening an assertion is a failed attempt even when the reported throughput rises.
+A passing test is useful only if it represents the human's intent. A better score is useful only if it measures the agreed work. A polished explanation is not a substitute for either.
 
 ## How it works
 
-![How autodev works: Define, Anchor, Ratchet, Prove](docs/assets/autodev-overview.png)
+**Define → Anchor → Ratchet → Prove** organizes both the workflow and the skill's reference files. The two scenarios share the stages, not an identical sequence of decisions.
 
-| Stage | Purpose | Complete when |
+| Stage | Feature development | Performance optimization |
 |---|---|---|
-| **Define** | Turn the request into a falsifiable goal, executable gate, boundaries, budget, and reset | The contract is explicit and confirmed |
-| **Anchor** | Freeze the measuring stick and establish a trustworthy starting state | RED is verified, or the baseline and noise are recorded |
-| **Ratchet** | Measure every attempt, then accept it or restore the last accepted state | Every attempt has a mechanical verdict and log entry |
-| **Prove** | Verify the accepted state from clean conditions and package the evidence | Tests, measurements, cost, and rejected attempts are reported |
+| **Define** | Confirm architecture/workflow impact; revise acceptance tests with the human until approved | Revise one numeric benchmark test with the human until approved |
+| **Anchor** | Reconcile existing tests, verify execution, and record the baseline | Prepare and run the benchmark, record baseline, then confirm target, editable files, and time budget |
+| **Ratchet** | Develop and run the agreed tests until all pass | Optimize and measure until the target is reached or time expires |
+| **Prove** | Compare baseline and final test results; deliver the feature and handover | Compare baseline and final score; deliver the best verified result and stop reason |
 
-Two established practices do the work:
+### Feature development
 
-1. **Test-Driven Development is the correctness gate.** New behavior starts with a failing test. Optimization never trades correctness for a better number.
-2. **The ratchet is the progress gate.** The benchmark is fixed, the budget is explicit, and each attempt must be accepted or restored by a script. This mechanism is inspired by the accept/reject loop in [autoresearch](https://github.com/karpathy/autoresearch).
+```mermaid
+flowchart TD
+    subgraph D["Define"]
+        F1["Feature request"] --> F2["Confirm architecture and workflow impact"]
+        F2 --> F3["Draft acceptance tests with the human"]
+        F3 --> F4{"Human confirms tests?"}
+        F4 -- Revise --> F3
+    end
+    subgraph A["Anchor"]
+        F5["Inspect existing tests"] --> F6["Update or remove outdated tests; add missing tests"]
+        F6 --> F7["Verify tests can execute"]
+        F7 --> F8["Run tests and record baseline"]
+    end
+    subgraph R["Ratchet"]
+        F9{"All agreed tests pass?"}
+        F10["Develop within approved scope"] --> F11["Run the agreed test set"]
+        F11 --> F9
+        F9 -- No --> F10
+    end
+    subgraph P["Prove"]
+        F12["Verify final results and compare with baseline"] --> F13["Deliver feature, impact, and handover evidence"]
+    end
+    F4 -- Yes --> F5
+    F8 --> F9
+    F9 -- Yes --> F12
+```
 
-### Two modes, selected from the request
+**Clarify impact first.** Confirm how the feature affects the overall architecture, whether modules may be added or removed, how existing workflows are affected, and whether those workflows may change. A feature request is not unrestricted redesign permission.
 
-| Request | Success condition | Mode | Budget |
-|---|---|---|---|
-| add / implement / fix X | a relevant test goes from RED to GREEN | **development** | none |
-| make X faster / smaller / cheaper | tests stay green and a metric beats the baseline beyond noise | **optimization** | required |
-| add X and keep it under a limit | both conditions pass | **optimization** | required |
-| make X “better” or “cleaner” | no executable criterion | **stop and ask** | — |
+**Agree on tests, not just prose.** Review inputs, actions, expected outcomes, boundaries, and relevant regressions with the human. Revise until the human approves the test definition; there is no fixed question count.
 
-You never choose a mode manually. autodev infers it from the shape of the request and asks only for information that is genuinely missing. Optimization gets at most two questions—metric/target when ambiguous, then budget—and one confirmation of the complete contract.
+**Maintain the suite before measuring.** After approval, inspect existing tests, update or delete outdated expectations, and add missing cases. Keep still-relevant coverage and record why each test changed. Capture the baseline only after this reconciliation, so baseline and final results use the same test set.
+
+**Executable does not mean already passing.** The runner must produce meaningful outcomes; missing feature behavior may fail in the baseline. Broken setup is not baseline evidence. Implementation continues until all agreed tests pass, without changing acceptance to make the result look green.
+
+### Performance optimization
+
+```mermaid
+flowchart TD
+    subgraph D["Define"]
+        O1["Optimization goal"] --> O2["Design one numeric benchmark test with the human"]
+        O2 --> O3{"Human confirms test?"}
+        O3 -- Revise --> O2
+    end
+    subgraph A["Anchor"]
+        O4["Make the approved benchmark executable"] --> O5["Run benchmark and record baseline"]
+        O5 --> O6["Confirm target, editable files, and time budget"]
+    end
+    subgraph R["Ratchet"]
+        O7{"Target reached or time expired?"}
+        O8["Optimize only allowed files"] --> O9["Run the same benchmark"]
+        O9 --> O10["Record result and retain the best valid candidate"]
+        O10 --> O7
+        O7 -- No --> O8
+    end
+    subgraph P["Prove"]
+        O11["Compare baseline with the delivered result"] --> O12["Deliver evidence, stop reason, and handover"]
+    end
+    O3 -- Yes --> O4
+    O6 --> O7
+    O7 -- Yes --> O11
+```
+
+**Quantifiable:** the test is a benchmark that produces a numeric result. Agree on what it measures, its workload, unit, direction, and measurement method before using it.
+
+**Single objective:** there is exactly one optimization test. It can be one benchmark or a weighted sum of several benchmarks, but the result is one score. Weights, normalization, and aggregation are confirmed before the baseline and remain unchanged during iteration. Component readings explain the score; they are not independent optimization targets.
+
+**Baseline before limits:** after running the approved test, confirm:
+
+- **Target:** the score threshold that allows an early exit.
+- **Editable files:** the implementation surface; benchmark, inputs, and scoring rules are not a way to game the result.
+- **Time budget:** a wall-clock limit that bounds the loop, including measurements and reserved final verification time.
+
+Reuse decisions the human already supplied. Optimize until the target is met or time expires, retaining the best valid measured candidate. Do not invent a convergence stop or silently extend the budget. If the baseline already meets the target, report that without unnecessary edits.
+
+A timeout is a valid stopping reason, not proof that the target was met. If no improvement was verified, deliver that finding and the unchanged best state.
+
+## What the human receives
+
+| Deliverable | Feature development | Performance optimization |
+|---|---|---|
+| Approved definition | Architecture/workflow permissions and acceptance cases | One benchmark definition, then baseline-informed target, editable files, and time budget |
+| Before / after | Same case IDs and test version, with baseline and final outcomes | Same workload and scoring formula, with baseline and final score |
+| Runnable evidence | Commands, environment, raw results, and test-maintenance reasons | Command, measurement conditions, raw samples, and attempt history |
+| Visible summary | Case matrix and relevant module/workflow changes | Score comparison, target status, elapsed time, and optional trend chart |
+| Handover | Changed entry points, decisions, limitations, and remaining work | Delivered candidate, rejected approaches, limitations, and next steps |
+
+Tables are sufficient when they explain the result clearly. Use diagrams for architectural or workflow changes and charts for measured trends when helpful. Every displayed result must trace back to recorded evidence, not an illustrative number.
+
+A change in requirements, allowed impact, or test meaning requires renewed agreement and a new baseline. It must not be hidden inside an attempt or compared against results from a different test version.
 
 ## Get started
 
-### Install
-
-```bash
-npx skills add Momoyeyu/autodev -g
-```
-
-Install only for Claude Code, globally and non-interactively:
-
-```bash
-npx -y skills add Momoyeyu/autodev --skill autodev -a claude-code -g --copy -y
-```
-
-Try it once without installing:
-
-```bash
-npx skills use Momoyeyu/autodev@autodev --agent claude-code
-```
-
-### Ask normally
-
-No special prompt template is required:
+Install the skill with the command above, then describe the task normally:
 
 ```text
-Implement CSV export for the filtered transaction list.
+Add CSV export for the filtered transaction list.
 ```
 
 ```text
-Reduce CLI startup time by at least 5%. Use at most 10 attempts or 15 minutes.
+Bring API p95 latency below 200 ms. Limit implementation changes to src/api/ and use a 20-minute optimization budget.
 ```
 
-For feature work, autodev starts with the failing test. For optimization, it presents the contract before spending the approved budget.
+The first request begins with architecture/workflow alignment and test review. The second begins with benchmark review and baseline measurement; supplied limits are reused rather than asked for again.
 
-## Run the evaluation suite
+## Skill structure
 
-The same scenarios used above are versioned under [`evals/`](evals/README.md):
+| File | Load when |
+|---|---|
+| [`autodev/SKILL.md`](autodev/SKILL.md) | At entry: purpose, principles, scenario selection, and stage routing |
+| [`references/define.md`](autodev/references/define.md) | Entering Define: scope alignment and human-approved test definitions |
+| [`references/anchor.md`](autodev/references/anchor.md) | Entering Anchor: test preparation, baseline, and optimization limits |
+| [`references/ratchet.md`](autodev/references/ratchet.md) | Entering Ratchet: scenario-specific loops and progress records |
+| [`references/prove.md`](autodev/references/prove.md) | Entering Prove: comparisons, visible evidence, and handover |
+| [`references/test-design.md`](autodev/references/test-design.md) | Only when acceptance cases or a composite benchmark need design detail |
 
-```bash
-python3 evals/run.py list
-python3 evals/run.py run --case development-feature
-python3 evals/run.py run
-```
+Progressive disclosure follows the current stage. Do not load every reference at the start; within a stage, read its shared instructions and the applicable scenario. Visiting all four stages eventually does not require revealing all their detail up front.
 
-Each case runs in an isolated Git repository with the current skill installed as `.devin/skills/autodev`. Responses, transcripts, diffs, command output, and mutated workspaces are kept under the ignored `.autodev-evals/` directory for review.
-
-After review, remove every generated artifact with one guarded command:
-
-```bash
-python3 evals/run.py clean
-```
-
-Validate the fixtures, runner, cleanup guard, corpus, and scorer without invoking a model:
-
-```bash
-python3 -m unittest discover -s tests -v
-```
-
-## What is in the skill
-
-| File | Loaded when | Purpose |
-|---|---|---|
-| [`autodev/SKILL.md`](autodev/SKILL.md) | every autodev run | two modes, four stages, both gates, essential verdicts and safeguards, reference routing |
-| [`references/gate.md`](autodev/references/gate.md) | before changing production code or tests | correctness gate: RED → GREEN → REFACTOR, rationalizations, completion checklist |
-| [`references/contracts.md`](autodev/references/contracts.md) | during Define for optimization or contract-design questions | six contract fields, metric choice, frozen variables, benchmark construction |
-| [`references/progress-gate.md`](autodev/references/progress-gate.md) | before Anchor in optimization | progress gate: measurement, Ratchet verdicts, scoped restore, log, stops, Prove evidence |
-| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | only when adding or changing mocks, helpers, or test-only APIs | checks that tests exercise real behavior instead of their doubles |
-| [`references/testing-examples.md`](autodev/references/testing-examples.md) | only when a TDD step needs an example | illustrative retry and bug-fix sequences; read the relevant section |
-
-Load the core first, not the entire directory. Ordinary development adds the correctness gate; optimization also loads the contract and progress gate. Mock guidance and worked examples stay conditional. Every reference is linked directly from the core, so none requires a chain of document loads to discover.
-
-The skill itself remains language- and framework-agnostic. It does not require Jest, pytest, or a custom runtime; it reuses the commands the target repository already trusts.
+This repository distributes the skill, not a bundled test runner or evaluation suite. The executable tests belong to the project where the skill is used and are defined with that project's human owner.
 
 ## Contributing
 
-Behavior changes should come with a regression case in `evals/cases.json`. Keep the core skill compact, put conditional detail in `references/`, and keep the English and Chinese READMEs synchronized. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Keep the skill, stage references, and bilingual README flows consistent. See [CONTRIBUTING.md](CONTRIBUTING.md) for review and verification guidance and [AGENTS.md](AGENTS.md) for repository conventions.
 
 ## License
 

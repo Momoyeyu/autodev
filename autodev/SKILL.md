@@ -1,74 +1,61 @@
 ---
 name: autodev
-description: Use for features, bug fixes, refactoring, and optimization of latency, throughput, size, memory, cost, build time, or model quality. Prove correctness with TDD and improvement against frozen benchmarks.
+description: Align agents and humans through approved tests, measured baselines, and visible delivery evidence. Use for feature development, bug fixes, and performance optimization when requirements, allowed changes, and success must be made explicit before implementation.
 ---
 
 # autodev
 
-TDD is the **correctness gate**; the ratchet is the **progress gate**. Follow **Define → Anchor → Ratchet → Prove** and deliver evidence the user can run again.
+Reduce misunderstanding and rework between the human and the agent. Improve delivery quality, stability, and overall efficiency while making the project easier for the human to understand and take over.
 
-## Three rules
+**Verifiable & measurable & visible:** agree on what will be tested, record where the project starts, and make the final difference easy to inspect and reproduce.
 
-1. **Measure first.** Establish a runnable criterion and verify the starting state before implementation.
-2. **Protect the ruler.** Edit only the agreed `surface`; keep tests, benchmarks, and other `frozen` inputs protected.
-3. **The script decides.** Accept verified progress; otherwise restore the last accepted state. Prose cannot override a verdict.
+## Two scenarios, four stages
 
-## Two modes
+| Stage | Feature development | Performance optimization |
+|---|---|---|
+| **Define** | Confirm architecture/workflow impact; iterate on tests with the human until approved | Iterate with the human until one numeric benchmark test is approved |
+| **Anchor** | Inspect existing tests, update/remove outdated ones, add missing ones, verify execution, record baseline | Make the benchmark executable, record baseline, then confirm target, editable files, and time budget |
+| **Ratchet** | Implement and run the agreed tests until all pass | Optimize and measure until the target is reached or time expires |
+| **Prove** | Compare baseline and final test results; deliver the feature and handover evidence | Compare baseline and final score; deliver the best verified result and stop reason |
 
-| Request | Mode | Success | Budget |
-|---|---|---|---|
-| add / implement / fix X | development | relevant test RED → GREEN; suite green | none |
-| make X faster / smaller / cheaper | optimization | tests green; metric beats baseline beyond noise | required |
-| add X with a measurable limit | optimization | both gates pass | required |
-| make X “better” without a runnable criterion | stop and ask | agree on a measurable outcome before editing | — |
+A feature test is an executable acceptance case; the feature may need a set of them. An optimization test is exactly one numeric objective: one benchmark or a fixed weighted sum of several benchmarks. Component readings are diagnostics, not separate acceptance targets.
 
-Infer the mode; never ask the user to choose it. Both modes require TDD for new behavior. Split large development tasks into verifiable units, not timed attempts.
+## Progressive disclosure
 
-## Reference files
+Use the current stage as the reading key. On entry, read its shared instructions and the applicable scenario; do not preload later stages. Read [test design](references/test-design.md) only when acceptance cases or a composite benchmark need more detail.
 
-Do not preload references. Read only the file needed for the next action; paths are relative to this skill directory.
+## Define
 
-| Read | When |
-|---|---|
-| [Correctness gate](references/gate.md) | Before changing production code or tests, in either mode |
-| [Define: the contract](references/contracts.md) | During Define for optimization, or when contract design needs detail |
-| [Progress gate](references/progress-gate.md) | Before Anchor in optimization; use through Ratchet and Prove |
-| [Testing anti-patterns](references/testing-anti-patterns.md) | Only when adding or changing mocks, test utilities, or test-only APIs |
-| [Worked testing examples](references/testing-examples.md) | Only when the TDD sequence needs an example; read the relevant section |
+Read [Define](references/define.md).
 
-## Phase 0 — Define
+For a feature, establish whether modules may be added or removed and whether existing workflows may change. Then draft tests with the human and revise until the human confirms what they should prove.
 
-Confirm six fields: `goal` (falsifiable outcome), `criterion` (one gate command), `budget` (optimization attempts/time; none for development), `frozen` (protected files/conditions), `surface` (editable paths), `reset` (exact scoped restore).
+For optimization, first agree on the single benchmark, its inputs, numeric output, direction, and measurement method. Do not substitute the easiest metric to improve.
 
-Ask only for missing information: at most two questions, then one contract confirmation. In optimization, ask ambiguous metric/target and absent budget. Offer concrete choices, a recommendation, and a custom option; include attempt/time limits. Never ask what you can infer or measure.
+Reuse explicit decisions already supplied by the human. Confirmation concerns test meaning, not merely permission to write code; there is no fixed question count. Do not begin implementation while acceptance remains ambiguous.
 
-Wait for confirmation before Anchor or implementation. If the gate is missing, build and verify it with TDD first, then confirm the optimization contract.
+## Anchor
 
-## Phase 1 — Anchor
+Read [Anchor](references/anchor.md).
 
-Hash `frozen` files. Development: verify RED for the expected missing behavior. Optimization: record a fixed-repeat median baseline and measured noise. Deterministic metrics: `repeats: 1`, noise `0`; noisy metrics: `repeats ≥ 5`.
+For a feature, reconcile the existing suite with the approved behavior before recording the baseline. Outdated tests may be changed or removed; still-relevant tests stay. “Tests can run” means execution produces meaningful results, not that the unimplemented feature already passes.
 
-Keep one untracked root-level TSV with contract, hashes, and starting evidence. Columns: `attempt, commit, tests, metric, delta, verdict, note`; metric/delta stay blank in development. Freeze verified acceptance tests before implementation; never weaken assertions.
+For optimization, run the approved benchmark to obtain the baseline **before confirming loop limits**: target, editable files, and wall-clock budget. Separate benchmark preparation from optimization work.
 
-## Phase 2 — Ratchet
+Preserve the approved test version, command, conditions, and raw baseline results. Implementation starts only after this evidence and the required permissions exist.
 
-Read the log, choose an idea, edit only `surface`, and run the gate. Save output to artifacts. Check frozen hashes before/after every attempt; log every verdict, including failures.
+## Ratchet
 
-| Result after implementation | Verdict |
-|---|---|
-| crash, failing tests, or changed frozen inputs | reject and restore |
-| development: verified RED → GREEN and full suite passes | accept |
-| optimization: improvement exceeds `δ = max(minimum improvement, measured noise)` | accept; advance baseline |
-| optimization: improvement does not exceed δ | reject and restore |
+Read [Ratchet](references/ratchet.md).
 
-Commit accepted states. Normalize improvement so positive means better; compare it and δ in the same units. Restore only the attempt's implementation paths, preserving tests, log, and pre-existing user work. Never use `git reset --hard`.
+Develop within the approved feature scope until all agreed tests pass. For optimization, keep the best valid measured candidate and stop when the target is met or the time budget expires; neither invent a convergence stop nor extend the budget silently.
 
-**Anti-gaming:** assertion count must not fall; no `.skip`, `xfail`, or loosened tolerances. No new dependencies, network calls, or hardware branches. No smaller workload, cached answers, memoized benchmark inputs, or undeclared cache warming. Fix repetitions and use medians, never best-of-N.
+Keep the measuring test stable during iteration. Never weaken assertions, shrink workloads, alter weights, or edit the benchmark to manufacture success. A changed requirement, scope, or test meaning returns to Define and requires a new baseline, not a rewritten history.
 
-**Optimization stops** at the first of: attempt/time limit, target met, three improvements below measured noise in a row, or four consecutive restorations. Report and offer to continue; do not ask mid-budget or exceed it. Development has no attempt/time budget.
+## Prove
 
-## Phase 3 — Prove
+Read [Prove](references/prove.md).
 
-Rerun the full gate from clean conditions. Refactor only while green, then remeasure. Equal metric with a simpler diff wins only under the agreed tie-break; restore regressions.
+Deliver the actual baseline/final comparison, reproduction commands, changed modules and workflows, known limitations, and the evidence needed to continue the work. Use a readable test matrix or score/history table; add a diagram or chart when it explains the change better.
 
-Deliver runnable evidence: tests, baseline/final metric and noise, accepted/rejected attempts, net improvement, actual cost, stop reason, and near-misses. Omit metric fields for development.
+All feature tests must pass to claim completion. An optimization that times out must state whether its target was met and what improvement, if any, was verified. Never substitute an explanation or an illustrative chart for measured results.

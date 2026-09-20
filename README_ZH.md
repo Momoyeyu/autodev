@@ -4,202 +4,168 @@
 
 # autodev
 
-**autodev 是一个要求编程 Agent 用结果证明工作的 Skill：开发功能，要让一个失败的测试变绿；做优化，要在冻结的 benchmark 上真正超过 baseline。**
-
-![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)
-![Agent Skill](https://img.shields.io/badge/skill-autodev-7C3AED?style=flat-square)
-![Version](https://img.shields.io/badge/version-3.0.3-0891b2?style=flat-square)
-![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)
+**先让 Agent 与人对齐，再进入实现。交付易验证、可度量、够直观的成果。**
 
 ```bash
 npx skills add Momoyeyu/autodev -g
 ```
 
-支持 Claude Code、Cursor、Codex CLI、OpenCode，以及任何能够读取 `SKILL.md` 的 Agent。
+面向**功能开发**与**性能优化**的 Agent Skill。适用于能够加载 `SKILL.md` 的 Agent，复用目标项目已有的测试与 benchmark 工具。
 
 ## 为什么要做 autodev
 
-编程 Agent 写代码的速度，已经超过了人逐行 review 的速度。现在真正困难的，不再是让代码被写出来，而是判断这次改动究竟值不值得留下。
+自然语言上的同意，很容易被误认为双方已经理解一致。Agent 可能实现了错误的行为，改掉人希望保留的流程，或者优化了一个并不代表真实目标的数字。
 
-如果没有一套测量规则，Agent 最重要的几句话都无法核实：
+autodev 在实现之前，把这些不确定性转化为双方共同确认的 test 定义。人确认怎样才算成功；Agent 记录 baseline，围绕确认后的 test 迭代，再展示最终差异。目的在于减少理解偏差和返工，而不只是增加自动写代码的时间。
 
-| Agent 说 | 缺少的证据 |
+希望获得的是更好的**质量、稳定性和综合效率**，以及一个能够**理解项目并接管工作**的人。
+
+## Verifiable & measurable & visible
+
+| 理念 | Agent 应交付什么 |
 |---|---|
-| “功能已经做完了。” | 一个实现前失败、实现后通过的测试 |
-| “页面已经变快了。” | baseline、稳定的 benchmark，以及实测的噪声范围 |
-| “这是最好的方案。” | 被拒绝的尝试记录，以及统一的比较规则 |
+| **Verifiable · 易验证** | 人确认过的 test、准确的复现命令，以及真实的执行证据 |
+| **Measurable · 可度量** | 可比较的 baseline 与最终结果：验收用例的状态，或一个数值 benchmark 分数 |
+| **Visible · 够直观** | 易读的前后对比、对架构与流程的影响，以及足以接管工作的上下文 |
 
-autodev 改变的是交付物。Agent 的解释仍然有参考价值，但它不再是证据；证据必须是你明天还能重新运行的东西：
-
-- 开发功能，交付一个 **RED → GREEN** 的测试用例；
-- 做性能优化，交付一组 **before → after** 的测量结果；
-- 失败的方案会被**记录，并恢复到上一个已接受状态**，而不是悄悄堆进最终代码；
-- 测试、benchmark、数据集等测量依据会被冻结，Agent 不能靠修改尺子来提高分数。
-
-最终得到的是一个只向前移动的棘轮：只有脚本能够证明更好的代码，才会进入已接受状态。
-
-## 看看它实际怎么工作
-
-仓库为下面的场景提供了不依赖第三方库的可重复 fixture。图中的结果都来自这些 fixture 的实际运行，不是为了说明概念而虚构的数字。
-
-![可重复的功能开发与性能优化结果](docs/assets/autodev-evidence.png)
-
-### 1. 开发一个新功能
-
-```text
-为 Invoice 增加 total_with_tax(rate) 方法。
-```
-
-autodev 不会先写实现。它先写一个只描述目标行为的测试，亲自运行并确认失败原因正确；之后才补上最小实现，再运行目标测试和完整测试套件。
-
-| 检查点 | fixture 实测结果 |
-|---|---|
-| RED | `test_total_with_tax_applies_rate ... FAIL` |
-| GREEN | Invoice 的两个测试全部通过 |
-| 交付证据 | 新测试明确展示了输入、税率和精确结果 |
-
-这就是**开发模式**。它不设置尝试预算：功能要么已经实现并受到测试保护，要么就还没有完成。
-
-### 2. 优化一个可测量的目标
-
-```text
-把 API 的 p95 延迟降到 200 ms 以下；固定运行 7 次并取中位数。
-```
-
-动代码之前，autodev 会先写出 contract：
-
-```yaml
-goal:      "API p95 延迟低于 200 ms"
-criterion: "测试通过；benchmark 跑 7 次；比较中位数"
-frozen:    ["tests/**", "bench/**"]
-surface:   ["src/api.py"]
-budget:    "最多 12 次尝试或 20 分钟"
-reset:     "从已接受的 commit 恢复 src/api.py"
-```
-
-仓库中的 fixture 可以重复得到下面的结果：
-
-| | p95 | 测试 | 判定 |
-|---|---:|---|---|
-| Baseline | 224.305 ms | 通过 | — |
-| 第 1 次尝试 | 163.196 ms | 通过 | **接受** |
-| 总收益 | **−27.2%** | 仍然全绿 | 达到目标 |
-
-数字变快还不够。如果测试失败，或者这次尝试修改了 benchmark、数据集及其他 frozen 输入，autodev 也会拒绝这次尝试并恢复到上一个已接受状态，即使新的跑分看起来更好。
-
-### 3. “更好”没有定义时，先停下来
-
-```text
-把这块代码重构得更优雅一些。
-```
-
-这句话没有可执行的验收标准，所以 autodev 不会自行猜测，也不会直接改代码。它会请你选择一个能够运行的目标，例如：保持行为不变并降低复杂度、提高覆盖率、缩小产物体积，或者采用更符合当前仓库的指标。
-
-同一条规则也会拦住虚假的优化。比如提高批量导入吞吐量时，autodev 会冻结测试、benchmark、数据集、runner 配置和 lockfile。删掉一半数据或者放宽断言，即使吞吐量上涨，也只会得到一次失败的尝试。
+测试通过，只有在它代表人的真实意图时才有意义；分数变好，只有在它测量的是双方确认的工作时才有意义。漂亮的解释不能代替任何一项。
 
 ## 工作流程
 
-![autodev 工作流程：Define、Anchor、Ratchet、Prove](docs/assets/autodev-overview.zh.png)
+**Define → Anchor → Ratchet → Prove** 同时组织工作流程与 skill 子文档。两种场景共用四个阶段，但不强行共用同一套决策顺序。
 
-| 阶段 | 作用 | 完成标志 |
+| 阶段 | 功能开发 | 性能优化 |
 |---|---|---|
-| **Define · 定义** | 把需求变成可证伪目标、可执行 gate、边界、预算和回滚方式 | contract 已明确并确认 |
-| **Anchor · 锚定** | 冻结量尺，建立可信的起点 | 已验证 RED，或已记录 baseline 与噪声 |
-| **Ratchet · 棘轮** | 测量每次尝试，然后接受，或者恢复到上一个已接受状态 | 每次尝试都有机械判定和日志 |
-| **Prove · 证明** | 从干净条件验证最终状态，并整理证据 | 测试、测量结果、成本和失败记录都已交付 |
+| **Define · 定义** | 确认架构与流程影响；与人反复制定验收 test，直到确认 | 与人反复制定唯一的数值 benchmark test，直到确认 |
+| **Anchor · 锚定** | 整理现有测试，确认能执行，记录 baseline | 准备并运行 benchmark，记录 baseline，再确认目标、可编辑文件和时间预算 |
+| **Ratchet · 迭代** | 开发并运行确认后的测试，直到全部通过 | 优化并测量，直到达到目标或时间耗尽 |
+| **Prove · 证明** | 对比 baseline 与最终测试结果，交付功能和接管材料 | 对比 baseline 与最终分数，交付已验证的最佳结果与停止原因 |
 
-真正起作用的是两种已经被反复验证的方法：
+### 功能开发
 
-1. **TDD 是正确性 gate。** 新行为从失败测试开始。性能数字再漂亮，也不能拿正确性做交换。
-2. **Ratchet 是进展 gate。** benchmark 被固定，预算提前约定，每次尝试都必须由脚本决定是接受还是恢复。这套机制受到 [autoresearch](https://github.com/karpathy/autoresearch) 接受 / 拒绝 loop 的启发。
+```mermaid
+flowchart TD
+    subgraph D["Define · 定义"]
+        F1["用户输入功能需求"] --> F2["确认对架构和已有流程的影响"]
+        F2 --> F3["与人共同制定验收 test"]
+        F3 --> F4{"用户确认 test？"}
+        F4 -- 修改 --> F3
+    end
+    subgraph A["Anchor · 锚定"]
+        F5["查询现有测试"] --> F6["修改或删除过时测试；新增缺失测试"]
+        F6 --> F7["确认测试能执行"]
+        F7 --> F8["运行测试并记录 baseline"]
+    end
+    subgraph R["Ratchet · 迭代"]
+        F9{"确认后的测试全部通过？"}
+        F10["在已确认的范围内开发"] --> F11["运行确认后的测试集合"]
+        F11 --> F9
+        F9 -- 否 --> F10
+    end
+    subgraph P["Prove · 证明"]
+        F12["验证最终结果并与 baseline 对比"] --> F13["交付功能、影响说明和接管证据"]
+    end
+    F4 -- 是 --> F5
+    F8 --> F9
+    F9 -- 是 --> F12
+```
 
-### 根据需求自动选择模式
+**先确认影响。** 明确功能对整体架构的影响，是否允许增加或减少模块，对已有流程有什么影响，以及是否允许修改这些流程。提出一个功能需求，不等于授权无限制地重新设计项目。
 
-| 需求 | 成功条件 | 模式 | 预算 |
-|---|---|---|---|
-| 增加 / 实现 / 修复 X | 相关测试从 RED 变成 GREEN | **开发** | 无 |
-| 让 X 更快 / 更小 / 更便宜 | 测试保持全绿，指标超过 baseline 和噪声 | **优化** | 必须有 |
-| 增加 X，同时不能超过某个上限 | 正确性和指标同时达标 | **优化** | 必须有 |
-| 让 X “更好”或“更干净” | 没有可执行标准 | **停止并询问** | — |
+**确认 test，而不只是确认一段描述。** 与人一起审阅输入、操作、预期结果、边界和相关回归行为，持续修订，直到用户确认 test 定义。不限制必须问几轮问题。
 
-你不需要手动选择模式。autodev 会根据需求本身判断，只询问真正缺失的信息。优化任务最多问两个问题——指标与目标不明确时问一次，预算问一次——然后只需要你确认一遍完整 contract。
+**先维护测试，再建立基线。** 确认后查询已有测试，修改或删除过时的预期，新增缺失用例。保留仍有效的覆盖，并记录每项测试变更的原因。整理完成后才记录 baseline，确保前后使用同一套测试。
+
+**能执行，不等于已经全部通过。** 测试运行器必须能够给出有意义的结果；尚未实现的功能可以在 baseline 中失败。损坏的运行环境不能充当基线证据。之后持续开发，直到确认后的测试全部通过，而不是修改验收标准来刷绿。
+
+### 性能优化
+
+```mermaid
+flowchart TD
+    subgraph D["Define · 定义"]
+        O1["用户输入优化目标"] --> O2["与人共同制定唯一的数值 benchmark test"]
+        O2 --> O3{"用户确认 test？"}
+        O3 -- 修改 --> O2
+    end
+    subgraph A["Anchor · 锚定"]
+        O4["让确认后的 benchmark 可执行"] --> O5["运行 benchmark 并记录 baseline"]
+        O5 --> O6["确认目标、可编辑文件和时间预算"]
+    end
+    subgraph R["Ratchet · 迭代"]
+        O7{"达到目标或时间耗尽？"}
+        O8["仅在允许的文件中优化"] --> O9["运行同一个 benchmark"]
+        O9 --> O10["记录结果并保留已验证的最佳方案"]
+        O10 --> O7
+        O7 -- 否 --> O8
+    end
+    subgraph P["Prove · 证明"]
+        O11["对比 baseline 与交付结果"] --> O12["交付证据、停止原因和接管材料"]
+    end
+    O3 -- 是 --> O4
+    O6 --> O7
+    O7 -- 是 --> O11
+```
+
+**可量化：** test 是一个输出数值结果的 benchmark。使用之前，先确认测量对象、工作负载、单位、改善方向和测量方法。
+
+**单一性：** 优化只能有一项 test。可以是一个 benchmark，也可以是多个 benchmark 的加权和，但最终必须得到一个分数。权重、归一化方式和聚合方法在 baseline 之前确认，迭代期间保持不变。各分项读数用于解释分数，不是独立的优化目标。
+
+**先 baseline，再确认限制：** 运行确认后的 test 之后，明确：
+
+- **优化目标：** 达到哪个分数阈值后可以提前退出。
+- **修改范围：** 哪些实现文件可以修改；不能通过修改 benchmark、输入或评分规则刷榜。
+- **时间预算：** 用实际经过的时间约束循环，包含测量，并预留最终验证时间。
+
+复用用户已经明确给出的决定。持续优化，直到达到目标或时间耗尽，并保留已验证的最佳方案。不擅自增加收敛停止条件，也不偷偷延长预算。如果 baseline 已经达标，直接报告，不做无意义的修改。
+
+超时是一个真实的停止原因，不代表目标已经达成。如果没有验证到提升，就如实交付这个结论和未变的最佳状态。
+
+## 人最终拿到什么
+
+| 交付物 | 功能开发 | 性能优化 |
+|---|---|---|
+| 已确认的定义 | 架构与流程变更权限、验收用例 | 唯一 benchmark 定义，以及根据 baseline 确认的目标、可编辑文件和时间预算 |
+| 前后对比 | 同一用例 ID、同一测试版本的 baseline 与最终结果 | 同一工作负载、同一评分公式的 baseline 与最终分数 |
+| 可运行的证据 | 命令、环境、原始结果和测试维护原因 | 命令、测量条件、原始样本和尝试记录 |
+| 直观总结 | 用例矩阵，以及相关模块和流程变化 | 分数对比、是否达标、实际耗时，以及按需提供的趋势图 |
+| 接管材料 | 修改后的入口、决策、限制和未完成事项 | 交付方案、被放弃的方法、限制和后续步骤 |
+
+表格能清楚表达时，就使用表格；架构或流程变化适合用图说明，实测趋势适合按需画图。所有展示的结果都应能追溯到真实记录，而不是演示数字。
+
+需求、允许的影响范围或 test 含义发生变化时，需要重新对齐并建立新 baseline。不能把这种变化藏进一次尝试，也不能与不同测试版本的结果混为一次提升。
 
 ## 快速开始
 
-### 安装
-
-```bash
-npx skills add Momoyeyu/autodev -g
-```
-
-只安装到 Claude Code、全局、免交互：
-
-```bash
-npx -y skills add Momoyeyu/autodev --skill autodev -a claude-code -g --copy -y
-```
-
-不安装，只试用一次：
-
-```bash
-npx skills use Momoyeyu/autodev@autodev --agent claude-code
-```
-
-### 像平常一样描述任务
-
-不需要学习特殊的 prompt 模板：
+使用上面的命令安装 skill，然后像平常一样描述任务：
 
 ```text
-实现筛选后交易列表的 CSV 导出。
+为筛选后的交易列表增加 CSV 导出。
 ```
 
 ```text
-把 CLI 启动时间至少缩短 5%，最多尝试 10 次或运行 15 分钟。
+把 API 的 p95 延迟降到 200 ms 以下。实现修改仅限 src/api/，优化时间预算为 20 分钟。
 ```
 
-开发任务会直接从失败测试开始；优化任务会先展示 contract，得到确认后才会使用你批准的预算。
+第一个需求先对齐架构与流程影响，再审阅 test。第二个需求先审阅 benchmark 并测量 baseline；已经给出的限制直接复用，不重复询问。
 
-## 运行评测样例
+## Skill 结构
 
-上面的场景都以可重复样例的形式保存在 [`evals/`](evals/README.md)：
+| 文件 | 何时加载 |
+|---|---|
+| [`autodev/SKILL.md`](autodev/SKILL.md) | 入口：目的、理念、场景选择和阶段路由 |
+| [`references/define.md`](autodev/references/define.md) | 进入 Define：范围对齐与人确认的 test 定义 |
+| [`references/anchor.md`](autodev/references/anchor.md) | 进入 Anchor：测试准备、baseline 和优化限制 |
+| [`references/ratchet.md`](autodev/references/ratchet.md) | 进入 Ratchet：两种场景各自的循环和进展记录 |
+| [`references/prove.md`](autodev/references/prove.md) | 进入 Prove：前后对比、直观证据和接管材料 |
+| [`references/test-design.md`](autodev/references/test-design.md) | 仅在验收用例或复合 benchmark 需要设计细节时 |
 
-```bash
-python3 evals/run.py list
-python3 evals/run.py run --case development-feature
-python3 evals/run.py run
-```
+渐进式披露以当前阶段为依据。不要一开始加载全部引用；进入某个阶段后，读取共用规则和当前场景的部分。最终会经过四个阶段，不意味着开始时就需要知道所有细节。
 
-每个 case 都会创建独立的 Git 仓库，并把当前版本的 skill 安装到 `.devin/skills/autodev`。Agent 的回复、完整 transcript、diff、命令输出和修改后的 workspace 都会保存在已忽略的 `.autodev-evals/` 目录，方便逐项 review。
-
-Review 完成后，一条受保护的命令即可删除全部运行产物：
-
-```bash
-python3 evals/run.py clean
-```
-
-不调用模型，也可以验证 fixture、runner、清理保护、语料结构和评分器：
-
-```bash
-python3 -m unittest discover -s tests -v
-```
-
-## Skill 里有什么
-
-| 文件 | 何时加载 | 作用 |
-|---|---|---|
-| [`autodev/SKILL.md`](autodev/SKILL.md) | 每次 autodev 运行 | 两种模式、四阶段、两个 gate、必要判定与保护规则、按需文档路由 |
-| [`references/gate.md`](autodev/references/gate.md) | 修改生产代码或测试之前 | 正确性 gate：RED → GREEN → REFACTOR、借口辨析和完成清单 |
-| [`references/contracts.md`](autodev/references/contracts.md) | Define 中定义优化任务，或需要设计 contract 时 | 六个 contract 字段、指标选择、frozen 变量和 benchmark 构建方法 |
-| [`references/progress-gate.md`](autodev/references/progress-gate.md) | 优化任务进入 Anchor 之前 | 进展 gate：测量、Ratchet 判定、局部恢复、日志、停止条件和 Prove 证据 |
-| [`references/testing-anti-patterns.md`](autodev/references/testing-anti-patterns.md) | 仅在新增或修改 mock、helper、测试专用 API 时 | 确保测试验证真实行为，而不是验证替身本身 |
-| [`references/testing-examples.md`](autodev/references/testing-examples.md) | 仅在需要具体 TDD 示例时 | 重试与 bug 修复的示范流程，只读相关章节 |
-
-先加载入口，不要预加载整个目录。普通开发任务补充读取正确性 gate；优化任务再读取 contract 和进展 gate。Mock 指南与示例始终按需读取。入口直接链接每个子文档，无须沿多层引用链寻找规则。
-
-Skill 本身不绑定语言和测试框架。它不要求项目使用 Jest、pytest 或额外 runtime，而是复用目标仓库已经信任的命令。
+本仓库分发 skill，不附带测试运行器或评测套件。可执行测试属于使用 skill 的目标项目，由 Agent 与那个项目的负责人共同定义。
 
 ## 参与贡献
 
-行为变更应该同时在 `evals/cases.json` 中增加回归 case。请保持核心 Skill 紧凑，把按条件加载的细节放入 `references/`，并同步维护中英文 README。完整约定见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+保持 skill、阶段文档和双语 README 的流程一致。审阅与验证方式见 [CONTRIBUTING.md](CONTRIBUTING.md)，仓库约定见 [AGENTS.md](AGENTS.md)。
 
 ## 许可
 
