@@ -224,6 +224,18 @@ autodev covers test-first implementation, bug fixes, refactors, and measurable o
 
 Framework-specific templates are out of scope on purpose. The moment the skill knows about Jest, it stops applying to Rust.
 
+## Evaluating the skill
+
+The versioned evaluation corpus in [`evals/cases.json`](evals/cases.json) covers development, bug fixes, optimization contracts, noisy metrics, scope failures, and anti-gaming behavior. Run each case in a clean agent session, record its observable assertions, then score the report deterministically:
+
+```bash
+python3 evals/run.py run --case development-feature
+python3 evals/run.py clean
+python3 -m unittest discover -s tests -v
+```
+
+Runs copy the current skill and fixtures into the ignored `.autodev-evals/` directory, preserving transcripts and diffs for review. See [`evals/README.md`](evals/README.md) for scoring and the repeatable workflow.
+
 - [Skill core](autodev/SKILL.md) · [Correctness gate](autodev/references/gate.md) · [Contracts](autodev/references/contracts.md) · [Anti-patterns](autodev/references/testing-anti-patterns.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
 
 ## License

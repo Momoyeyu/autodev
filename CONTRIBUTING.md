@@ -53,6 +53,16 @@ node bin/archify.mjs deliver architecture <repo>/docs/diagrams/autodev.workflow.
 
 The JSON sources live in `docs/diagrams/`. `meta.quality_profile` must stay `showcase`, and a change is only done when `validate` reports all nine artifact checks passing with zero warnings.
 
+## Evaluating behavior
+
+Behavior changes need a regression case in `evals/cases.json`. Keep existing prompts stable unless their intended behavior changes, and validate the corpus and scorer with:
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+For model runs, use `python3 evals/run.py run`, review the ignored artifacts, and attach the scored report with the agent, model, and skill revision. Remove reviewed artifacts with `python3 evals/run.py clean`.
+
 ## Before you open a PR
 
 - [ ] `SKILL.md` still near 2.5k tokens, with new detail pushed into `references/`

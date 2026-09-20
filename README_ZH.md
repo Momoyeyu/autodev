@@ -224,6 +224,18 @@ autodev 覆盖测试先行的实现、bug 修复、重构，以及优化任何�
 
 框架专用模板是有意排除的。一旦这个 skill 认识了 Jest，它就不再适用于 Rust。
 
+## 测试 skill
+
+版本化的评测语料位于 [`evals/cases.json`](evals/cases.json)，覆盖开发、bug 修复、优化 contract、噪声指标、范围不明确和反作弊行为。每个 case 都在干净的 Agent session 中运行，记录可观察断言，再用固定脚本评分：
+
+```bash
+python3 evals/run.py run --case development-feature
+python3 evals/run.py clean
+python3 -m unittest discover -s tests -v
+```
+
+每次运行都会把当前 skill 和 fixture 复制到已忽略的 `.autodev-evals/`，保留 transcript 和 diff 供 review。评分方式和可重复执行流程见 [`evals/README.md`](evals/README.md)。
+
 - [Skill 核心](autodev/SKILL.md) · [正确性 gate](autodev/references/gate.md) · [contract](autodev/references/contracts.md) · [反模式](autodev/references/testing-anti-patterns.md) · [更新日志](CHANGELOG.md) · [贡献指南](CONTRIBUTING.md)
 
 ## 许可
