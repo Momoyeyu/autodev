@@ -1,392 +1,103 @@
 {
-  "schema_version": 1,
-  "diagram_type": "architecture",
+  "schema_version": 2,
+  "diagram_type": "workflow",
   "meta": {
-    "title": "Define · Anchor · Ratchet · Prove",
-    "visual_preset": "signal-flow",
-    "quality_profile": "showcase"
+    "title": "autodev · Clarify → Loop → Handoff",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "legend": { "mode": "hidden" }
   },
-  "components": [
+  "lanes": [
+    { "id": "development", "label": "功能开发" },
+    { "id": "optimization", "label": "性能优化" }
+  ],
+  "phases": [
+    { "id": "clarify", "label": "Clarify · 对齐", "fromCol": 1, "toCol": 3, "variant": "security" },
+    { "id": "loop", "label": "Loop · 迭代", "fromCol": 4, "toCol": 4, "variant": "emphasis" },
+    { "id": "handoff", "label": "Handoff · 交付", "fromCol": 5, "toCol": 5 }
+  ],
+  "nodes": [
     {
-      "id": "contract",
-      "type": "security",
-      "label": "产出 contract",
-      "sublabel": "目标、gate、预算",
-      "pos": [
-        80,
-        130
-      ],
-      "size": [
-        212,
-        64
-      ]
+      "id": "dev-input", "lane": "development", "col": 0,
+      "type": "external", "label": "功能需求", "sublabel": "用户输入", "width": 112
     },
     {
-      "id": "scope",
-      "type": "security",
-      "label": "划定边界",
-      "sublabel": "frozen、surface、reset",
-      "pos": [
-        80,
-        232
-      ],
-      "size": [
-        212,
-        64
-      ]
+      "id": "dev-impact", "lane": "development", "col": 1,
+      "type": "security", "label": "确认影响范围", "sublabel": "架构 · 模块 · 已有流程", "width": 156
     },
     {
-      "id": "confirm",
-      "type": "external",
-      "label": "确认",
-      "tag": "human gate",
-      "pos": [
-        80,
-        334
-      ],
-      "size": [
-        212,
-        64
-      ],
-      "sublabel": "唯一的 gate"
+      "id": "dev-tests", "lane": "development", "col": 2,
+      "type": "security", "label": "共建可执行 test", "sublabel": "查询 · 删改 · 补充 · 跑通",
+      "tag": "直到用户确认", "width": 176
     },
     {
-      "id": "spec",
-      "type": "backend",
-      "label": "建立 gate",
-      "sublabel": "失败测试或 benchmark",
-      "pos": [
-        380,
-        182
-      ],
-      "size": [
-        212,
-        64
-      ]
+      "id": "dev-baseline", "lane": "development", "col": 3,
+      "type": "database", "label": "测量 baseline", "sublabel": "记录确认后的测试结果", "width": 156
     },
     {
-      "id": "measure",
-      "type": "database",
-      "label": "锚定起点",
-      "sublabel": "验证 RED 或测量噪声",
-      "pos": [
-        380,
-        284
-      ],
-      "size": [
-        212,
-        64
-      ]
+      "id": "dev-loop", "lane": "development", "col": 4,
+      "type": "backend", "label": "开发 ↔ 测试", "sublabel": "直到全部 test 通过", "width": 156
     },
     {
-      "id": "edit",
-      "type": "backend",
-      "label": "改允许的文件",
-      "pos": [
-        700,
-        130
-      ],
-      "size": [
-        230,
-        64
-      ]
+      "id": "dev-table", "lane": "development", "col": 5,
+      "type": "frontend", "label": "一张对比表", "sublabel": "baseline 与最终结果", "width": 180
     },
     {
-      "id": "run",
-      "type": "messagebus",
-      "label": "运行 gate",
-      "pos": [
-        700,
-        232
-      ],
-      "size": [
-        230,
-        64
-      ]
+      "id": "opt-input", "lane": "optimization", "col": 0,
+      "type": "external", "label": "优化目标", "sublabel": "用户输入", "width": 112
     },
     {
-      "id": "verdict",
-      "type": "security",
-      "label": "脚本判定",
-      "sublabel": "不接受辩论",
-      "pos": [
-        700,
-        334
-      ],
-      "size": [
-        230,
-        64
-      ]
+      "id": "opt-test", "lane": "optimization", "col": 1,
+      "type": "security", "label": "共建可执行 test", "sublabel": "单一 benchmark 或加权和",
+      "tag": "直到用户确认", "width": 176
     },
     {
-      "id": "accept",
-      "type": "backend",
-      "label": "接受",
-      "sublabel": "推进 + 记日志",
-      "pos": [
-        830,
-        440
-      ],
-      "size": [
-        90,
-        64
-      ]
+      "id": "opt-baseline", "lane": "optimization", "col": 2,
+      "type": "database", "label": "测量 baseline", "sublabel": "记录原始数值结果", "width": 156
     },
     {
-      "id": "reject",
-      "type": "messagebus",
-      "label": "恢复",
-      "sublabel": "还原 + 记日志",
-      "pos": [
-        720,
-        440
-      ],
-      "size": [
-        90,
-        64
-      ]
+      "id": "opt-limits", "lane": "optimization", "col": 3,
+      "type": "security", "label": "确认优化限制", "sublabel": "目标 · 可编辑文件 · 时间", "width": 176
     },
     {
-      "id": "retest",
-      "type": "database",
-      "label": "从干净状态验证",
-      "sublabel": "tests + benchmark",
-      "pos": [
-        1030,
-        182
-      ],
-      "size": [
-        230,
-        64
-      ]
+      "id": "opt-loop", "lane": "optimization", "col": 4,
+      "type": "backend", "label": "优化 ↔ 测量", "sublabel": "直到达标或时间耗尽", "width": 156
     },
     {
-      "id": "report",
-      "type": "backend",
-      "label": "交付证据",
-      "sublabel": "结果、成本、失败记录",
-      "pos": [
-        1030,
-        284
-      ],
-      "size": [
-        230,
-        64
-      ]
+      "id": "opt-chart", "lane": "optimization", "col": 5,
+      "type": "frontend", "label": "一张过程图", "sublabel": "baseline → 尝试 → 最终结果", "width": 180
     }
   ],
-  "boundaries": [
-    {
-      "kind": "region",
-      "label": "Define · 定义",
-      "wraps": [
-        "contract",
-        "scope",
-        "confirm"
-      ],
-      "pad": 30
-    },
-    {
-      "kind": "region",
-      "label": "Anchor · 锚定",
-      "wraps": [
-        "spec",
-        "measure"
-      ],
-      "pad": 30
-    },
-    {
-      "kind": "security-group",
-      "label": "Ratchet · 棘轮",
-      "wraps": [
-        "edit",
-        "run",
-        "verdict",
-        "accept",
-        "reject"
-      ],
-      "pad": 30
-    },
-    {
-      "kind": "region",
-      "label": "Prove · 证明",
-      "wraps": [
-        "retest",
-        "report"
-      ],
-      "pad": 30
-    }
+  "edges": [
+    { "id": "dev-request-impact", "from": "dev-input", "to": "dev-impact" },
+    { "id": "dev-impact-tests", "from": "dev-impact", "to": "dev-tests" },
+    { "id": "dev-approved-baseline", "from": "dev-tests", "to": "dev-baseline", "label": "已确认", "variant": "security" },
+    { "id": "dev-baseline-loop", "from": "dev-baseline", "to": "dev-loop", "variant": "emphasis" },
+    { "id": "dev-results-table", "from": "dev-loop", "to": "dev-table", "label": "通过", "variant": "emphasis" },
+    { "id": "opt-request-test", "from": "opt-input", "to": "opt-test" },
+    { "id": "opt-approved-baseline", "from": "opt-test", "to": "opt-baseline", "label": "已确认", "variant": "security" },
+    { "id": "opt-baseline-limits", "from": "opt-baseline", "to": "opt-limits" },
+    { "id": "opt-limits-loop", "from": "opt-limits", "to": "opt-loop", "variant": "emphasis" },
+    { "id": "opt-results-chart", "from": "opt-loop", "to": "opt-chart", "label": "停止", "variant": "emphasis" }
   ],
-  "connections": [
-    {
-      "id": "c1",
-      "from": "contract",
-      "to": "scope",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "c2",
-      "from": "scope",
-      "to": "confirm",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "c3",
-      "from": "confirm",
-      "to": "spec",
-      "label": "agreed",
-      "fromSide": "right",
-      "toSide": "left",
-      "via": [
-        [
-          345,
-          366
-        ],
-        [
-          345,
-          214
-        ]
-      ]
-    },
-    {
-      "id": "c4",
-      "from": "spec",
-      "to": "measure",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "c5",
-      "from": "measure",
-      "to": "edit",
-      "fromSide": "right",
-      "toSide": "left",
-      "via": [
-        [
-          640,
-          316
-        ],
-        [
-          640,
-          162
-        ]
-      ]
-    },
-    {
-      "id": "c6",
-      "from": "edit",
-      "to": "run",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "c7",
-      "from": "run",
-      "to": "verdict",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "c8",
-      "from": "verdict",
-      "to": "accept",
-      "label": "更好",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "via": [
-        [
-          815,
-          415
-        ],
-        [
-          875,
-          415
-        ]
-      ],
-      "labelAt": [
-        960,
-        470
-      ]
-    },
-    {
-      "id": "c9",
-      "from": "verdict",
-      "to": "reject",
-      "label": "没变好",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "via": [
-        [
-          815,
-          425
-        ],
-        [
-          765,
-          425
-        ]
-      ],
-      "variant": "security",
-      "labelAt": [
-        690,
-        470
-      ]
-    },
-    {
-      "id": "c10",
-      "from": "verdict",
-      "to": "edit",
-      "label": "下一轮",
-      "fromSide": "left",
-      "toSide": "top",
-      "via": [
-        [
-          635,
-          366
-        ],
-        [
-          635,
-          96
-        ],
-        [
-          815,
-          96
-        ]
-      ],
-      "labelAt": [
-        600,
-        262
-      ]
-    },
-    {
-      "id": "c11",
-      "from": "verdict",
-      "to": "retest",
-      "label": "满足停止条件",
-      "fromSide": "right",
-      "toSide": "left",
-      "via": [
-        [
-          990,
-          366
-        ],
-        [
-          990,
-          214
-        ]
-      ],
-      "labelAt": [
-        920,
-        312
-      ]
-    },
-    {
-      "id": "c12",
-      "from": "retest",
-      "to": "report",
-      "fromSide": "bottom",
-      "toSide": "top"
-    }
-  ]
+  "semanticChecks": {
+    "allowedRoots": ["dev-input", "opt-input"],
+    "allowedTerminals": ["dev-table", "opt-chart"],
+    "requiredEdges": [
+      { "from": "dev-input", "to": "dev-impact" },
+      { "from": "dev-impact", "to": "dev-tests" },
+      { "from": "dev-tests", "to": "dev-baseline" },
+      { "from": "dev-baseline", "to": "dev-loop" },
+      { "from": "dev-loop", "to": "dev-table" },
+      { "from": "opt-input", "to": "opt-test" },
+      { "from": "opt-test", "to": "opt-baseline" },
+      { "from": "opt-baseline", "to": "opt-limits" },
+      { "from": "opt-limits", "to": "opt-loop" },
+      { "from": "opt-loop", "to": "opt-chart" }
+    ],
+    "requiredPaths": [
+      { "from": "dev-input", "to": "dev-table" },
+      { "from": "opt-input", "to": "opt-chart" }
+    ]
+  }
 }

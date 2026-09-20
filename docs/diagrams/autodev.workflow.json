@@ -1,391 +1,103 @@
 {
-  "schema_version": 1,
-  "diagram_type": "architecture",
+  "schema_version": 2,
+  "diagram_type": "workflow",
   "meta": {
-    "title": "Define · Anchor · Ratchet · Prove",
-    "visual_preset": "signal-flow",
-    "quality_profile": "showcase"
+    "title": "autodev · Clarify → Loop → Handoff",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "legend": { "mode": "hidden" }
   },
-  "components": [
+  "lanes": [
+    { "id": "development", "label": "Feature development" },
+    { "id": "optimization", "label": "Performance optimization" }
+  ],
+  "phases": [
+    { "id": "clarify", "label": "Clarify", "fromCol": 1, "toCol": 3, "variant": "security" },
+    { "id": "loop", "label": "Loop", "fromCol": 4, "toCol": 4, "variant": "emphasis" },
+    { "id": "handoff", "label": "Handoff", "fromCol": 5, "toCol": 5 }
+  ],
+  "nodes": [
     {
-      "id": "contract",
-      "type": "security",
-      "label": "Write the contract",
-      "sublabel": "goal, gate, budget",
-      "pos": [
-        80,
-        130
-      ],
-      "size": [
-        212,
-        64
-      ]
+      "id": "dev-input", "lane": "development", "col": 0,
+      "type": "external", "label": "Feature", "sublabel": "User requirement", "width": 112
     },
     {
-      "id": "scope",
-      "type": "security",
-      "label": "Set the boundaries",
-      "sublabel": "frozen, surface, reset",
-      "pos": [
-        80,
-        232
-      ],
-      "size": [
-        212,
-        64
-      ]
+      "id": "dev-impact", "lane": "development", "col": 1,
+      "type": "security", "label": "Confirm impact", "sublabel": "Modules / workflows", "width": 156
     },
     {
-      "id": "confirm",
-      "type": "external",
-      "label": "Confirm",
-      "tag": "human gate",
-      "pos": [
-        80,
-        334
-      ],
-      "size": [
-        212,
-        64
-      ]
+      "id": "dev-tests", "lane": "development", "col": 2,
+      "type": "security", "label": "Prepare tests", "sublabel": "Inspect / revise / add / run",
+      "tag": "Until user approval", "width": 176
     },
     {
-      "id": "spec",
-      "type": "backend",
-      "label": "Build the gate",
-      "sublabel": "failing test or benchmark",
-      "pos": [
-        380,
-        182
-      ],
-      "size": [
-        212,
-        64
-      ]
+      "id": "dev-baseline", "lane": "development", "col": 3,
+      "type": "database", "label": "Record baseline", "sublabel": "Run approved tests", "width": 156
     },
     {
-      "id": "measure",
-      "type": "database",
-      "label": "Anchor starting state",
-      "sublabel": "verify RED or measure noise",
-      "pos": [
-        380,
-        284
-      ],
-      "size": [
-        212,
-        64
-      ]
+      "id": "dev-loop", "lane": "development", "col": 4,
+      "type": "backend", "label": "Develop ↔ test", "sublabel": "Until all tests pass", "width": 156
     },
     {
-      "id": "edit",
-      "type": "backend",
-      "label": "Edit allowed files",
-      "pos": [
-        700,
-        130
-      ],
-      "size": [
-        230,
-        64
-      ]
+      "id": "dev-table", "lane": "development", "col": 5,
+      "type": "frontend", "label": "One comparison table", "sublabel": "Baseline vs final results", "width": 180
     },
     {
-      "id": "run",
-      "type": "messagebus",
-      "label": "Run the gate",
-      "pos": [
-        700,
-        232
-      ],
-      "size": [
-        230,
-        64
-      ]
+      "id": "opt-input", "lane": "optimization", "col": 0,
+      "type": "external", "label": "Optimize", "sublabel": "User goal", "width": 112
     },
     {
-      "id": "verdict",
-      "type": "security",
-      "label": "Verdict",
-      "sublabel": "the script decides",
-      "pos": [
-        700,
-        334
-      ],
-      "size": [
-        230,
-        64
-      ]
+      "id": "opt-test", "lane": "optimization", "col": 1,
+      "type": "security", "label": "Agree on one test", "sublabel": "Benchmark / weighted sum",
+      "tag": "Until user approval", "width": 176
     },
     {
-      "id": "accept",
-      "type": "backend",
-      "label": "Accept",
-      "sublabel": "advance + log",
-      "pos": [
-        830,
-        440
-      ],
-      "size": [
-        90,
-        64
-      ]
+      "id": "opt-baseline", "lane": "optimization", "col": 2,
+      "type": "database", "label": "Record baseline", "sublabel": "Original numeric score", "width": 156
     },
     {
-      "id": "reject",
-      "type": "messagebus",
-      "label": "Restore",
-      "sublabel": "revert + log",
-      "pos": [
-        720,
-        440
-      ],
-      "size": [
-        90,
-        64
-      ]
+      "id": "opt-limits", "lane": "optimization", "col": 3,
+      "type": "security", "label": "Confirm limits", "sublabel": "Target / files / time", "width": 176
     },
     {
-      "id": "retest",
-      "type": "database",
-      "label": "Verify from clean state",
-      "sublabel": "tests + benchmark",
-      "pos": [
-        1030,
-        182
-      ],
-      "size": [
-        230,
-        64
-      ]
+      "id": "opt-loop", "lane": "optimization", "col": 4,
+      "type": "backend", "label": "Optimize ↔ measure", "sublabel": "Until target or timeout", "width": 156
     },
     {
-      "id": "report",
-      "type": "backend",
-      "label": "Deliver the evidence",
-      "sublabel": "results, cost, rejections",
-      "pos": [
-        1030,
-        284
-      ],
-      "size": [
-        230,
-        64
-      ]
+      "id": "opt-chart", "lane": "optimization", "col": 5,
+      "type": "frontend", "label": "One progress chart", "sublabel": "Baseline → attempts → final", "width": 180
     }
   ],
-  "boundaries": [
-    {
-      "kind": "region",
-      "label": "Define",
-      "wraps": [
-        "contract",
-        "scope",
-        "confirm"
-      ],
-      "pad": 30
-    },
-    {
-      "kind": "region",
-      "label": "Anchor",
-      "wraps": [
-        "spec",
-        "measure"
-      ],
-      "pad": 30
-    },
-    {
-      "kind": "security-group",
-      "label": "Ratchet",
-      "wraps": [
-        "edit",
-        "run",
-        "verdict",
-        "accept",
-        "reject"
-      ],
-      "pad": 30
-    },
-    {
-      "kind": "region",
-      "label": "Prove",
-      "wraps": [
-        "retest",
-        "report"
-      ],
-      "pad": 30
-    }
+  "edges": [
+    { "id": "dev-request-impact", "from": "dev-input", "to": "dev-impact" },
+    { "id": "dev-impact-tests", "from": "dev-impact", "to": "dev-tests" },
+    { "id": "dev-approved-baseline", "from": "dev-tests", "to": "dev-baseline", "label": "agreed", "variant": "security" },
+    { "id": "dev-baseline-loop", "from": "dev-baseline", "to": "dev-loop", "variant": "emphasis" },
+    { "id": "dev-results-table", "from": "dev-loop", "to": "dev-table", "label": "pass", "variant": "emphasis" },
+    { "id": "opt-request-test", "from": "opt-input", "to": "opt-test" },
+    { "id": "opt-approved-baseline", "from": "opt-test", "to": "opt-baseline", "label": "agreed", "variant": "security" },
+    { "id": "opt-baseline-limits", "from": "opt-baseline", "to": "opt-limits" },
+    { "id": "opt-limits-loop", "from": "opt-limits", "to": "opt-loop", "variant": "emphasis" },
+    { "id": "opt-results-chart", "from": "opt-loop", "to": "opt-chart", "label": "stop", "variant": "emphasis" }
   ],
-  "connections": [
-    {
-      "id": "c1",
-      "from": "contract",
-      "to": "scope",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "c2",
-      "from": "scope",
-      "to": "confirm",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "c3",
-      "from": "confirm",
-      "to": "spec",
-      "label": "agreed",
-      "fromSide": "right",
-      "toSide": "left",
-      "via": [
-        [
-          345,
-          366
-        ],
-        [
-          345,
-          214
-        ]
-      ]
-    },
-    {
-      "id": "c4",
-      "from": "spec",
-      "to": "measure",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "c5",
-      "from": "measure",
-      "to": "edit",
-      "fromSide": "right",
-      "toSide": "left",
-      "via": [
-        [
-          640,
-          316
-        ],
-        [
-          640,
-          162
-        ]
-      ]
-    },
-    {
-      "id": "c6",
-      "from": "edit",
-      "to": "run",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "c7",
-      "from": "run",
-      "to": "verdict",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "c8",
-      "from": "verdict",
-      "to": "accept",
-      "label": "better",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "via": [
-        [
-          815,
-          415
-        ],
-        [
-          875,
-          415
-        ]
-      ],
-      "labelAt": [
-        960,
-        470
-      ]
-    },
-    {
-      "id": "c9",
-      "from": "verdict",
-      "to": "reject",
-      "label": "no gain",
-      "fromSide": "bottom",
-      "toSide": "top",
-      "via": [
-        [
-          815,
-          425
-        ],
-        [
-          765,
-          425
-        ]
-      ],
-      "variant": "security",
-      "labelAt": [
-        690,
-        470
-      ]
-    },
-    {
-      "id": "c10",
-      "from": "verdict",
-      "to": "edit",
-      "label": "next attempt",
-      "fromSide": "left",
-      "toSide": "top",
-      "via": [
-        [
-          635,
-          366
-        ],
-        [
-          635,
-          96
-        ],
-        [
-          815,
-          96
-        ]
-      ],
-      "labelAt": [
-        600,
-        262
-      ]
-    },
-    {
-      "id": "c11",
-      "from": "verdict",
-      "to": "retest",
-      "label": "stop condition met",
-      "fromSide": "right",
-      "toSide": "left",
-      "via": [
-        [
-          990,
-          366
-        ],
-        [
-          990,
-          214
-        ]
-      ],
-      "labelAt": [
-        920,
-        312
-      ]
-    },
-    {
-      "id": "c12",
-      "from": "retest",
-      "to": "report",
-      "fromSide": "bottom",
-      "toSide": "top"
-    }
-  ]
+  "semanticChecks": {
+    "allowedRoots": ["dev-input", "opt-input"],
+    "allowedTerminals": ["dev-table", "opt-chart"],
+    "requiredEdges": [
+      { "from": "dev-input", "to": "dev-impact" },
+      { "from": "dev-impact", "to": "dev-tests" },
+      { "from": "dev-tests", "to": "dev-baseline" },
+      { "from": "dev-baseline", "to": "dev-loop" },
+      { "from": "dev-loop", "to": "dev-table" },
+      { "from": "opt-input", "to": "opt-test" },
+      { "from": "opt-test", "to": "opt-baseline" },
+      { "from": "opt-baseline", "to": "opt-limits" },
+      { "from": "opt-limits", "to": "opt-loop" },
+      { "from": "opt-loop", "to": "opt-chart" }
+    ],
+    "requiredPaths": [
+      { "from": "dev-input", "to": "dev-table" },
+      { "from": "opt-input", "to": "opt-chart" }
+    ]
+  }
 }
