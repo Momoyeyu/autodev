@@ -6,34 +6,34 @@
     "locale": "zh-CN",
     "visual_preset": "editorial",
     "quality_profile": "showcase",
-    "viewBox": [820, 386],
+    "viewBox": [820, 436],
     "legend": { "mode": "hidden" }
   },
-  "layout": { "mode": "grid", "origin": [40, 60], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
+  "layout": { "mode": "grid", "origin": [40, 110], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
   "components": [
     { "id": "benchmark", "row": 0, "col": 0, "size": [140, 68], "type": "security", "label": "共建并试运行测试", "sublabel": "单项 benchmark / 固定加权和" },
-    { "id": "review", "row": 0, "col": 1, "size": [140, 68], "type": "security", "label": "用户确认？", "sublabel": "唯一的数值分数" },
-    { "id": "baseline", "row": 0, "col": 2, "size": [140, 68], "type": "security", "label": "记录 baseline", "sublabel": "原始实测分数" },
-    { "id": "limits", "row": 0, "col": 3, "size": [140, 68], "type": "security", "label": "确认限制", "sublabel": "目标 / 文件 / 时间" },
+    { "id": "baseline", "row": 0, "col": 1, "size": [140, 68], "type": "security", "label": "记录 baseline", "sublabel": "原始实测分数" },
+    { "id": "limits", "row": 0, "col": 2, "size": [140, 68], "type": "security", "label": "提出限制", "sublabel": "目标 / 文件 / 时间" },
+    { "id": "review", "row": 0, "col": 3, "size": [140, 68], "type": "security", "label": "用户确认？", "sublabel": "测试 · baseline · 限制" },
     { "id": "optimize", "row": 1, "col": 3, "size": [140, 68], "type": "backend", "label": "优化实现", "sublabel": "仅修改允许的文件" },
     { "id": "measure", "row": 1, "col": 2, "size": [140, 68], "type": "backend", "label": "测量并保留最佳", "sublabel": "同一测试 / 已验证的结果" },
     { "id": "stop-check", "row": 1, "col": 1, "size": [140, 68], "type": "backend", "label": "已达标或超时？", "sublabel": "每次尝试后检查" },
     { "id": "chart", "row": 1, "col": 0, "size": [140, 68], "type": "frontend", "label": "一张过程图", "sublabel": "baseline → 尝试 → 最终结果" }
   ],
   "boundaries": [
-    { "kind": "region", "label": "01  CLARIFY · 对齐", "wraps": ["benchmark", "review", "baseline", "limits"], "pad": 20 },
+    { "kind": "region", "label": "01  CLARIFY · 对齐", "wraps": ["benchmark", "baseline", "limits", "review"], "pad": 20 },
     { "kind": "region", "label": "02  LOOP · 迭代", "wraps": ["stop-check", "optimize", "measure"], "pad": 20 },
     { "kind": "region", "label": "03  HANDOFF · 交付", "wraps": ["chart"], "pad": 20 }
   ],
   "connections": [
-    { "id": "bench-review", "from": "benchmark", "to": "review" },
-    { "id": "revise", "from": "review", "to": "benchmark", "label": "否 · 修订", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
-    { "id": "approved", "from": "review", "to": "baseline", "label": "是" },
+    { "id": "bench-base", "from": "benchmark", "to": "baseline" },
     { "id": "base-limits", "from": "baseline", "to": "limits" },
-    { "id": "start-loop", "from": "limits", "to": "optimize" },
+    { "id": "limits-review", "from": "limits", "to": "review" },
+    { "id": "revise", "from": "review", "to": "benchmark", "label": "否 · 重新 clarify", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[710, 70], [110, 70]] },
+    { "id": "start-loop", "from": "review", "to": "optimize", "label": "是", "labelAt": [710, 192] },
     { "id": "opt-measure", "from": "optimize", "to": "measure" },
     { "id": "measure-check", "from": "measure", "to": "stop-check" },
-    { "id": "retry", "from": "stop-check", "to": "optimize", "label": "否 · 下一次尝试", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[310, 190], [710, 190]] },
+    { "id": "retry", "from": "stop-check", "to": "optimize", "label": "否 · 下一次尝试", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[310, 233], [710, 233]] },
     { "id": "stop", "from": "stop-check", "to": "chart", "label": "是 · 交付已验证的最佳结果", "variant": "emphasis", "fromSide": "bottom", "toSide": "bottom" }
   ]
 }

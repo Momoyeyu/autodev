@@ -6,34 +6,34 @@
     "locale": "en",
     "visual_preset": "editorial",
     "quality_profile": "showcase",
-    "viewBox": [820, 386],
+    "viewBox": [820, 436],
     "legend": { "mode": "hidden" }
   },
-  "layout": { "mode": "grid", "origin": [40, 60], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
+  "layout": { "mode": "grid", "origin": [40, 110], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
   "components": [
     { "id": "benchmark", "row": 0, "col": 0, "size": [140, 68], "type": "security", "label": "Prepare & run test", "sublabel": "Benchmark / weighted sum" },
-    { "id": "review", "row": 0, "col": 1, "size": [140, 68], "type": "security", "label": "Human approval?", "sublabel": "One numeric score" },
-    { "id": "baseline", "row": 0, "col": 2, "size": [140, 68], "type": "security", "label": "Capture baseline", "sublabel": "Original measured score" },
-    { "id": "limits", "row": 0, "col": 3, "size": [140, 68], "type": "security", "label": "Confirm limits", "sublabel": "Target / files / time" },
+    { "id": "baseline", "row": 0, "col": 1, "size": [140, 68], "type": "security", "label": "Capture baseline", "sublabel": "Original measured score" },
+    { "id": "limits", "row": 0, "col": 2, "size": [140, 68], "type": "security", "label": "Propose limits", "sublabel": "Target / files / time" },
+    { "id": "review", "row": 0, "col": 3, "size": [140, 68], "type": "security", "label": "Human approval?", "sublabel": "Test · baseline · limits" },
     { "id": "optimize", "row": 1, "col": 3, "size": [140, 68], "type": "backend", "label": "Optimize", "sublabel": "Allowed files only" },
     { "id": "measure", "row": 1, "col": 2, "size": [140, 68], "type": "backend", "label": "Measure & retain", "sublabel": "Same test / keep best" },
     { "id": "stop-check", "row": 1, "col": 1, "size": [140, 68], "type": "backend", "label": "Target or timeout?", "sublabel": "Check after each attempt" },
     { "id": "chart", "row": 1, "col": 0, "size": [140, 68], "type": "frontend", "label": "Progress chart", "sublabel": "Baseline → attempts → final" }
   ],
   "boundaries": [
-    { "kind": "region", "label": "01  CLARIFY", "wraps": ["benchmark", "review", "baseline", "limits"], "pad": 20 },
+    { "kind": "region", "label": "01  CLARIFY", "wraps": ["benchmark", "baseline", "limits", "review"], "pad": 20 },
     { "kind": "region", "label": "02  LOOP", "wraps": ["stop-check", "optimize", "measure"], "pad": 20 },
     { "kind": "region", "label": "03  HANDOFF", "wraps": ["chart"], "pad": 20 }
   ],
   "connections": [
-    { "id": "bench-review", "from": "benchmark", "to": "review" },
-    { "id": "revise", "from": "review", "to": "benchmark", "label": "No · revise", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
-    { "id": "approved", "from": "review", "to": "baseline", "label": "Yes" },
+    { "id": "bench-base", "from": "benchmark", "to": "baseline" },
     { "id": "base-limits", "from": "baseline", "to": "limits" },
-    { "id": "start-loop", "from": "limits", "to": "optimize" },
+    { "id": "limits-review", "from": "limits", "to": "review" },
+    { "id": "revise", "from": "review", "to": "benchmark", "label": "No · revise", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[710, 70], [110, 70]] },
+    { "id": "start-loop", "from": "review", "to": "optimize", "label": "Yes", "labelAt": [710, 192] },
     { "id": "opt-measure", "from": "optimize", "to": "measure" },
     { "id": "measure-check", "from": "measure", "to": "stop-check" },
-    { "id": "retry", "from": "stop-check", "to": "optimize", "label": "No · next attempt", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[310, 190], [710, 190]] },
+    { "id": "retry", "from": "stop-check", "to": "optimize", "label": "No · next attempt", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[310, 233], [710, 233]] },
     { "id": "stop", "from": "stop-check", "to": "chart", "label": "Yes · deliver best verified state", "variant": "emphasis", "fromSide": "bottom", "toSide": "bottom" }
   ]
 }
