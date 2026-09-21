@@ -43,7 +43,7 @@ The human reviews the runnable tests, the baseline result, and the proposed scop
 
 ## Loop
 
-Change the implementation within the agreed boundaries and run the same test. Feature work ends only when all agreed tests pass. Optimization uses do-while order: optimize, measure and retain the best valid state, then check the target or time limit. Record every attempt for the final chart; do not bypass the first attempt merely because baseline meets the target.
+Work in a dedicated git worktree and branch created at Loop entry; every attempt is a commit, and a rejected optimization attempt is rolled back with `git reset --hard` to the best commit. Change the implementation within the agreed boundaries and run the same test. Feature work ends only when all agreed tests pass. Optimization uses do-while order: optimize, measure and retain the best valid state, then check the target or time limit. Record every attempt for the final chart; do not bypass the first attempt merely because baseline meets the target.
 
 Do not weaken tests, shrink workloads, alter benchmark weights, or change the measuring conditions to manufacture progress. Changes to intent, test meaning, or permitted scope return to Clarify and require a comparable new baseline.
 
@@ -51,4 +51,4 @@ Do not weaken tests, shrink workloads, alter benchmark weights, or change the me
 
 The primary deliverable is mandatory: **a comparison table for a feature; a progress chart for an optimization**. A final number, prose summary, or table alone does not replace the optimization chart.
 
-Use actual recorded results, the original baseline, and the delivered source state. Include concise reproduction details and relevant changes so the human can verify and take over. Report missed targets, blocked checks, and missing evidence honestly; do not label an incomplete handoff complete.
+Use actual recorded results, the original baseline, and the delivered source state. Merge the loop branch back into the branch the user started from, then remove the worktree. Include concise reproduction details and relevant changes so the human can verify and take over. Report missed targets, blocked checks, and missing evidence honestly; do not label an incomplete handoff complete.

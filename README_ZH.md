@@ -44,13 +44,11 @@ autodev 的目的是**确保 Agent 与人对齐，降低理解偏差，减少返
 | **Loop · 迭代** | 开发直到确认后的 test 全部通过 | 优化直到达标或时间耗尽 |
 | **Handoff · 交付** | 一张表，对比 baseline 与最终 test 结果 | 一张图，展示 baseline、优化尝试和最终结果 |
 
-Clarify 不只是问问题。查代码、维护测试、试运行和测量 baseline，都是建立共识的一部分。human-in-the-loop 的循环套在**整个 Clarify 阶段外层**：agent 跑完一轮——准备 test、记录 baseline、提出范围——用户一次审阅全部结果，决定继续 clarify 还是进入 Loop。Loop 负责实现共识，而不是边写代码边重新解释成功标准。
+Clarify 不只是问问题。查代码、维护测试、试运行和测量 baseline，都是建立共识的一部分。human-in-the-loop 的循环套在**整个 Clarify 阶段外层**：agent 跑完一轮——准备 test、记录 baseline、提出范围——用户一次审阅全部结果，决定继续 clarify 还是进入 Loop。Loop 负责实现共识，而不是边写代码边重新解释成功标准。Loop 在独立的 git worktree 和专用分支上进行，不触碰用户自己的工作区；每次尝试都是一个 commit，优化中被拒绝的尝试直接 reset 回最佳 commit，Handoff 时把分支合并回用户分支。
 
 ### 功能开发
 
 ![功能开发流程：准备测试、baseline、提出影响范围、用户确认、实现-测试循环、对比表](docs/assets/autodev-development.zh.png)
-
-[流程图源文件](docs/diagrams/autodev.development.zh.json)
 
 从左上角的功能需求出发，沿实线完成 Clarify，向下进入 Loop，再沿箭头回到 Handoff；虚线表示反馈循环。一轮 Clarify 是：查询、删改、新增并试运行 test；运行得到 baseline；再提出影响范围，明确是否允许增减模块、是否允许修改已有流程。
 
@@ -61,8 +59,6 @@ Clarify 不只是问问题。查代码、维护测试、试运行和测量 basel
 ### 性能优化
 
 ![性能优化流程：数值基准、baseline、提出限制、用户确认、优化-测量循环、过程图](docs/assets/autodev-optimization.zh.png)
-
-[流程图源文件](docs/diagrams/autodev.optimization.zh.json)
 
 **一项 test、一个分数：** 可执行的 benchmark 或固定加权和。沿实线从测试准备走到 baseline、提出限制，再到一次用户确认；虚线表示重做一轮 Clarify 或再做一次优化尝试。Loop 采用 **do-while** 顺序：先优化、测量并保留已验证的最佳结果，再判断是否达标或时间耗尽；均未满足才继续下一轮。每次运行仍受剩余时间预算约束。
 

@@ -41,6 +41,10 @@ In the chart caption or accompanying short text, give baseline/final values, act
 
 For a weighted test, include the fixed formula and retain component readings with the evidence. They explain the one score, not additional optimization objectives. A timeout can end the work without meeting the target; state that plainly.
 
+## Merge back and remove the worktree
+
+The delivered state is the loop branch's final commit: the passing checkpoint for a feature, `best` for an optimization. Verify it there, then merge the loop branch into the branch the user was on when Loop started, with a regular merge so the attempt history stays visible. If the merge conflicts with work the user did meanwhile, stop and report; do not resolve it by force or rewrite the user's branch. After a clean merge, remove the worktree and the loop branch. Ignored build products disappear with the worktree.
+
 ## Keep the handoff trustworthy
 
 Tie the table or chart to raw results, test/source identities, execution conditions, and the delivered changes. Note limitations and any unresolved next action concisely. Never use fabricated measurements or a polished visual to conceal missing verification.
