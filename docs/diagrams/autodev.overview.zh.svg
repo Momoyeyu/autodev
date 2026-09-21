@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="700" viewBox="0 0 1920 700">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0A1226"/>
+      <stop offset="1" stop-color="#0D1B3A"/>
+    </linearGradient>
+    <linearGradient id="path" gradientUnits="userSpaceOnUse" x1="560" y1="0" x2="1440" y2="0">
+      <stop offset="0" stop-color="#3259B4"/>
+      <stop offset="0.5" stop-color="#3C8CFF"/>
+      <stop offset="1" stop-color="#00C8D2"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00C8D2"/>
+      <stop offset="1" stop-color="#78E6DD"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#3259B4"/>
+      <stop offset="1" stop-color="#3C8CFF"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#3C8CFF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#3C8CFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowc">
+      <stop offset="0" stop-color="#00C8D2" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#00C8D2" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="6"/></filter>
+    <pattern id="dots" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#3C8CFF" fill-opacity="0.18"/>
+    </pattern>
+  </defs>
+
+  <rect width="1920" height="700" fill="url(#bg)"/>
+  <rect width="1920" height="700" fill="url(#dots)"/>
+
+  <!-- glows -->
+  <circle cx="560" cy="330" r="260" fill="url(#glow)"/>
+  <circle cx="1000" cy="330" r="280" fill="url(#glowc)"/>
+  <circle cx="1440" cy="330" r="260" fill="url(#glow)"/>
+
+  <!-- spine -->
+  <path d="M 606 330 H 820 M 1150 330 H 1310" stroke="url(#path)" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M 812 314 L 842 330 L 812 346 Z M 1302 314 L 1332 330 L 1302 346 Z" fill="#3C8CFF"/>
+  <path d="M 590 330 H 850 M 1150 330 H 1340" stroke="url(#path)" stroke-width="18" stroke-opacity="0.25" stroke-linecap="round" fill="none" filter="url(#blur)"/>
+
+  <!-- CLARIFY: scattered intent converging into one focused point -->
+  <g stroke="#3C8CFF" stroke-linecap="round" fill="none">
+    <path d="M 300 150 C 420 170, 500 280, 560 322" stroke-width="3" stroke-opacity="0.35" stroke-dasharray="10 14"/>
+    <path d="M 270 230 C 400 240, 480 300, 560 326" stroke-width="3" stroke-opacity="0.45" stroke-dasharray="6 12"/>
+    <path d="M 260 330 H 560" stroke-width="3" stroke-opacity="0.6"/>
+    <path d="M 270 430 C 400 420, 480 360, 560 334" stroke-width="3" stroke-opacity="0.45" stroke-dasharray="6 12"/>
+    <path d="M 300 510 C 420 490, 500 380, 560 338" stroke-width="3" stroke-opacity="0.35" stroke-dasharray="10 14"/>
+  </g>
+  <circle cx="560" cy="330" r="46" fill="none" stroke="#3C8CFF" stroke-width="3" stroke-opacity="0.5"/>
+  <circle cx="560" cy="330" r="28" fill="none" stroke="url(#blue)" stroke-width="8"/>
+  <circle cx="560" cy="330" r="9" fill="#78E6DD"/>
+  <g stroke="#3C8CFF" stroke-width="3" stroke-linecap="round" stroke-opacity="0.8">
+    <path d="M 560 262 V 276 M 560 384 V 398 M 492 330 H 506 M 614 330 H 628"/>
+  </g>
+
+  <!-- LOOP: orbit ring with directional arrows -->
+  <circle cx="1000" cy="330" r="150" fill="none" stroke="#00C8D2" stroke-width="2" stroke-opacity="0.25" stroke-dasharray="4 10"/>
+  <path d="M 1000 210 A 120 120 0 1 1 896 390" fill="none" stroke="url(#cyan)" stroke-width="12" stroke-linecap="round"/>
+  <path d="M 1000 450 A 120 120 0 1 1 1104 270" fill="none" stroke="url(#cyan)" stroke-width="12" stroke-linecap="round"/>
+  <path d="M 870 404 L 909 372 L 910 416 Z" fill="#78E6DD"/>
+  <path d="M 1130 256 L 1091 288 L 1090 244 Z" fill="#78E6DD"/>
+  <circle cx="1000" cy="330" r="62" fill="#0A1226" stroke="#3C8CFF" stroke-width="3" stroke-opacity="0.6"/>
+  <g fill="none" stroke="#78E6DD" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 968 300 L 950 330 L 968 360"/>
+    <path d="M 1032 300 L 1050 330 L 1032 360"/>
+    <path d="M 1012 292 L 988 368"/>
+  </g>
+  <circle cx="1000" cy="180" r="7" fill="#78E6DD"/>
+  <circle cx="1000" cy="480" r="7" fill="#78E6DD"/>
+
+  <!-- HANDOFF: path opens into measured evidence -->
+  <g transform="translate(1360 330)">
+    <path d="M -20 0 C 20 0, 30 -90, 70 -90 M -20 0 C 20 0, 30 90, 70 90" fill="none" stroke="url(#path)" stroke-width="4" stroke-opacity="0.6"/>
+    <rect x="70" y="-112" width="260" height="224" rx="22" fill="#0A1226" stroke="#3C8CFF" stroke-width="3" stroke-opacity="0.6"/>
+    <g fill="url(#blue)" opacity="0.85">
+      <rect x="110" y="20" width="28" height="60" rx="6"/>
+      <rect x="152" y="-10" width="28" height="90" rx="6"/>
+      <rect x="194" y="-40" width="28" height="120" rx="6"/>
+    </g>
+    <rect x="236" y="-80" width="28" height="160" rx="6" fill="url(#cyan)"/>
+    <path d="M 110 -70 L 145 -70" stroke="#3C8CFF" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 8"/>
+    <path d="M 110 -55 L 178 -55" stroke="#3C8CFF" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 8"/>
+    <circle cx="296" cy="-76" r="30" fill="#00C8D2"/>
+    <path d="M 282 -76 L 293 -65 L 312 -88" fill="none" stroke="#0A1226" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- labels -->
+  <g font-family="'Helvetica Neue', 'PingFang SC', 'SF Pro Display', Arial, sans-serif" text-anchor="middle">
+    <text x="560" y="590" font-size="46" font-weight="700" letter-spacing="8" fill="#FFFFFF">CLARIFY</text>
+    <text x="1000" y="590" font-size="46" font-weight="700" letter-spacing="8" fill="#FFFFFF">LOOP</text>
+    <text x="1555" y="590" font-size="46" font-weight="700" letter-spacing="8" fill="#FFFFFF">HANDOFF</text>
+    <text x="560" y="646" font-size="28" fill="#9DB5E8">与人对齐出可执行的 test 与 baseline</text>
+    <text x="1000" y="646" font-size="28" fill="#9DB5E8">开发或优化，直到 test 给出结论</text>
+    <text x="1555" y="646" font-size="28" fill="#9DB5E8">交付可验证、可接管的证据</text>
+  </g>
+  <g font-family="'Helvetica Neue', 'PingFang SC', Arial, sans-serif" fill="#9DB5E8">
+    <text x="80" y="80" font-size="26" font-weight="700" fill="#FFFFFF" letter-spacing="2">autodev</text>
+    <text x="1840" y="80" font-size="22" text-anchor="end" letter-spacing="3">易验证 · 可度量 · 够直观</text>
+  </g>
+</svg>

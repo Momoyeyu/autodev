@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="400" viewBox="0 0 1600 400">
+  <defs>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3259B4"/>
+      <stop offset="1" stop-color="#3C8CFF"/>
+    </linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#00C8D2"/>
+      <stop offset="1" stop-color="#78E6DD"/>
+    </linearGradient>
+    <linearGradient id="dev" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3C8CFF"/>
+      <stop offset="1" stop-color="#00C8D2"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(60 0)">
+
+  <!-- mark: A without crossbar + cyan loop arrow -->
+  <g transform="translate(300 186)">
+    <path d="M -96 96 L -6 -118 Q 0 -132 6 -118 L 96 96"
+          fill="none" stroke="url(#a)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M -38 18 A 44 44 0 1 0 38 18"
+          fill="none" stroke="url(#c)" stroke-width="22" stroke-linecap="round"/>
+    <path d="M 21 -12 L 56 8 L 21 28 Z" fill="#78E6DD"/>
+  </g>
+
+  <line x1="490" y1="120" x2="490" y2="280" stroke="#3C8CFF" stroke-opacity="0.45" stroke-width="4" stroke-linecap="round"/>
+
+  <text x="560" y="262" font-family="'Helvetica Neue', 'SF Pro Display', Arial, sans-serif"
+        font-weight="700" font-size="200" letter-spacing="-8" fill="#3259B4">Auto<tspan fill="url(#dev)">Dev</tspan></text>
+  </g>
+</svg>
