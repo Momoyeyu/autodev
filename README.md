@@ -40,33 +40,33 @@ These are requirements across the workflow, not three separate stages. Neither a
 
 | Stage | Feature development | Performance optimization |
 |---|---|---|
-| **Clarify** | Confirm impact; co-create runnable tests until approved; record baseline | Agree on one runnable numeric test; record baseline; confirm target, editable files, and time budget |
+| **Clarify** | Prepare runnable tests; record baseline; propose impact; the human reviews the whole pass | Prepare one runnable numeric test; record baseline; propose target, editable files, and time budget; the human reviews the whole pass |
 | **Loop** | Develop until all agreed tests pass | Optimize until the target is met or time expires |
 | **Handoff** | One table comparing baseline and final test results | One chart showing baseline, optimization attempts, and the final result |
 
-Clarify is not just a conversation. Inspecting code, maintaining tests, trial runs, and baseline measurement are part of establishing the agreement. Loop implements that agreement rather than deciding what success means along the way.
+Clarify is not just a conversation. Inspecting code, maintaining tests, trial runs, and baseline measurement are part of establishing the agreement. The human-in-the-loop cycle wraps the **whole Clarify pass**: the agent prepares tests, records baseline, and proposes the scope, then the human reviews all of it once and decides whether to revise or enter Loop. Loop implements that agreement rather than deciding what success means along the way.
 
 ### Feature development
 
-![Feature development flow: impact, human-reviewed tests, baseline, implement-test loop, comparison table](docs/assets/autodev-development.png)
+![Feature development flow: prepare tests, baseline, propose impact, human review, implement-test loop, comparison table](docs/assets/autodev-development.png)
 
 [Diagram source](docs/diagrams/autodev.development.json)
 
-Start at the upper left with the feature request; follow the solid arrows across Clarify, down into Loop, and back toward Handoff. Dashed arrows are feedback cycles. Agree explicitly whether modules may be added or removed and whether existing workflows may change.
+Start at the upper left with the feature request; follow the solid arrows across Clarify, down into Loop, and back toward Handoff. Dashed arrows are feedback cycles. One Clarify pass is: query, revise, add, and trial-run the tests; run them for the baseline; then propose the impact, stating explicitly whether modules may be added or removed and whether existing workflows may change.
 
-Test maintenance belongs **inside the human-in-the-loop review**, not after test approval. Keep still-relevant coverage and explain why outdated expectations changed. Approval concerns runnable tests, not just a test plan.
+The human reviews the **whole pass at once** — runnable tests, baseline results, and proposed impact — and either sends it back for revision or approves it. Seeing the baseline before deciding shows whether the tests measure the right thing. Keep still-relevant coverage and explain why outdated expectations changed. Approval concerns runnable tests, not just a test plan.
 
-“Can execute” does not mean “already passes”: the missing feature may fail during preparation and baseline. Broken setup is not useful evidence. Record the formal baseline after approval, before feature implementation; do not count removal of obsolete tests as a development gain.
+“Can execute” does not mean “already passes”: the missing feature may fail during preparation and baseline. Broken setup is not useful evidence. Baseline is recorded before feature implementation; do not count removal of obsolete tests as a development gain.
 
 ### Performance optimization
 
-![Performance optimization flow: one approved benchmark, baseline, limits, optimize-measure loop, progress chart](docs/assets/autodev-optimization.png)
+![Performance optimization flow: one numeric test, baseline, proposed limits, human review, optimize-measure loop, progress chart](docs/assets/autodev-optimization.png)
 
 [Diagram source](docs/diagrams/autodev.optimization.json)
 
-**One test, one score:** agree on an executable benchmark or a fixed weighted sum. Follow the solid arrows from test preparation through baseline and limits; the dashed paths repeat review or optimization. Loop uses **do-while** order: optimize, measure and retain the best verified state, then check the target and deadline. Repeat only if neither exit condition holds. Bound each run by the remaining wall-clock budget.
+**One test, one score:** an executable benchmark or a fixed weighted sum. Follow the solid arrows from test preparation through baseline and proposed limits to one human review; the dashed paths repeat the Clarify pass or the optimization attempt. Loop uses **do-while** order: optimize, measure and retain the best verified state, then check the target and deadline. Repeat only if neither exit condition holds. Bound each run by the remaining wall-clock budget.
 
-Agree on the workload, unit, direction, measurement method, and any weights or normalization before baseline. Multiple benchmark components still produce **one score**, not separate optimization targets. Do not change the ruler during Loop.
+Fix the workload, unit, direction, measurement method, and any weights or normalization before baseline; the human confirms them together with the baseline and the limits. Multiple benchmark components still produce **one score**, not separate optimization targets. Do not change the ruler during Loop.
 
 Retain the best verified candidate and record every attempt, including rejections and failures, so the chart describes what actually happened. A timeout ends the loop but does not imply the target was met. If baseline already meets the target or no improvement is verified, show that honestly rather than inventing a trajectory.
 

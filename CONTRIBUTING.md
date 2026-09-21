@@ -64,7 +64,7 @@ The process maps use Archify's `architecture` schema v1 and grid layout, not its
 
 Detail maps use a compact two-row path: Clarify reads left to right, then Loop and Handoff follow the arrows right to left. Three numbered stage regions remain distinct. Dashed return paths show review and implementation feedback; solid paths show progression and delivery. The optimization loop is post-tested (do-while): limits → optimize → measure and retain → stop check. A negative decision returns to optimization; target reached or time exhausted leads to the chart. Do not introduce a limits-to-stop-check shortcut.
 
-This renderer does not support workflow `semanticChecks`. Check directed connections explicitly: approval precedes baseline; optimization limits follow baseline; each detail map has a review cycle and an execution cycle; only the required table/chart is terminal. Do not treat successful geometry validation as a semantic check.
+This renderer does not support workflow `semanticChecks`. Check directed connections explicitly: test preparation → baseline → proposed impact/limits → one human review; the review's "No" edge returns to test preparation and its "Yes" edge enters Loop; each detail map has that Clarify cycle and an execution cycle; only the required table/chart is terminal. Do not treat successful geometry validation as a semantic check.
 
 Keep the PNGs opaque and dark regardless of the README viewer's color scheme. Use Archify's Editorial preset and canonical PNG export, not a screenshot containing viewer controls or manually recolored output. These are workflow illustrations, not test-result charts; do not reintroduce the removed result screenshot.
 
@@ -100,7 +100,7 @@ Before committing:
 
 - Walk through both scenario paths against the skill, READMEs, and diagram sources.
 - Check local links, anchors, frontmatter, and code fences; verify the deleted reference names are no longer used.
-- Check that runnable-test approval precedes formal baseline and optimization limits follow baseline.
+- Check that baseline precedes the scope proposal and that the single human review closes the whole Clarify pass in both scenarios.
 - Verify the feature table and optimization process chart are mandatory everywhere, not optional presentation choices.
 - Confirm bilingual diagram topology and geometry match; detail PNGs are dark canonical exports and the brand PNG keeps a transparent background.
 - Run Archify validation/browser checks for the detail diagrams and review every actual image, including the brand and overview; retain the evidence.
