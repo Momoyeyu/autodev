@@ -1,13 +1,13 @@
 # Loop
 
-Read after Clarify is complete. Apply the shared rules and the section for the current scenario. Loop implements the agreement; it does not redefine success.
+Read after the human has approved a complete Clarify pass. Apply the shared rules and the section for the current scenario. Loop implements the agreement; it does not redefine success.
 
 ## Shared rules
 
 - Work only within the permitted impact or editable-file boundary.
 - Keep the approved test version, workload, and measuring conditions comparable with baseline.
 - Save actual command output and source identities. Do not turn skips, setup errors, crashes, or unrun checks into passing results.
-- Return to [Clarify](clarify.md) if intent, test meaning, or scope changes. A test defect also needs repair and a comparable baseline, not a silent adjustment during implementation.
+- Return to [Clarify](clarify.md) for a new full pass if intent, test meaning, or scope changes. A test defect also needs repair and a comparable baseline, not a silent adjustment during implementation.
 - Preserve unrelated user work. Restoring an attempt never authorizes resetting the whole repository or rewriting shared history.
 
 ## Feature development

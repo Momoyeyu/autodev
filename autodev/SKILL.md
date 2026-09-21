@@ -11,11 +11,11 @@ Align the agent and the human to reduce natural-language misunderstanding and re
 
 ## Clarify → Loop → Handoff
 
-User input starts the workflow; it is not another stage. Clarify is the core capability: test preparation, human review, and baseline measurement belong here, not in the implementation loop.
+User input starts the workflow; it is not another stage. Clarify is the core capability: test preparation, baseline measurement, scope proposal, and human review belong here, not in the implementation loop.
 
 | Stage | Feature development | Performance optimization |
 |---|---|---|
-| **Clarify** | Confirm architecture/workflow impact; maintain and run tests with the human until approved; record baseline | Agree with the human on one runnable numeric test; record baseline; then confirm target, editable files, and time budget |
+| **Clarify** | Prepare runnable tests; record baseline; propose architecture/workflow impact; the human reviews the whole pass | Prepare one runnable numeric test; record baseline; propose target, editable files, and time budget; the human reviews the whole pass |
 | **Loop** | Develop until all agreed tests pass | Optimize until the target is met or the time budget expires |
 | **Handoff** | One table comparing baseline and final test results | One chart showing the process from baseline through attempts to the final result |
 
@@ -33,11 +33,13 @@ Do not preload the directory. Follow the current stage and scenario, keeping sha
 
 ## Clarify
 
-For features, first confirm the permitted architecture and workflow impact, including whether modules may be added or removed and existing flows changed. Then query existing tests, remove or update outdated ones, add missing ones, and verify execution as part of the human-in-the-loop test-design cycle. Repeat until the human confirms the runnable tests; only then record the formal baseline.
+Clarify is a human-in-the-loop cycle around the **whole pass**, not around each sub-step. Run one complete pass, present everything it produced, and let the human decide: revise and repeat Clarify, or enter Loop.
 
-For optimization, the test is exactly one numeric benchmark or one fixed weighted sum of benchmarks. Agree on the executable test with the human, measure baseline, then confirm the target, editable implementation files, and wall-clock limit.
+For features, one pass is: query existing tests, remove or update outdated ones, add missing ones, and verify they can execute; run them to record the baseline; then propose the architecture and workflow impact, including whether modules may be added or removed and existing flows changed.
 
-Use decisions already supplied; do not impose a question count or assume approval. Tests that can execute may still fail because the requested feature is absent. Preparing tests and measuring baseline are not permission to implement the requested change early.
+For optimization, the test is exactly one numeric benchmark or one fixed weighted sum of benchmarks. One pass is: prepare and trial-run the test; measure baseline; then propose the target, editable implementation files, and wall-clock limit against that baseline.
+
+The human reviews the runnable tests, the baseline result, and the proposed scope together. Use decisions already supplied; do not impose a question count or assume approval. Tests that can execute may still fail because the requested feature is absent. Preparing tests and measuring baseline are not permission to implement the requested change early.
 
 ## Loop
 

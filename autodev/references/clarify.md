@@ -2,7 +2,7 @@
 
 Read at task entry or when an agreement changes. Clarify turns natural-language intent into a shared, executable understanding before implementation.
 
-It includes inspecting code, maintaining or building tests, trial runs, human review, and baseline measurement. It is not a questions-only or read-only phase.
+It includes inspecting code, maintaining or building tests, trial runs, baseline measurement, and a scope proposal. It is not a questions-only or read-only phase.
 
 ## Choose the scenario
 
@@ -11,9 +11,17 @@ It includes inspecting code, maintaining or building tests, trial runs, human re
 
 Read only the applicable branch. For a combined request, establish the feature behavior first, then optimize it with its own approved benchmark and baseline.
 
-## Human-in-the-loop means agreement on runnable tests
+## Human-in-the-loop wraps the whole pass
 
-Show what each test exercises, the input or workload, and the expected behavior or numeric output. Prepare and run the tests, discuss corrections with the human, and repeat until the human confirms the actual executable acceptance basis.
+Both branches share one shape: **prepare the test → capture baseline → propose the scope → human review**. Run the complete pass first, then present its results together. Do not stop for approval after each sub-step.
+
+The human sees, in one review:
+
+- the runnable tests, what each exercises, the input or workload, and the expected behavior or numeric output;
+- the actual baseline result of those tests on the unchanged source;
+- the proposed scope: permitted architecture/workflow impact for a feature, or target, editable files, and time budget for an optimization.
+
+The human then decides: **revise**, which repeats Clarify from test preparation with the feedback applied, or **approve**, which enters Loop. Seeing the baseline before deciding lets the human judge whether the tests measure the right thing and whether the proposed scope fits the measured starting point.
 
 Approval of a feature description or a test plan is not a substitute for confirming the runnable tests. Reuse explicit decisions already supplied; do not ask the human to repeat them, impose a fixed question count, or interpret silence as consent.
 
@@ -21,16 +29,16 @@ Keep test changes tied to the intended behavior. An obsolete expectation may be 
 
 ## Ready for Loop
 
-Before implementation, record:
+After approval, record:
 
 - the request and the human's confirmed test agreement;
 - test files/version, exact command, working directory, and necessary execution conditions;
 - the original source state and actual baseline output;
 - for development, the approved architecture and workflow impact;
-- for optimization, the baseline-informed target, editable files, and time budget.
+- for optimization, the approved target, editable files, and time budget.
 
 Keep this evidence in the repository's normal artifact location so the next person can distinguish agreements from assumptions. Do not overwrite the original baseline with the latest successful attempt.
 
-A setup failure is not useful baseline evidence. Repair it before proceeding. If a test defect is found later, repair it here and rerun on the original source state; if its meaning changes, obtain renewed approval. Keep old and new test versions distinct instead of presenting incomparable results as progress.
+A setup failure is not useful baseline evidence. Repair it and rerun the pass before review. If a test defect is found later, repair it here and rerun on the original source state; if its meaning changes, obtain renewed approval. Keep old and new test versions distinct instead of presenting incomparable results as progress.
 
-Continue to [Loop](loop.md) only after the selected branch's agreement and baseline are ready.
+Continue to [Loop](loop.md) only after the human has approved a complete pass.

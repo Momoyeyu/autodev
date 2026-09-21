@@ -1,36 +1,42 @@
 # Clarify: feature development
 
-Read for a feature request, alongside the shared [Clarify](clarify.md) rules. Complete these steps in order before implementing the feature.
+Read for a feature request, alongside the shared [Clarify](clarify.md) rules. One pass runs steps 1–3 in order; the human reviews the whole pass in step 4. Do not implement the feature during Clarify.
 
-## 1. Confirm the impact
+## 1. Prepare runnable tests
 
-Inspect the relevant code and make the proposed changes and preserved behavior explicit.
-
-| Boundary | Confirm with the human |
-|---|---|
-| Overall architecture | Which modules and interfaces are affected? May modules be added or removed? Which architectural boundaries must remain? |
-| Existing workflows | Which user/system flows are affected? May their sequence, outputs, or side effects change? Which behavior must remain compatible? |
-
-Record the permitted impact. A feature request is not unrestricted permission to redesign the project.
-
-## 2. Co-create runnable tests until the human confirms
-
-Test maintenance is inside this review cycle, not a task postponed until after approval:
+Test maintenance happens here, before baseline, not after approval:
 
 1. **Query existing tests.** Map coverage to the intended behavior and identify outdated expectations and missing cases.
 2. **Remove or update outdated tests.** Explain how each change follows from the requested behavior. Keep still-relevant tests and regressions; do not discard a test merely because it fails.
 3. **Add missing tests.** Give cases stable IDs and observable outcomes. Cover meaningful inputs, boundaries, errors, and behavior that must remain unchanged, using the project's existing tools.
 4. **Verify the tests can run.** Check discovery, dependencies, fixtures, and execution. Trial runs must produce meaningful results; failure caused by an unimplemented requested behavior is valid, while unrelated setup errors need repair.
-5. **Review with the human.** Show the runnable tests, their meaning, maintenance reasons, trial results, and any coverage gaps. Revise and rerun as needed until the human confirms the test set.
 
-“Can run” does not mean “already passes.” Do not implement the feature merely to obtain a green trial run. The agreed set includes retained coverage as well as updated and new cases; approval is not limited to the easiest passing subset.
+“Can run” does not mean “already passes.” Do not implement the feature merely to obtain a green trial run. The prepared set includes retained coverage as well as updated and new cases, not only the easiest passing subset.
 
-## 3. Capture baseline
+## 2. Capture baseline
 
-After confirmation, run the agreed test set on the pre-implementation source state. Record case IDs, actual outcomes, failure reasons, totals, the command, and test/source identities.
+Run the prepared test set on the pre-implementation source state. Record case IDs, actual outcomes, failure reasons, totals, the command, and test/source identities.
 
-This baseline uses the reconciled suite. Removing outdated tests is preparation, not a development gain. Use the same approved test version and comparable conditions for the final results.
+This baseline uses the reconciled suite. Removing outdated tests is preparation, not a development gain. Use the same test version and comparable conditions for the final results.
 
-If every agreed test already passes, verify that the requested behavior genuinely exists. Avoid unnecessary implementation changes, but still follow [Handoff](handoff.md#feature-development-one-table): verify the delivered state and provide the baseline/final comparison table. Return to test review if the agreement missed part of the requirement.
+## 3. Propose the impact
 
-**Exit:** impact is confirmed, executable tests are approved, and baseline results are preserved. Continue to [Loop: development](loop.md#feature-development).
+Inspect the relevant code and make the proposed changes and preserved behavior explicit, informed by which baseline cases fail and why.
+
+| Boundary | Propose for the human's confirmation |
+|---|---|
+| Overall architecture | Which modules and interfaces are affected? May modules be added or removed? Which architectural boundaries must remain? |
+| Existing workflows | Which user/system flows are affected? May their sequence, outputs, or side effects change? Which behavior must remain compatible? |
+
+A feature request is not unrestricted permission to redesign the project.
+
+## 4. Human review of the whole pass
+
+Show the runnable tests, their meaning and maintenance reasons, the baseline results with any coverage gaps, and the proposed impact, together. The human decides:
+
+- **Revise:** apply the feedback and repeat from step 1. Rerun baseline on the updated suite; a changed test set needs a new baseline.
+- **Approve:** record the approved tests, baseline, and impact, then enter Loop.
+
+If every prepared test already passes at baseline, say so in the review; the human may confirm the behavior already exists or point out what the tests missed. An approved all-green baseline still requires final verification and the comparison table in [Handoff](handoff.md#feature-development-one-table).
+
+**Exit:** the human has approved one complete pass — runnable tests, their baseline, and the permitted impact. Continue to [Loop: development](loop.md#feature-development).
