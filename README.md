@@ -82,6 +82,18 @@ Add concise notes about relevant changes, limitations, and where to continue. Th
 
 If intent, test meaning, or permitted scope changes, return to Clarify and establish a comparable new baseline. Do not splice results from different tests into a single improvement claim.
 
+## What is enforced, and by what
+
+autodev is a protocol plus one small judge. The Markdown tells the agent what to do; `autodev/scripts/autodev_verify.py` (Python 3, standard library, installed with the skill) makes the parts that can be checked mechanically actually checked, every round, with raw output kept.
+
+| Guarantee | Provided by |
+|---|---|
+| Frozen test/benchmark files unchanged, changes only inside the approved scope, time budget respected, score compared in the agreed direction with the agreed margin, rejected attempts rolled back with no residue, every verdict logged with its raw output | `autodev_verify.py`: `init` in Clarify, `start`/`attempt`/`status` in Loop, `report` in Handoff. `start` first proves the checks bite by editing a frozen file and adding an out-of-scope file and requiring both to be rejected. |
+| The test measures the right thing, the proposed impact or limits are reasonable, the contract itself is approved | The human's single review of the whole Clarify pass |
+| The table or chart is read, the merged branch is accepted | The human at Handoff |
+
+Installing the skill therefore does not by itself guarantee compliance; the contract directory it leaves behind does let the human check, round by round, whether the rules were executed rather than merely written. Nothing here is a runtime or a test framework: the judge only runs the project's own test command.
+
 ## Get started
 
 Install the skill with the command above, then describe the task normally:
@@ -106,10 +118,11 @@ The first request starts with architecture/workflow alignment and collaborative 
 | [`references/clarify-optimization.md`](autodev/references/clarify-optimization.md) | Clarifying a performance goal |
 | [`references/loop.md`](autodev/references/loop.md) | Starting Loop after agreement and baseline are ready |
 | [`references/handoff.md`](autodev/references/handoff.md) | Preparing the required comparison table or process chart |
+| [`scripts/autodev_verify.py`](autodev/scripts/autodev_verify.py) | Run, not read: `init` in Clarify, `start`/`attempt`/`status` in Loop, `report` in Handoff |
 
 Read the current stage's shared rules and the applicable scenario only. Do not preload later stages or the other Clarify branch. Progressive disclosure is about providing detail when it is needed, even when a task eventually visits all three stages.
 
-This repository distributes the skill, not a bundled test runner or evaluation suite. Tests are prepared with the human in the project where the skill is used. The README illustrations show the workflow itself, not example test results.
+This repository distributes the skill and its judge script, not a test runner or evaluation suite. Tests are prepared with the human in the project where the skill is used; the judge only executes the agreed command and records the verdict. The README illustrations show the workflow itself, not example test results.
 
 ## Contributing
 

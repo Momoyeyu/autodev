@@ -82,6 +82,18 @@ Clarify 不只是问问题。查代码、维护测试、试运行和测量 basel
 
 如果意图、test 含义或允许的范围发生变化，应回到 Clarify，并建立可比较的新 baseline。不能把不同测试的结果拼成一次提升。
 
+## 约束由什么保障
+
+autodev 是一套协议加一个小型裁决脚本。Markdown 告诉 agent 该做什么；随 skill 一起安装的 `autodev/scripts/autodev_verify.py`（Python 3 标准库）把其中能机械检查的部分变成每轮真正执行的检查，并保留原始输出。
+
+| 保障项 | 由谁提供 |
+|---|---|
+| 冻结的测试／benchmark 文件未被改动、改动只落在允许范围内、时间预算被遵守、分数按约定方向和余量比较、被拒绝的尝试回滚无残留、每次裁决都带原始输出记录 | `autodev_verify.py`：Clarify 用 `init`，Loop 用 `start`／`attempt`／`status`，Handoff 用 `report`。`start` 会先故意改一个冻结文件、加一个范围外文件，要求两者都被拒绝，证明检查真的生效。 |
+| test 量的是不是对的东西、提出的影响范围或限制是否合理、契约本身是否被认可 | 用户对整轮 Clarify 的一次审阅 |
+| 表／图是否被看过、合并回来的分支是否被接受 | Handoff 时的用户 |
+
+因此，安装 skill 本身并不保证 agent 一定遵守；但它留下的契约目录让人可以逐轮核对"规则是否真的被执行"，而不是"规则是否被写下来"。这里没有运行时框架，也不绑定测试工具：裁决脚本只调用项目自己的测试命令。
+
 ## 快速开始
 
 使用上面的命令安装 skill，然后像平常一样描述任务：
@@ -106,10 +118,11 @@ Clarify 不只是问问题。查代码、维护测试、试运行和测量 basel
 | [`references/clarify-optimization.md`](autodev/references/clarify-optimization.md) | 澄清性能优化目标时 |
 | [`references/loop.md`](autodev/references/loop.md) | 约定与 baseline 就绪，进入 Loop 时 |
 | [`references/handoff.md`](autodev/references/handoff.md) | 准备必需的对比表或过程图时 |
+| [`scripts/autodev_verify.py`](autodev/scripts/autodev_verify.py) | 运行而非阅读：Clarify 用 `init`，Loop 用 `start`／`attempt`／`status`，Handoff 用 `report` |
 
 只读当前阶段的共用规则与对应场景，不要预加载后续阶段或另一条 Clarify 分支。渐进式披露的含义是需要时才提供细节，即使一个任务最终会经过全部三个阶段。
 
-本仓库分发 skill，不附带测试运行器或评测套件。测试由 Agent 与人共同在使用 skill 的目标项目中准备。README 配图只展示流程本身，不展示示例测试结果。
+本仓库分发 skill 及其裁决脚本，不附带测试运行器或评测套件。测试由 Agent 与人共同在使用 skill 的目标项目中准备；脚本只执行约定的命令并记录裁决。README 配图只展示流程本身，不展示示例测试结果。
 
 ## 参与贡献
 

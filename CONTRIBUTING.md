@@ -6,12 +6,12 @@ Improve alignment between agents and humans. Changes should reduce misunderstand
 
 Use **Clarify → Loop → Handoff** as the only top-level working stages. User input triggers the workflow.
 
-- **Development Clarify:** confirm architecture/workflow impact, then query, update/remove, add, and trial-run tests with the human until the executable set is approved; record the formal baseline afterward.
-- **Optimization Clarify:** agree on one runnable numeric benchmark or fixed weighted score, record baseline, then confirm target, editable files, and wall-clock budget.
-- **Loop:** develop until all agreed tests pass, or optimize until target/time limit. Preserve the measuring agreement and record actual outcomes.
+- **Development Clarify:** query, update/remove, add, and trial-run tests; record baseline; propose architecture/workflow impact; then one human review of the whole pass.
+- **Optimization Clarify:** prepare one runnable numeric benchmark or fixed weighted score; record baseline; propose target, editable files, and wall-clock budget; then one human review of the whole pass.
+- **Loop:** in a dedicated git worktree, develop until all agreed tests pass, or optimize until target/time limit with post-checked (do-while) exits. Every round is judged by `autodev/scripts/autodev_verify.py`; keep its behavior identical to the prose in `loop.md`.
 - **Handoff:** one baseline/final comparison table for development; one chart of the measured optimization process for optimization.
 
-Do not move test preparation outside the human review cycle, equate executable tests with already-passing tests, replace the optimization chart with a table, or add convergence/attempt-count exits. Changes to test meaning or permitted scope return to Clarify.
+Do not split the single human review into per-step approvals, move test preparation outside the human review cycle, equate executable tests with already-passing tests, replace the optimization chart with a table, or add convergence/attempt-count exits. Changes to test meaning or permitted scope return to Clarify.
 
 ## Progressive disclosure
 
@@ -92,19 +92,32 @@ Open each successfully delivered HTML with `?theme=dark`, keep Editorial selecte
 
 Archify renders this repository's explanatory workflow. It is not a mandatory dependency for producing a target project's optimization-result chart.
 
+## Judge script
+
+`autodev/scripts/autodev_verify.py` is standard-library Python 3 with no dependencies, so it runs wherever the target project runs. It must not grow into a runner or a framework: it executes the agreed test command, checks the contract, decides, rolls back, and logs. Any rule it enforces must appear in the same words in `loop.md`, and any prose rule that can be checked mechanically belongs in the script.
+
+Run its tests before committing changes to it or to the Loop rules:
+
+```bash
+python3 -m unittest discover -s tests
+```
+
+The cases in `tests/test_verify.py` are the acceptance criteria from the issue tracker: a frozen-file edit, an out-of-scope file, a regression, a sub-`δ` improvement, a crash, a dirty worktree, a spent budget, and the development scenario must each get the documented verdict, and rollback must leave no residue.
+
 ## Verify changes
 
-The legacy unit/evaluation suite remains retired. Do not cite its results as proof of this protocol.
+The legacy evaluation suite remains retired; `tests/` covers only the judge script and does not prove agent adherence.
 
 Before committing:
 
 - Walk through both scenario paths against the skill, READMEs, and diagram sources.
 - Check local links, anchors, frontmatter, and code fences; verify the deleted reference names are no longer used.
+- Confirm the judge script's commands named in `loop.md`, `clarify-*.md`, and `handoff.md` exist with those flags.
 - Check that baseline precedes the scope proposal and that the single human review closes the whole Clarify pass in both scenarios.
 - Verify the feature table and optimization process chart are mandatory everywhere, not optional presentation choices.
 - Confirm bilingual diagram topology and geometry match; detail PNGs are dark canonical exports and the brand PNG keeps a transparent background.
 - Run Archify validation/browser checks for the detail diagrams and review every actual image, including the brand and overview; retain the evidence.
-- Run `git diff --check` and confirm `git ls-files -- tests evals` is empty.
+- Run `git diff --check` and `python3 -m unittest discover -s tests`; confirm `git ls-files -- evals` is empty.
 - Keep ignored historical run artifacts and unrelated user work untouched.
 - State whether model behavior was evaluated; document and image checks do not prove agent adherence.
 
