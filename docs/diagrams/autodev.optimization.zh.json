@@ -1,210 +1,39 @@
 {
-  "schema_version": 2,
-  "diagram_type": "workflow",
+  "schema_version": 1,
+  "diagram_type": "architecture",
   "meta": {
     "title": "autodev · 性能优化",
     "locale": "zh-CN",
+    "visual_preset": "editorial",
     "quality_profile": "showcase",
-    "legend": {
-      "mode": "hidden"
-    }
+    "viewBox": [820, 386],
+    "legend": { "mode": "hidden" }
   },
-  "lanes": [
-    {
-      "id": "clarify",
-      "label": "Clarify · 对齐"
-    },
-    {
-      "id": "loop",
-      "label": "Loop · 迭代"
-    },
-    {
-      "id": "handoff",
-      "label": "Handoff · 交付"
-    }
+  "layout": { "mode": "grid", "origin": [40, 60], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
+  "components": [
+    { "id": "benchmark", "row": 0, "col": 0, "size": [140, 68], "type": "security", "label": "共建并试运行测试", "sublabel": "单项 benchmark / 固定加权和" },
+    { "id": "review", "row": 0, "col": 1, "size": [140, 68], "type": "security", "label": "用户确认？", "sublabel": "唯一的数值分数" },
+    { "id": "baseline", "row": 0, "col": 2, "size": [140, 68], "type": "security", "label": "记录 baseline", "sublabel": "原始实测分数" },
+    { "id": "limits", "row": 0, "col": 3, "size": [140, 68], "type": "security", "label": "确认限制", "sublabel": "目标 / 文件 / 时间" },
+    { "id": "stop-check", "row": 1, "col": 3, "size": [140, 68], "type": "backend", "label": "已达标或超时？", "sublabel": "每次尝试前检查" },
+    { "id": "optimize", "row": 1, "col": 2, "size": [140, 68], "type": "backend", "label": "优化实现", "sublabel": "仅修改允许的文件" },
+    { "id": "measure", "row": 1, "col": 1, "size": [140, 68], "type": "backend", "label": "测量并保留最佳", "sublabel": "同一测试 / 已验证的结果" },
+    { "id": "chart", "row": 1, "col": 0, "size": [140, 68], "type": "frontend", "label": "一张过程图", "sublabel": "baseline → 尝试 → 最终结果" }
   ],
-  "nodes": [
-    {
-      "id": "input",
-      "lane": "clarify",
-      "col": 0,
-      "type": "external",
-      "label": "优化",
-      "sublabel": "用户目标",
-      "width": 120
-    },
-    {
-      "id": "benchmark",
-      "lane": "clarify",
-      "col": 1,
-      "type": "security",
-      "label": "共建基准",
-      "sublabel": "单一数值分数",
-      "width": 168
-    },
-    {
-      "id": "review",
-      "lane": "clarify",
-      "col": 2,
-      "type": "security",
-      "label": "人工确认",
-      "tag": "直到确认",
-      "width": 148
-    },
-    {
-      "id": "baseline",
-      "lane": "clarify",
-      "col": 3,
-      "type": "database",
-      "label": "Baseline",
-      "sublabel": "原始分数",
-      "width": 148
-    },
-    {
-      "id": "limits",
-      "lane": "clarify",
-      "col": 4,
-      "type": "security",
-      "label": "确认限制",
-      "sublabel": "目标 · 文件 · 时间",
-      "width": 172
-    },
-    {
-      "id": "optimize",
-      "lane": "loop",
-      "col": 4,
-      "type": "backend",
-      "label": "优化",
-      "sublabel": "仅允许文件",
-      "width": 168
-    },
-    {
-      "id": "measure",
-      "lane": "loop",
-      "col": 5,
-      "type": "backend",
-      "label": "测量",
-      "sublabel": "同一基准",
-      "width": 148
-    },
-    {
-      "id": "chart",
-      "lane": "handoff",
-      "col": 5,
-      "type": "frontend",
-      "label": "过程图",
-      "sublabel": "baseline → 尝试 → 结果",
-      "width": 208
-    }
+  "boundaries": [
+    { "kind": "region", "label": "01  CLARIFY · 对齐", "wraps": ["benchmark", "review", "baseline", "limits"], "pad": 20 },
+    { "kind": "region", "label": "02  LOOP · 迭代", "wraps": ["stop-check", "optimize", "measure"], "pad": 20 },
+    { "kind": "region", "label": "03  HANDOFF · 交付", "wraps": ["chart"], "pad": 20 }
   ],
-  "edges": [
-    {
-      "id": "in-bench",
-      "from": "input",
-      "to": "benchmark"
-    },
-    {
-      "id": "bench-review",
-      "from": "benchmark",
-      "to": "review"
-    },
-    {
-      "id": "revise",
-      "from": "review",
-      "to": "benchmark",
-      "label": "修订",
-      "role": "return"
-    },
-    {
-      "id": "approved",
-      "from": "review",
-      "to": "baseline",
-      "label": "已确认",
-      "variant": "security"
-    },
-    {
-      "id": "base-limits",
-      "from": "baseline",
-      "to": "limits"
-    },
-    {
-      "id": "start-loop",
-      "from": "limits",
-      "to": "optimize",
-      "route": "drop",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "opt-measure",
-      "from": "optimize",
-      "to": "measure"
-    },
-    {
-      "id": "retry",
-      "from": "measure",
-      "to": "optimize",
-      "label": "继续",
-      "role": "return"
-    },
-    {
-      "id": "stop",
-      "from": "measure",
-      "to": "chart",
-      "label": "达标 / 超时",
-      "variant": "emphasis"
-    }
-  ],
-  "semanticChecks": {
-    "allowedRoots": [
-      "input"
-    ],
-    "allowedTerminals": [
-      "chart"
-    ],
-    "requiredEdges": [
-      {
-        "from": "input",
-        "to": "benchmark"
-      },
-      {
-        "from": "benchmark",
-        "to": "review"
-      },
-      {
-        "from": "review",
-        "to": "benchmark"
-      },
-      {
-        "from": "review",
-        "to": "baseline"
-      },
-      {
-        "from": "baseline",
-        "to": "limits"
-      },
-      {
-        "from": "limits",
-        "to": "optimize"
-      },
-      {
-        "from": "optimize",
-        "to": "measure"
-      },
-      {
-        "from": "measure",
-        "to": "optimize"
-      },
-      {
-        "from": "measure",
-        "to": "chart"
-      }
-    ],
-    "requiredPaths": [
-      {
-        "from": "input",
-        "to": "chart"
-      }
-    ]
-  }
+  "connections": [
+    { "id": "bench-review", "from": "benchmark", "to": "review" },
+    { "id": "revise", "from": "review", "to": "benchmark", "label": "否 · 修订", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
+    { "id": "approved", "from": "review", "to": "baseline", "label": "是" },
+    { "id": "base-limits", "from": "baseline", "to": "limits" },
+    { "id": "start-loop", "from": "limits", "to": "stop-check" },
+    { "id": "continue", "from": "stop-check", "to": "optimize", "label": "否" },
+    { "id": "opt-measure", "from": "optimize", "to": "measure" },
+    { "id": "retry", "from": "measure", "to": "stop-check", "label": "下一次尝试", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[310, 190], [710, 190]] },
+    { "id": "stop", "from": "stop-check", "to": "chart", "label": "是 · 交付已验证的最佳结果", "variant": "emphasis", "fromSide": "bottom", "toSide": "bottom" }
+  ]
 }

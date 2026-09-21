@@ -1,210 +1,39 @@
 {
-  "schema_version": 2,
-  "diagram_type": "workflow",
+  "schema_version": 1,
+  "diagram_type": "architecture",
   "meta": {
     "title": "autodev · 功能开发",
     "locale": "zh-CN",
+    "visual_preset": "editorial",
     "quality_profile": "showcase",
-    "legend": {
-      "mode": "hidden"
-    }
+    "viewBox": [820, 366],
+    "legend": { "mode": "hidden" }
   },
-  "lanes": [
-    {
-      "id": "clarify",
-      "label": "Clarify · 对齐"
-    },
-    {
-      "id": "loop",
-      "label": "Loop · 迭代"
-    },
-    {
-      "id": "handoff",
-      "label": "Handoff · 交付"
-    }
+  "layout": { "mode": "grid", "origin": [40, 60], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
+  "components": [
+    { "id": "impact", "size": [140, 68], "row": 0, "col": 0, "type": "security", "label": "确认影响范围", "sublabel": "模块增减 / 已有流程变更" },
+    { "id": "tests", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "共建可执行测试", "sublabel": "查询 / 删改 / 新增 / 试运行" },
+    { "id": "review", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "用户确认？", "sublabel": "审阅可执行测试" },
+    { "id": "baseline", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "记录 baseline", "sublabel": "运行已确认的测试集" },
+    { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "开发实现", "sublabel": "不超出已确认的影响范围" },
+    { "id": "verify", "size": [140, 68], "row": 1, "col": 2, "type": "backend", "label": "全部通过？", "sublabel": "运行完整测试集" },
+    { "id": "evidence", "size": [140, 68], "row": 1, "col": 1, "type": "frontend", "label": "复验交付状态", "sublabel": "同一测试 / 可比较的条件" },
+    { "id": "table", "size": [140, 68], "row": 1, "col": 0, "type": "frontend", "label": "一张对比表", "sublabel": "baseline 与最终结果" }
   ],
-  "nodes": [
-    {
-      "id": "input",
-      "lane": "clarify",
-      "col": 0,
-      "type": "external",
-      "label": "功能",
-      "sublabel": "用户需求",
-      "width": 140
-    },
-    {
-      "id": "impact",
-      "lane": "clarify",
-      "col": 1,
-      "type": "security",
-      "label": "确认影响",
-      "sublabel": "架构 · 流程",
-      "width": 160
-    },
-    {
-      "id": "tests",
-      "lane": "clarify",
-      "col": 2,
-      "type": "security",
-      "label": "共建测试",
-      "sublabel": "查询 · 更新 · 新增 · 运行",
-      "width": 180
-    },
-    {
-      "id": "review",
-      "lane": "clarify",
-      "col": 3,
-      "type": "security",
-      "label": "人工确认",
-      "tag": "直到确认",
-      "width": 140
-    },
-    {
-      "id": "baseline",
-      "lane": "clarify",
-      "col": 4,
-      "type": "database",
-      "label": "Baseline",
-      "sublabel": "运行已确认测试",
-      "width": 160
-    },
-    {
-      "id": "implement",
-      "lane": "loop",
-      "col": 4,
-      "type": "backend",
-      "label": "实现",
-      "sublabel": "在确认范围内",
-      "width": 168
-    },
-    {
-      "id": "verify",
-      "lane": "loop",
-      "col": 5,
-      "type": "backend",
-      "label": "运行测试",
-      "sublabel": "已确认集合",
-      "width": 140
-    },
-    {
-      "id": "table",
-      "lane": "handoff",
-      "col": 5,
-      "type": "frontend",
-      "label": "对比表",
-      "sublabel": "baseline vs 最终结果",
-      "width": 180
-    }
+  "boundaries": [
+    { "kind": "region", "label": "01  CLARIFY · 对齐", "wraps": ["impact", "tests", "review", "baseline"], "pad": 20 },
+    { "kind": "region", "label": "02  LOOP · 迭代", "wraps": ["implement", "verify"], "pad": 20 },
+    { "kind": "region", "label": "03  HANDOFF · 交付", "wraps": ["evidence", "table"], "pad": 20 }
   ],
-  "edges": [
-    {
-      "id": "in-impact",
-      "from": "input",
-      "to": "impact"
-    },
-    {
-      "id": "impact-tests",
-      "from": "impact",
-      "to": "tests"
-    },
-    {
-      "id": "tests-review",
-      "from": "tests",
-      "to": "review"
-    },
-    {
-      "id": "revise",
-      "from": "review",
-      "to": "tests",
-      "label": "修订",
-      "role": "return"
-    },
-    {
-      "id": "approved",
-      "from": "review",
-      "to": "baseline",
-      "label": "已确认",
-      "variant": "security"
-    },
-    {
-      "id": "start-loop",
-      "from": "baseline",
-      "to": "implement",
-      "route": "drop",
-      "fromSide": "bottom",
-      "toSide": "top"
-    },
-    {
-      "id": "impl-verify",
-      "from": "implement",
-      "to": "verify"
-    },
-    {
-      "id": "retry",
-      "from": "verify",
-      "to": "implement",
-      "label": "未通过",
-      "role": "return"
-    },
-    {
-      "id": "pass",
-      "from": "verify",
-      "to": "table",
-      "label": "全部通过",
-      "variant": "emphasis"
-    }
-  ],
-  "semanticChecks": {
-    "allowedRoots": [
-      "input"
-    ],
-    "allowedTerminals": [
-      "table"
-    ],
-    "requiredEdges": [
-      {
-        "from": "input",
-        "to": "impact"
-      },
-      {
-        "from": "impact",
-        "to": "tests"
-      },
-      {
-        "from": "tests",
-        "to": "review"
-      },
-      {
-        "from": "review",
-        "to": "tests"
-      },
-      {
-        "from": "review",
-        "to": "baseline"
-      },
-      {
-        "from": "baseline",
-        "to": "implement"
-      },
-      {
-        "from": "implement",
-        "to": "verify"
-      },
-      {
-        "from": "verify",
-        "to": "implement"
-      },
-      {
-        "from": "verify",
-        "to": "table"
-      }
-    ],
-    "requiredPaths": [
-      {
-        "from": "input",
-        "to": "table"
-      }
-    ]
-  }
+  "connections": [
+    { "id": "impact-tests", "from": "impact", "to": "tests" },
+    { "id": "tests-review", "from": "tests", "to": "review" },
+    { "id": "revise", "from": "review", "to": "tests", "label": "否 · 修订", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
+    { "id": "approved", "from": "review", "to": "baseline", "label": "是" },
+    { "id": "start-loop", "from": "baseline", "to": "implement" },
+    { "id": "impl-verify", "from": "implement", "to": "verify" },
+    { "id": "retry", "from": "verify", "to": "implement", "label": "否 · 修复", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
+    { "id": "pass", "from": "verify", "to": "evidence", "label": "是", "variant": "emphasis" },
+    { "id": "deliver", "from": "evidence", "to": "table", "variant": "emphasis" }
+  ]
 }

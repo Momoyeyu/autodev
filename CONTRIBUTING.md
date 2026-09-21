@@ -36,13 +36,17 @@ The README diagrams are generated with [Archify](https://github.com/tt-a1i/archi
 
 | Source | README image | Role |
 |---|---|---|
-| `docs/diagrams/autodev.overview(.zh).json` | `docs/assets/autodev-overview(.zh).png` | Hero: only the big three steps per scenario lane |
+| `docs/diagrams/autodev.overview(.zh).json` | `docs/assets/autodev-overview(.zh).png` | Hero: one shared three-step path, without scenario detail |
 | `docs/diagrams/autodev.development(.zh).json` | `docs/assets/autodev-development(.zh).png` | Feature flow inside the workflow section |
 | `docs/diagrams/autodev.optimization(.zh).json` | `docs/assets/autodev-optimization(.zh).png` | Optimization flow inside the workflow section |
 
-All sources use workflow schema v2, `quality_profile: showcase`, and per-locale identical node/edge IDs. The overview keeps two scenario lanes and collapses each stage to one node. The detail diagrams use three stage lanes (Clarify / Loop / Handoff) so the columns can show full detail: the human-review revise edge and the implement-verify retry edge are `role: "return"` cycles, stage transitions drop between lanes, and `semanticChecks` protect the ordering — do not weaken those checks to resolve a layout failure. Self-loops (`from == to`) are not routable; express a cycle as a return edge between two nodes.
+The process maps use Archify's `architecture` schema v1 and grid layout, not its workflow-lane template. This provides explicit canvas bounds without unused columns or full-width empty stage lanes. `components` are process steps, `connections` are directed control flow, and the named regions group stages, not deployment infrastructure. Keep `quality_profile: showcase` and identical topology and geometry within each language pair.
 
-Keep the PNGs opaque and dark regardless of the README viewer's color scheme. Use Archify's Classic preset and canonical PNG export, not a screenshot containing viewer controls or manually recolored output. These are workflow illustrations, not test-result charts; do not reintroduce the removed result screenshot.
+The overview has exactly three nodes and two arrows. Detail maps use a compact two-row path: Clarify reads left to right, then Loop and Handoff follow the arrows right to left. Three numbered stage regions remain distinct. Dashed return paths show review and implementation feedback; solid paths show progression and delivery. The optimization stop check precedes each attempt, with a direct exit to the chart for an already-met target or exhausted budget.
+
+This renderer does not support workflow `semanticChecks`. Check directed connections explicitly: approval precedes baseline; optimization limits follow baseline; each detail map has a review cycle and an execution cycle; only the required table/chart is terminal. Do not treat successful geometry validation as a semantic check.
+
+Keep the PNGs opaque and dark regardless of the README viewer's color scheme. Use Archify's Editorial preset and canonical PNG export, not a screenshot containing viewer controls or manually recolored output. These are workflow illustrations, not test-result charts; do not reintroduce the removed result screenshot.
 
 ### Regenerate with Archify
 
@@ -55,8 +59,8 @@ for name in overview development optimization; do
   for locale in '' '.zh'; do
     source="docs/diagrams/autodev.${name}${locale}.json"
     output="$OUT/autodev-${name}${locale}.html"
-    node "$ARCHIFY_SKILL/bin/archify.mjs" validate workflow "$source" --quality showcase --json &&
-    node "$ARCHIFY_SKILL/bin/archify.mjs" deliver workflow "$source" "$output" --quality showcase --json &&
+    node "$ARCHIFY_SKILL/bin/archify.mjs" validate architecture "$source" --quality showcase --json &&
+    node "$ARCHIFY_SKILL/bin/archify.mjs" deliver architecture "$source" "$output" --quality showcase --json &&
     node "$ARCHIFY_SKILL/bin/archify.mjs" visual-check "$output" --json || break 2
   done
 done
@@ -64,7 +68,7 @@ done
 
 Require all nine artifact checks, zero composition errors, and zero warnings. Never inspect stale HTML after a failed delivery. Browser evidence and perceptual review are separate from deterministic validation.
 
-Open each successfully delivered HTML with `?theme=dark`, keep Classic selected, and use Export → PNG. Save the canonical downloads to the corresponding image paths above. Inspect both exported PNGs for legibility, correct sequence, unclipped labels, no viewer UI, and an opaque dark background. Keep validation and export receipts with the generation artifacts; source JSON and final images belong in Git.
+Open each successfully delivered HTML with `?theme=dark`, keep Editorial selected, and use Export → PNG. Save the canonical downloads to the corresponding image paths above. Inspect all six exported PNGs at a 960px README reading width for legibility, balanced margins, clear local cycles, unclipped labels, no viewer UI, and an opaque dark background. Review one detail composition before producing its translated counterpart; a nine-check pass alone is not visual acceptance. Keep validation and export receipts with the generation artifacts; source JSON and final images belong in Git.
 
 Archify renders this repository's explanatory workflow. It is not a mandatory dependency for producing a target project's optimization-result chart.
 
@@ -78,7 +82,7 @@ Before committing:
 - Check local links, anchors, frontmatter, and code fences; verify the deleted reference names are no longer used.
 - Check that runnable-test approval precedes formal baseline and optimization limits follow baseline.
 - Verify the feature table and optimization process chart are mandatory everywhere, not optional presentation choices.
-- Confirm bilingual diagram topology matches and both PNGs are dark canonical exports.
+- Confirm bilingual diagram topology and geometry match and all six PNGs are dark canonical exports.
 - Run Archify validation/browser checks and review the actual images; retain the evidence.
 - Run `git diff --check` and confirm `git ls-files -- tests evals` is empty.
 - Keep ignored historical run artifacts and unrelated user work untouched.

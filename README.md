@@ -52,7 +52,7 @@ Clarify is not just a conversation. Inspecting code, maintaining tests, trial ru
 
 [Diagram source](docs/diagrams/autodev.development.json)
 
-Clarify confirms the architecture/workflow impact, builds runnable tests with the human (query → update outdated → add missing → verify execution, revised until approved), then records the baseline. Loop implements within the approved impact and reruns the agreed set until everything passes. Handoff delivers one table comparing baseline and final results for the same tests.
+Start at the upper left with the feature request; follow the solid arrows across Clarify, down into Loop, and back toward Handoff. Dashed arrows are feedback cycles. Agree explicitly whether modules may be added or removed and whether existing workflows may change.
 
 Test maintenance belongs **inside the human-in-the-loop review**, not after test approval. Keep still-relevant coverage and explain why outdated expectations changed. Approval concerns runnable tests, not just a test plan.
 
@@ -64,7 +64,7 @@ Test maintenance belongs **inside the human-in-the-loop review**, not after test
 
 [Diagram source](docs/diagrams/autodev.optimization.json)
 
-Clarify builds one runnable numeric test with the human — **quantifiable** (an executable benchmark producing a number) and **single** (one benchmark, or a fixed weighted sum of several) — then records the baseline and confirms the limits against it: the **target** that permits early exit, the **editable files** that bound implementation, and the **time budget** that prevents an unbounded loop. Loop optimizes allowed files and reruns the same test until the target is met or time expires. Handoff delivers one chart showing the process from baseline through attempts to the final result.
+**One test, one score:** agree on an executable benchmark or a fixed weighted sum. Follow the solid arrows from test preparation through baseline and limits; the dashed paths repeat review or optimization. The stop check precedes each attempt, allowing an already-satisfied target to go straight to Handoff. Bound each run by the remaining wall-clock budget.
 
 Agree on the workload, unit, direction, measurement method, and any weights or normalization before baseline. Multiple benchmark components still produce **one score**, not separate optimization targets. Do not change the ruler during Loop.
 

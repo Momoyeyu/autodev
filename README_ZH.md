@@ -52,7 +52,7 @@ Clarify 不只是问问题。查代码、维护测试、试运行和测量 basel
 
 [流程图源文件](docs/diagrams/autodev.development.zh.json)
 
-Clarify 先确认架构与流程影响，再与人共建可执行 test（查询 → 更新过时 → 新增缺失 → 验证执行，反复修订直到用户确认），然后记录 baseline。Loop 在确认后的影响范围内开发，反复运行已确认的测试集直到全部通过。Handoff 交付一张表，对比同一套 test 的 baseline 与最终结果。
+从左上角的功能需求出发，沿实线完成 Clarify，向下进入 Loop，再沿箭头回到 Handoff；虚线表示反馈循环。影响确认必须明确：是否允许增减模块，是否允许修改已有流程。
 
 测试维护属于 **human-in-the-loop 审阅过程内部**，不是用户确认 test 之后才开始的另一个阶段。保留仍有效的覆盖，说明过时期望为何被修改。用户确认的是可执行 test，而不只是测试计划。
 
@@ -64,7 +64,7 @@ Clarify 先确认架构与流程影响，再与人共建可执行 test（查询 
 
 [流程图源文件](docs/diagrams/autodev.optimization.zh.json)
 
-Clarify 与人共建唯一的可执行数值 test——**可量化**（benchmark 输出数值结果）、**单一性**（一个 benchmark 或多个 benchmark 的固定加权和）——然后记录 baseline，并据此确认限制：可以提前退出的**优化目标**、限定实现改动的**可编辑文件**、防止无限循环的**时间预算**。Loop 只在允许的文件中优化、反复运行同一个 test，直到达标或时间耗尽。Handoff 交付一张图，展示从 baseline、经过各次尝试到最终结果的过程。
+**一项 test、一个分数：** 确认可执行的 benchmark 或固定加权和。沿实线从测试准备走到 baseline 与限制确认，沿虚线反复审阅或优化。每次尝试前先检查停止条件，baseline 已达标时可直接进入 Handoff；每次运行都受剩余时间预算约束。
 
 工作负载、单位、改善方向、测量方法，以及可能涉及的权重和归一化方式，都在 baseline 之前确认。多个 benchmark 分项仍只产生**一个分数**，不是多个独立优化目标。Loop 中不能换尺子。
 

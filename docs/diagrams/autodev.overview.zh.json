@@ -1,190 +1,22 @@
 {
-  "schema_version": 2,
-  "diagram_type": "workflow",
+  "schema_version": 1,
+  "diagram_type": "architecture",
   "meta": {
     "title": "autodev · Clarify → Loop → Handoff",
     "locale": "zh-CN",
+    "visual_preset": "editorial",
     "quality_profile": "showcase",
-    "legend": {
-      "mode": "hidden"
-    }
+    "viewBox": [600, 240],
+    "legend": { "mode": "hidden" }
   },
-  "lanes": [
-    {
-      "id": "development",
-      "label": "功能开发"
-    },
-    {
-      "id": "optimization",
-      "label": "性能优化"
-    }
+  "layout": { "mode": "grid", "origin": [30, 60], "cols": 3, "cellW": 150, "cellH": 120, "gapX": 45, "gapY": 0 },
+  "components": [
+    { "id": "clarify", "row": 0, "col": 0, "size": [150, 120], "type": "security", "label": "Clarify", "sublabel": "把人的意图变成可执行共识", "tag": "01 · 对齐" },
+    { "id": "loop", "row": 0, "col": 1, "size": [150, 120], "type": "backend", "label": "Loop", "sublabel": "在共识内迭代实现", "tag": "02 · 迭代" },
+    { "id": "handoff", "row": 0, "col": 2, "size": [150, 120], "type": "frontend", "label": "Handoff", "sublabel": "用直观证据交付成果", "tag": "03 · 交付" }
   ],
-  "nodes": [
-    {
-      "id": "dev-input",
-      "lane": "development",
-      "col": 0,
-      "type": "external",
-      "label": "功能",
-      "sublabel": "用户需求",
-      "width": 128
-    },
-    {
-      "id": "dev-clarify",
-      "lane": "development",
-      "col": 1,
-      "type": "security",
-      "label": "Clarify",
-      "sublabel": "影响 · 测试 · baseline",
-      "width": 172
-    },
-    {
-      "id": "dev-loop",
-      "lane": "development",
-      "col": 2,
-      "type": "backend",
-      "label": "Loop",
-      "sublabel": "直到测试全部通过",
-      "width": 172
-    },
-    {
-      "id": "dev-handoff",
-      "lane": "development",
-      "col": 3,
-      "type": "frontend",
-      "label": "Handoff",
-      "sublabel": "对比表",
-      "width": 172
-    },
-    {
-      "id": "opt-input",
-      "lane": "optimization",
-      "col": 0,
-      "type": "external",
-      "label": "优化",
-      "sublabel": "用户目标",
-      "width": 128
-    },
-    {
-      "id": "opt-clarify",
-      "lane": "optimization",
-      "col": 1,
-      "type": "security",
-      "label": "Clarify",
-      "sublabel": "单一测试 · baseline · 限制",
-      "width": 196
-    },
-    {
-      "id": "opt-loop",
-      "lane": "optimization",
-      "col": 2,
-      "type": "backend",
-      "label": "Loop",
-      "sublabel": "直到达标或超时",
-      "width": 172
-    },
-    {
-      "id": "opt-handoff",
-      "lane": "optimization",
-      "col": 3,
-      "type": "frontend",
-      "label": "Handoff",
-      "sublabel": "过程图",
-      "width": 172
-    }
-  ],
-  "edges": [
-    {
-      "id": "dev-in",
-      "from": "dev-input",
-      "to": "dev-clarify"
-    },
-    {
-      "id": "dev-cl",
-      "from": "dev-clarify",
-      "to": "dev-loop"
-    },
-    {
-      "id": "dev-lh",
-      "from": "dev-loop",
-      "to": "dev-handoff"
-    },
-    {
-      "id": "dev-back",
-      "from": "dev-loop",
-      "to": "dev-clarify",
-      "label": "范围变化",
-      "variant": "dashed",
-      "role": "return"
-    },
-    {
-      "id": "opt-in",
-      "from": "opt-input",
-      "to": "opt-clarify"
-    },
-    {
-      "id": "opt-cl",
-      "from": "opt-clarify",
-      "to": "opt-loop"
-    },
-    {
-      "id": "opt-lh",
-      "from": "opt-loop",
-      "to": "opt-handoff"
-    },
-    {
-      "id": "opt-back",
-      "from": "opt-loop",
-      "to": "opt-clarify",
-      "label": "范围变化",
-      "variant": "dashed",
-      "role": "return"
-    }
-  ],
-  "semanticChecks": {
-    "allowedRoots": [
-      "dev-input",
-      "opt-input"
-    ],
-    "allowedTerminals": [
-      "dev-handoff",
-      "opt-handoff"
-    ],
-    "requiredEdges": [
-      {
-        "from": "dev-input",
-        "to": "dev-clarify"
-      },
-      {
-        "from": "dev-clarify",
-        "to": "dev-loop"
-      },
-      {
-        "from": "dev-loop",
-        "to": "dev-handoff"
-      },
-      {
-        "from": "opt-input",
-        "to": "opt-clarify"
-      },
-      {
-        "from": "opt-clarify",
-        "to": "opt-loop"
-      },
-      {
-        "from": "opt-loop",
-        "to": "opt-handoff"
-      }
-    ],
-    "requiredPaths": [
-      {
-        "from": "dev-input",
-        "to": "dev-handoff"
-      },
-      {
-        "from": "opt-input",
-        "to": "opt-handoff"
-      }
-    ]
-  }
+  "connections": [
+    { "id": "agreement", "from": "clarify", "to": "loop" },
+    { "id": "delivery", "from": "loop", "to": "handoff" }
+  ]
 }
