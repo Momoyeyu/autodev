@@ -18,7 +18,7 @@ Loop runs in a **separate git worktree on a dedicated branch**, created when Loo
 2. Note the user's current branch; Handoff merges back into it. Create the loop branch and worktree outside the repository, for example `git worktree add -b autodev/<task> ../<repo>-autodev-<task> HEAD`.
 3. If the user has uncommitted changes that belong to the starting point, apply them in the worktree and commit them there as the baseline commit. The user's checkout and branch stay untouched.
 4. Prepare the runtime in the worktree yourself (dependencies, `.env`, local data); rerun the approved test there once and confirm it reproduces baseline before the first attempt.
-5. Commit every attempt or checkpoint on the loop branch before evaluating it. Write logs and raw outputs to the agreed artifact location, not into editable paths.
+5. Commit every attempt or checkpoint on the loop branch before evaluating it. Write logs and raw outputs to the agreed artifact location, which must be outside the worktree or git-ignored, since rollback runs `git clean -fd`; never into editable paths.
 
 Ignored build products left in the worktree are acceptable; the worktree is removed after Handoff. Prefer idempotent tests so a previous attempt's external side effects do not distort the next measurement.
 
