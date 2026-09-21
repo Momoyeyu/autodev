@@ -29,6 +29,6 @@
   <text x="560" y="232" font-family="'Helvetica Neue', 'SF Pro Display', Arial, sans-serif"
         font-weight="700" font-size="190" letter-spacing="-8" fill="#3259B4">Auto<tspan fill="url(#dev)">Dev</tspan></text>
   <text x="566" y="300" font-family="'Helvetica Neue', 'PingFang SC', 'SF Pro Display', Arial, sans-serif"
-        font-weight="500" font-size="44" letter-spacing="1" fill="#5A8BDF">Open the black box of vibe coding</text>
+        font-weight="500" font-size="44" letter-spacing="4" fill="#5A8BDF">打开 VibeCoding 的黑盒</text>
   </g>
 </svg>
