@@ -37,6 +37,18 @@ This is the original baseline for the handoff chart. Later improvements must not
 
 Reuse values already supplied by the human, but do not silently invent missing permissions or an unlimited budget. State the proposal relative to the measured starting point.
 
+Write the proposal as a contract with the judge script, from the user's checkout, into a directory outside the repository (pass `--home` as an absolute path; every later command uses the same value):
+
+```bash
+python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
+  --scenario optimization --editable src/api \
+  --frozen bench/ --test-cmd "python bench/run.py" \
+  --score-regex "p95=([0-9.]+)" --unit ms --direction lower \
+  --delta-pct 5 --target 200 --exclusive --budget-minutes 20
+```
+
+`init` runs the test once more to record the baseline and its raw output, converts `δ`, hashes the frozen paths, and prints the contract. That printed contract is what the human reviews in step 4; the same fields drive every Loop verdict, so nothing agreed here depends on the agent remembering it.
+
 Bind both Loop comparisons to the approved `direction`. `best` is the retained best verified score and starts at baseline; `δ` is the improvement margin:
 
 | direction | Attempt is accepted | Target is met |
@@ -44,7 +56,7 @@ Bind both Loop comparisons to the approved `direction`. `best` is the retained b
 | lower | `score < best - δ` | `score ≤ target`, or `score < target` if the human excluded equality |
 | higher | `score > best + δ` | `score ≥ target`, or `score > target` if the human excluded equality |
 
-Acceptance compares with `best`, not baseline, so a retained result is never replaced by a worse one. Fix `δ` in the score's unit before Loop: a percentage converts once against baseline, `δ = pct × |baseline|`, and is not recomputed against later `best` values; with an agreed noise floor use `δ = max(pct × |baseline|, noise)`. Read equality from the human's wording — "at least 90%" includes 90%, "below 100 ms" excludes 100 ms — and record the choice; do not default it.
+Acceptance compares with `best`, not baseline, so a retained result is never replaced by a worse one. Fix `δ` in the score's unit before Loop: `--delta-pct` converts once against baseline, `δ = pct × |baseline|`, and is not recomputed against later `best` values; `--delta` gives it directly, for example as an agreed noise floor. Read equality from the human's wording — "at least 90%" includes 90%, "below 100 ms" excludes 100 ms (`--exclusive`) — and record the choice; do not default it.
 
 Examples: latency baseline 200 ms, `δ` 10 ms, lower — 180 ms is accepted, 220 ms is rejected, and a later 185 ms is rejected because `best` is already 180 ms. Throughput target "at least 1000 req/s", higher — 800 req/s has not met the target; 1000 req/s has.
 
@@ -52,7 +64,7 @@ Examples: latency baseline 200 ms, `δ` 10 ms, lower — 180 ms is accepted, 220
 
 Show the benchmark and its conditions, the baseline score with its samples, and the proposed target, editable files, and time budget, together. The human decides:
 
-- **Revise:** apply the feedback and repeat from step 1. A changed benchmark, workload, or formula needs a new baseline before the next review.
+- **Revise:** apply the feedback and repeat from step 1. A changed benchmark, workload, or formula needs a new baseline before the next review; rerun `init --renew`, which archives the previous contract.
 - **Approve:** record the approved test, baseline, and limits, then enter Loop.
 
 Record hashes or equivalent identities for the benchmark and measurement inputs. Changing the ruler, reducing work, or warming an undeclared cache is not an implementation improvement. A change in the approved measurement requires renewed Clarify and a new baseline.

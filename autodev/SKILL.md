@@ -31,6 +31,8 @@ User input starts the workflow; it is not another stage. Clarify is the core cap
 
 Do not preload the directory. Follow the current stage and scenario, keeping shared instructions with the selected branch.
 
+`scripts/autodev_verify.py` (Python 3, standard library) is the judge for the Loop. Clarify writes the agreement into it with `init`; Loop runs `start`, then `attempt` and `status` every round; Handoff runs `report`. It enforces the frozen surface, the editable scope, the time budget, the direction-bound comparison, and the rollback, and it keeps the raw output for every verdict. The rules below describe what it does and what remains your responsibility.
+
 ## Clarify
 
 Clarify is a human-in-the-loop cycle around the **whole pass**, not around each sub-step. Run one complete pass, present everything it produced, and let the human decide: revise and repeat Clarify, or enter Loop.
@@ -43,7 +45,7 @@ The human reviews the runnable tests, the baseline result, and the proposed scop
 
 ## Loop
 
-Work in a dedicated git worktree and branch created at Loop entry; every attempt is a commit, and a rejected optimization attempt is rolled back with `git reset --hard` to the best commit. Change the implementation within the agreed boundaries and run the same test. Feature work ends only when all agreed tests pass. Optimization uses do-while order: optimize, measure and retain the best valid state, then check the target or time limit. Record every attempt for the final chart; do not bypass the first attempt merely because baseline meets the target.
+Work in a dedicated git worktree and branch created at Loop entry; every attempt is a commit judged by `autodev_verify.py attempt`, and a rejected or invalid attempt is rolled back with `git reset --hard` to the best commit. Change the implementation within the agreed boundaries and run the same test. Feature work ends only when all agreed tests pass. Optimization uses do-while order: optimize, measure and retain the best valid state, then check the target or time limit. Record every attempt for the final chart; do not bypass the first attempt merely because baseline meets the target.
 
 Do not weaken tests, shrink workloads, alter benchmark weights, or change the measuring conditions to manufacture progress. Changes to intent, test meaning, or permitted scope return to Clarify and require a comparable new baseline.
 

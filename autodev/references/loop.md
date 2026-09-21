@@ -9,6 +9,7 @@ Read after the human has approved a complete Clarify pass. Apply the shared rule
 - Save actual command output and source identities. Do not turn skips, setup errors, crashes, or unrun checks into passing results.
 - Return to [Clarify](clarify.md) for a new full pass if intent, test meaning, or scope changes. A test defect also needs repair and a comparable baseline, not a silent adjustment during implementation.
 - Work in the dedicated worktree described below. Never reset, clean, or rewrite the user's own checkout or shared history.
+- Judge every round with `scripts/autodev_verify.py`, not by hand. It performs the scope check, frozen-surface check, test run, direction-bound comparison, rollback, and logging described below, and leaves the raw output that Handoff cites. Its exit code is the verdict: `0` accepted, `1` rejected or failing, `2` invalid, `3` precondition not met.
 
 ## Isolate the loop in a git worktree
 
@@ -17,7 +18,7 @@ Loop runs in a **separate git worktree on a dedicated branch**, created when Loo
 1. If the project is not a git repository, `git init` and commit the current state first.
 2. Note the user's current branch; Handoff merges back into it. Create the loop branch and worktree outside the repository, for example `git worktree add -b autodev/<task> ../<repo>-autodev-<task> HEAD`.
 3. If the user has uncommitted changes that belong to the starting point, apply them in the worktree and commit them there as the baseline commit. The user's checkout and branch stay untouched.
-4. Prepare the runtime in the worktree yourself (dependencies, `.env`, local data); rerun the approved test there once and confirm it reproduces baseline before the first attempt.
+4. Prepare the runtime in the worktree yourself (dependencies, `.env`, local data). Then bind the judge to the worktree: `python3 <skill>/scripts/autodev_verify.py --home <contract dir> start --worktree <path>`. It records `best = HEAD`, starts the time budget, and runs a smoke test that deliberately edits a frozen file and adds an out-of-scope file, requiring both to be rejected and the rollback to leave no residue. Do not begin attempts if the smoke test fails.
 5. Commit every attempt or checkpoint on the loop branch before evaluating it. Write logs and raw outputs to the agreed artifact location, which must be outside the worktree or git-ignored, since rollback runs `git clean -fd`; never into editable paths.
 
 Ignored build products left in the worktree are acceptable; the worktree is removed after Handoff. Prefer idempotent tests so a previous attempt's external side effects do not distort the next measurement.
@@ -26,8 +27,8 @@ Ignored build products left in the worktree are acceptable; the worktree is remo
 
 1. Read the approved impact, tests, and baseline failures.
 2. Implement a focused change within that impact.
-3. Run relevant tests for feedback and the complete agreed test set at checkpoints; commit each checkpoint on the loop branch.
-4. Record remaining failures and repeat until **all agreed tests pass**.
+3. Run relevant tests for feedback. At each checkpoint, commit and run `autodev_verify.py --home <contract dir> attempt --note "<what changed>"`: it rejects the checkpoint as invalid if it touches frozen test files or paths outside the approved impact, runs the complete agreed test set, and logs the result. A failing checkpoint is kept (exit `1`); an invalid one is rolled back (exit `2`).
+4. Record remaining failures and repeat until `attempt` exits `0`, meaning **all agreed tests pass**; `status` then reports `handoff`.
 
 A still-failing new case does not require discarding useful partial development. Fix the implementation and regressions rather than weakening tests or accepting only a passing subset. Do not impose an optimization timeout or an arbitrary attempt count on feature work.
 
@@ -40,13 +41,13 @@ Keep the original baseline separate from the best verified candidate. Initialize
 Use a **do-while** loop: execute an attempt before evaluating the normal exit conditions.
 
 1. Modify only allowed implementation files and commit the attempt.
-2. Run the same benchmark with the agreed inputs, repetitions, aggregation, and formula.
-3. Before judging the score, check that the diff from `best` touches only editable files and that the frozen surface (benchmark, inputs, weights, scoring) still matches the identities recorded in Clarify. A score measured with a tampered ruler is invalid regardless of its value, as are crashes and invalid outputs.
-4. Accept the attempt only under the direction-bound rule from Clarify (lower: `score < best - δ`; higher: `score > best + δ`); accepted means the attempt commit becomes `best`.
-5. Log the outcome: attempt ID, one-line description of the change, score or invalid reason, and accepted/rejected/invalid. Then, unless accepted, roll back with `git reset --hard <best>` followed by `git clean -fd` in the worktree, which removes modified, added, deleted, and staged changes alike. Rejected code is not kept; the log is what the chart and the human need.
-6. Check whether **the retained best verified score meets the target under the same direction and the agreed equality rule, or the time budget has expired**. A rejected or invalid attempt cannot establish target achievement. If neither exit condition holds, return to step 1; otherwise enter Handoff with the best verified state.
+2. Run `autodev_verify.py --home <contract dir> attempt --note "<what changed>"`. It runs the same benchmark with the agreed command inside the remaining budget and saves the raw output as `raw/attempt-NNN.log`.
+3. Before judging the score, the same command checks that the diff from `best` touches only editable files and that the frozen surface (benchmark, inputs, weights, scoring) still matches the hashes recorded in Clarify. A score measured with a tampered ruler is invalid regardless of its value, as are crashes, timeouts, and output without a score.
+4. It accepts the attempt only under the direction-bound rule from Clarify (lower: `score < best - δ`; higher: `score > best + δ`); accepted means the attempt commit becomes `best`.
+5. It logs the outcome to `attempts.jsonl`: attempt number, commit, your note, score or invalid reason, verdict, and raw-output path. Then, unless accepted, it rolls back with `git reset --hard <best>` followed by `git clean -fd` in the worktree, which removes modified, added, deleted, and staged changes alike. Rejected code is not kept; the log is what the chart and the human need.
+6. Run `autodev_verify.py --home <contract dir> status`. It reports whether **the retained best verified score meets the target under the same direction and the agreed equality rule, or the time budget has expired**. A rejected or invalid attempt cannot establish target achievement. If `decision` is `continue`, return to step 1; if `handoff`, enter Handoff with the best verified state.
 
-Bound commands by the remaining wall-clock budget throughout each attempt. Post-testing does not authorize work after the deadline; interrupt an in-flight attempt when time runs out. If no execution time remains at entry, report budget exhaustion rather than starting unauthorized work.
+`attempt` bounds the test run by the remaining wall-clock budget and refuses to start once the deadline has passed (exit `3`); the in-flight commit is then rolled back the same way and `status` reports `time budget exhausted`. Post-testing does not authorize work after the deadline. Do not edit the contract, the log, or the raw outputs; a changed agreement means a new Clarify pass and `init --renew`.
 
 Do not add convergence, rejection-count, or attempt-count exits. Do not extend the budget silently. At timeout, roll back any unverified in-flight candidate the same way and retain `best`. If no improvement was verified, retain baseline and say so.
 
@@ -54,7 +55,7 @@ Do not shrink workloads, hardcode answers, retune weights, or change benchmark c
 
 ## Record the optimization process for the chart
 
-Record baseline and every attempt, including rejected and failed ones. Each record needs an attempt ID or elapsed time, source identity, actual score when valid, retained/rejected/failed status, and a link to raw output.
+`attempts.jsonl` already records baseline and every attempt, including rejected and failed ones, with attempt number, commit, actual score when valid, verdict, and the raw-output path. Add nothing to it by hand; write your own notes elsewhere.
 
 A crash or timeout has no numeric score: mark it invalid, not zero. Preserve enough history to distinguish measured attempts from the best-so-far state. Record which measured candidate is ultimately delivered, even if it is not the last attempt.
 

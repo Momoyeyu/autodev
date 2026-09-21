@@ -30,11 +30,21 @@ Inspect the relevant code and make the proposed changes and preserved behavior e
 
 A feature request is not unrestricted permission to redesign the project.
 
+Write the proposal as a contract with the judge script, from the user's checkout, into a directory outside the repository (pass `--home` as an absolute path; every later command uses the same value):
+
+```bash
+python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
+  --scenario development --editable src/ --frozen tests/ \
+  --test-cmd "pytest -q tests/"
+```
+
+`--editable` is the file-level form of the permitted impact; `--frozen` is the agreed test set, which Loop may not edit. `init` runs the tests once more to record the baseline and its raw output and prints the contract for the human to review in step 4.
+
 ## 4. Human review of the whole pass
 
 Show the runnable tests, their meaning and maintenance reasons, the baseline results with any coverage gaps, and the proposed impact, together. The human decides:
 
-- **Revise:** apply the feedback and repeat from step 1. Rerun baseline on the updated suite; a changed test set needs a new baseline.
+- **Revise:** apply the feedback and repeat from step 1. Rerun baseline on the updated suite; a changed test set needs a new baseline, so rerun `init --renew`.
 - **Approve:** record the approved tests, baseline, and impact, then enter Loop.
 
 If every prepared test already passes at baseline, say so in the review; the human may confirm the behavior already exists or point out what the tests missed. An approved all-green baseline still requires final verification and the comparison table in [Handoff](handoff.md#feature-development-one-table).

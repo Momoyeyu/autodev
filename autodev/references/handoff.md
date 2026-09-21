@@ -8,7 +8,7 @@ Both must use the approved test and the original baseline. Add only the reproduc
 
 Run the complete agreed test set on the delivered source state under comparable conditions. Present one table comparing baseline and final results.
 
-Use stable case IDs or agreed groups, include totals, and link to the full execution evidence. A suitable structure is:
+Start from `autodev_verify.py --home <contract dir> report`, which writes `comparison.md` with the baseline and final runs of the agreed command and their raw-output paths. Expand it with stable case IDs or agreed groups from those logs, include totals, and link to the full execution evidence. A suitable structure is:
 
 | Test / expected behavior | Baseline result | Final result | Evidence |
 |---|---|---|---|
@@ -33,7 +33,7 @@ The chart must:
 
 A best-so-far line may accompany the measured attempts, but label it as derived retained state. Do not hide regressions by plotting only favorable samples, smooth away failures, or join results from different test versions.
 
-Generate the chart from the recorded history using the project's available plotting/export tools; provide an image the human can view and retain the source data. If execution was blocked before any attempt or no attempt produced a valid new score, show the real baseline and annotate that outcome instead of fabricating progress. If chart generation is blocked, preserve the data and report the handoff as incomplete rather than silently falling back to a table.
+`autodev_verify.py --home <contract dir> report` renders `process.svg` from `attempts.jsonl` with exactly these elements and writes `caption.json` with the values below; use it unless the human asked for another format, and keep the source data. If execution was blocked before any attempt or no attempt produced a valid new score, show the real baseline and annotate that outcome instead of fabricating progress. If chart generation is blocked, preserve the data and report the handoff as incomplete rather than silently falling back to a table.
 
 Verify the delivered candidate within the reserved time. If only a prior measurement is available, reuse it only when source state, test version, and conditions match, and explicitly say it was not freshly rerun. Otherwise mark verification incomplete.
 
@@ -47,4 +47,4 @@ The delivered state is the loop branch's final commit: the passing checkpoint fo
 
 ## Keep the handoff trustworthy
 
-Tie the table or chart to raw results, test/source identities, execution conditions, and the delivered changes. Note limitations and any unresolved next action concisely. Never use fabricated measurements or a polished visual to conceal missing verification.
+Tie the table or chart to raw results, test/source identities, execution conditions, and the delivered changes. Every verdict in `attempts.jsonl` points to its `raw/attempt-NNN.log`; hand over the contract directory so the human can trace each round. Note limitations and any unresolved next action concisely. Never use fabricated measurements or a polished visual to conceal missing verification.

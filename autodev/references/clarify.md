@@ -37,6 +37,7 @@ After approval, record:
 - for development, the approved architecture and workflow impact;
 - for optimization, the approved target, editable files, and time budget;
 - the user's current branch and whether uncommitted changes belong to the starting point, so Loop can create its worktree and Handoff can merge back.
+- the contract directory written by `scripts/autodev_verify.py init`, which holds the same agreement in the form the Loop judge executes.
 
 Keep this evidence in the repository's normal artifact location so the next person can distinguish agreements from assumptions. Do not overwrite the original baseline with the latest successful attempt.
 
