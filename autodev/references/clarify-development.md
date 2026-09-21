@@ -13,6 +13,8 @@ Test maintenance happens here, before baseline, not after approval:
 
 “Can run” does not mean “already passes.” Do not implement the feature merely to obtain a green trial run. The prepared set includes retained coverage as well as updated and new cases, not only the easiest passing subset.
 
+Judge test changes by what they still constrain, not by how many assertions remain. Counts prove nothing: `expect(x).toBe(42)` and `expect(x).toBeDefined()` are one assertion each, and merging repeated assertions into one structural comparison loses no coverage. For every removed or changed test, show the old and new expectation side by side and state which behavior it constrained and where that behavior is now covered. Flag anything that widens accepted results, narrows inputs, adds skips or expected failures, or moves a check behind a condition. Where a case guards the requested behavior, run it once against the unchanged source: it must fail there, which shows it can detect the behavior's absence; regression cases must pass there. During Loop the test files are frozen and hash-checked, so this review is the only point at which weakening can enter.
+
 ## 2. Capture baseline
 
 Run the prepared test set on the pre-implementation source state. Record case IDs, actual outcomes, failure reasons, totals, the command, and test/source identities.
@@ -42,7 +44,7 @@ python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
 
 ## 4. Human review of the whole pass
 
-Show the runnable tests, their meaning and maintenance reasons, the baseline results with any coverage gaps, and the proposed impact, together. The human decides:
+Show the runnable tests, the old/new expectation for every changed or removed test, the baseline results with any coverage gaps, and the proposed impact, together. The human decides:
 
 - **Revise:** apply the feedback and repeat from step 1. Rerun baseline on the updated suite; a changed test set needs a new baseline, so rerun `init --renew`.
 - **Approve:** record the approved tests, baseline, and impact, then enter Loop.
