@@ -31,6 +31,6 @@ After confirmation, run the agreed test set on the pre-implementation source sta
 
 This baseline uses the reconciled suite. Removing outdated tests is preparation, not a development gain. Use the same approved test version and comparable conditions for the final results.
 
-If every agreed test already passes, verify that the requested behavior genuinely exists. Deliver that finding without unnecessary changes, or return to test review if the agreement missed part of the requirement.
+If every agreed test already passes, verify that the requested behavior genuinely exists. Avoid unnecessary implementation changes, but still follow [Handoff](handoff.md#feature-development-one-table): verify the delivered state and provide the baseline/final comparison table. Return to test review if the agreement missed part of the requirement.
 
 **Exit:** impact is confirmed, executable tests are approved, and baseline results are preserved. Continue to [Loop: development](loop.md#feature-development).

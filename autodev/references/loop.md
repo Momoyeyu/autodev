@@ -32,7 +32,7 @@ Use a **do-while** loop: execute an attempt before evaluating the normal exit co
 3. Check file boundaries and measurement identities. Crashes, invalid outputs, or tampering invalidate the result regardless of its reported score.
 4. Keep a verified improvement under the agreed direction and variability treatment; otherwise restore only that attempt's changes to the best valid state.
 5. Record the outcome, including invalid or rejected attempts.
-6. Check whether **the target is met or the time budget has expired**. If neither holds, return to step 1; otherwise enter Handoff with the best verified state.
+6. Check whether **the retained best verified score meets the target or the time budget has expired**. A rejected or invalid attempt cannot establish target achievement. If neither exit condition holds, return to step 1; otherwise enter Handoff with the best verified state.
 
 Bound commands by the remaining wall-clock budget throughout each attempt. Post-testing does not authorize work after the deadline; interrupt an in-flight attempt when time runs out. If no execution time remains at entry, report budget exhaustion rather than starting unauthorized work.
 

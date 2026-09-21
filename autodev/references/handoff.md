@@ -1,6 +1,6 @@
 # Handoff
 
-Read when the feature tests pass or optimization reaches its target or deadline. The required primary artifact depends on the scenario: **one comparison table** or **one optimization process chart**.
+Read when preparing delivery, including an incomplete or blocked result. The required primary artifact depends on the scenario: **one comparison table** or **one optimization process chart**. Show unresolved failures and missing evidence without claiming completion.
 
 Both must use the approved test and the original baseline. Add only the reproduction details and context needed for the human to verify, understand, and take over the result.
 
