@@ -31,11 +31,22 @@ This is the original baseline for the handoff chart. Later improvements must not
 
 | Limit | Propose for the human's confirmation |
 |---|---|
-| Optimization target | Threshold on the one score, direction, and whether equality counts; reaching it permits early exit |
+| Optimization target | Threshold on the one score and whether equality counts, taken from how the human phrased it; reaching it permits early exit |
 | Editable files | Explicit implementation paths the agent may change; benchmark, inputs, weights, and scoring logic remain outside this surface |
 | Time budget | A wall-clock limit, loop start and deadline; include attempt measurements and reserve time for final verification |
 
 Reuse values already supplied by the human, but do not silently invent missing permissions or an unlimited budget. State the proposal relative to the measured starting point.
+
+Bind both Loop comparisons to the approved `direction`. `best` is the retained best verified score and starts at baseline; `δ` is the improvement margin:
+
+| direction | Attempt is accepted | Target is met |
+|---|---|---|
+| lower | `score < best - δ` | `score ≤ target`, or `score < target` if the human excluded equality |
+| higher | `score > best + δ` | `score ≥ target`, or `score > target` if the human excluded equality |
+
+Acceptance compares with `best`, not baseline, so a retained result is never replaced by a worse one. Fix `δ` in the score's unit before Loop: a percentage converts once against baseline, `δ = pct × |baseline|`, and is not recomputed against later `best` values; with an agreed noise floor use `δ = max(pct × |baseline|, noise)`. Read equality from the human's wording — "at least 90%" includes 90%, "below 100 ms" excludes 100 ms — and record the choice; do not default it.
+
+Examples: latency baseline 200 ms, `δ` 10 ms, lower — 180 ms is accepted, 220 ms is rejected, and a later 185 ms is rejected because `best` is already 180 ms. Throughput target "at least 1000 req/s", higher — 800 req/s has not met the target; 1000 req/s has.
 
 ## 4. Human review of the whole pass
 
