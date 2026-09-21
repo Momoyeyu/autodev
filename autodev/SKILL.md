@@ -41,7 +41,7 @@ Use decisions already supplied; do not impose a question count or assume approva
 
 ## Loop
 
-Change the implementation within the agreed boundaries and run the same test. Feature work ends only when all agreed tests pass. Optimization ends at the target or time limit, retaining the best valid measured state and recording every attempt for the final chart.
+Change the implementation within the agreed boundaries and run the same test. Feature work ends only when all agreed tests pass. Optimization uses do-while order: optimize, measure and retain the best valid state, then check the target or time limit. Record every attempt for the final chart; do not bypass the first attempt merely because baseline meets the target.
 
 Do not weaken tests, shrink workloads, alter benchmark weights, or change the measuring conditions to manufacture progress. Changes to intent, test meaning, or permitted scope return to Clarify and require a comparable new baseline.
 

@@ -25,12 +25,16 @@ Once the complete agreed set passes, verify the delivered state and enter [Hando
 
 Keep the original baseline separate from the best verified candidate. Initialize the best candidate to baseline.
 
-1. Check the target and remaining time before each attempt. Bound long-running commands by the remaining budget.
-2. Modify only allowed implementation files, keeping a recoverable best-state snapshot.
-3. Run the same benchmark with the agreed inputs, repetitions, aggregation, and formula.
-4. Check file boundaries and measurement identities. Crashes, invalid outputs, or tampering invalidate the result regardless of its reported score.
-5. Keep a verified improvement under the agreed direction and variability treatment; otherwise restore only that attempt's changes to the best valid state.
-6. Record the outcome and repeat until **the target is met or the time budget expires**.
+Use a **do-while** loop: execute an attempt before evaluating the normal exit conditions.
+
+1. Modify only allowed implementation files, keeping a recoverable best-state snapshot.
+2. Run the same benchmark with the agreed inputs, repetitions, aggregation, and formula.
+3. Check file boundaries and measurement identities. Crashes, invalid outputs, or tampering invalidate the result regardless of its reported score.
+4. Keep a verified improvement under the agreed direction and variability treatment; otherwise restore only that attempt's changes to the best valid state.
+5. Record the outcome, including invalid or rejected attempts.
+6. Check whether **the target is met or the time budget has expired**. If neither holds, return to step 1; otherwise enter Handoff with the best verified state.
+
+Bound commands by the remaining wall-clock budget throughout each attempt. Post-testing does not authorize work after the deadline; interrupt an in-flight attempt when time runs out. If no execution time remains at entry, report budget exhaustion rather than starting unauthorized work.
 
 Do not add convergence, rejection-count, or attempt-count exits. Do not extend the budget silently. At timeout, discard any unverified in-flight candidate and retain the best verified one. If no improvement was verified, retain baseline and say so.
 

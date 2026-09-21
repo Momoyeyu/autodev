@@ -39,6 +39,6 @@ Reuse values already supplied by the human, but do not silently invent missing p
 
 Record hashes or equivalent identities for the benchmark and measurement inputs. Changing the ruler, reducing work, or warming an undeclared cache is not an implementation improvement. A change in the agreed measurement requires renewed Clarify and a new baseline.
 
-If baseline already meets the confirmed target, no optimization attempt is necessary. Handoff still requires a chart that honestly shows the baseline result and zero attempts; do not invent a trajectory.
+Once the agreement is ready, enter the do-while Loop with an optimization attempt, then evaluate the target and deadline after measurement and retention. A baseline that already meets the target does not bypass that first attempt. The agreed wall-clock budget remains a hard limit.
 
 **Exit:** one executable test is approved, baseline is recorded, and target, editable files, and time budget are confirmed. Continue to [Loop: optimization](loop.md#performance-optimization).

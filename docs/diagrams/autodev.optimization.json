@@ -15,9 +15,9 @@
     { "id": "review", "row": 0, "col": 1, "size": [140, 68], "type": "security", "label": "Human approval?", "sublabel": "One numeric score" },
     { "id": "baseline", "row": 0, "col": 2, "size": [140, 68], "type": "security", "label": "Capture baseline", "sublabel": "Original measured score" },
     { "id": "limits", "row": 0, "col": 3, "size": [140, 68], "type": "security", "label": "Confirm limits", "sublabel": "Target / files / time" },
-    { "id": "stop-check", "row": 1, "col": 3, "size": [140, 68], "type": "backend", "label": "Target or timeout?", "sublabel": "Check before each attempt" },
-    { "id": "optimize", "row": 1, "col": 2, "size": [140, 68], "type": "backend", "label": "Optimize", "sublabel": "Allowed files only" },
-    { "id": "measure", "row": 1, "col": 1, "size": [140, 68], "type": "backend", "label": "Measure & retain", "sublabel": "Same test / keep best" },
+    { "id": "optimize", "row": 1, "col": 3, "size": [140, 68], "type": "backend", "label": "Optimize", "sublabel": "Allowed files only" },
+    { "id": "measure", "row": 1, "col": 2, "size": [140, 68], "type": "backend", "label": "Measure & retain", "sublabel": "Same test / keep best" },
+    { "id": "stop-check", "row": 1, "col": 1, "size": [140, 68], "type": "backend", "label": "Target or timeout?", "sublabel": "Check after each attempt" },
     { "id": "chart", "row": 1, "col": 0, "size": [140, 68], "type": "frontend", "label": "Progress chart", "sublabel": "Baseline → attempts → final" }
   ],
   "boundaries": [
@@ -30,10 +30,10 @@
     { "id": "revise", "from": "review", "to": "benchmark", "label": "No · revise", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
     { "id": "approved", "from": "review", "to": "baseline", "label": "Yes" },
     { "id": "base-limits", "from": "baseline", "to": "limits" },
-    { "id": "start-loop", "from": "limits", "to": "stop-check" },
-    { "id": "continue", "from": "stop-check", "to": "optimize", "label": "No" },
+    { "id": "start-loop", "from": "limits", "to": "optimize" },
     { "id": "opt-measure", "from": "optimize", "to": "measure" },
-    { "id": "retry", "from": "measure", "to": "stop-check", "label": "Next attempt", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[310, 190], [710, 190]] },
+    { "id": "measure-check", "from": "measure", "to": "stop-check" },
+    { "id": "retry", "from": "stop-check", "to": "optimize", "label": "No · next attempt", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[310, 190], [710, 190]] },
     { "id": "stop", "from": "stop-check", "to": "chart", "label": "Yes · deliver best verified state", "variant": "emphasis", "fromSide": "bottom", "toSide": "bottom" }
   ]
 }

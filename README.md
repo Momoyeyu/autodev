@@ -64,7 +64,7 @@ Test maintenance belongs **inside the human-in-the-loop review**, not after test
 
 [Diagram source](docs/diagrams/autodev.optimization.json)
 
-**One test, one score:** agree on an executable benchmark or a fixed weighted sum. Follow the solid arrows from test preparation through baseline and limits; the dashed paths repeat review or optimization. The stop check precedes each attempt, allowing an already-satisfied target to go straight to Handoff. Bound each run by the remaining wall-clock budget.
+**One test, one score:** agree on an executable benchmark or a fixed weighted sum. Follow the solid arrows from test preparation through baseline and limits; the dashed paths repeat review or optimization. Loop uses **do-while** order: optimize, measure and retain the best verified state, then check the target and deadline. Repeat only if neither exit condition holds. Bound each run by the remaining wall-clock budget.
 
 Agree on the workload, unit, direction, measurement method, and any weights or normalization before baseline. Multiple benchmark components still produce **one score**, not separate optimization targets. Do not change the ruler during Loop.
 

@@ -33,7 +33,7 @@ The chart must:
 
 A best-so-far line may accompany the measured attempts, but label it as derived retained state. Do not hide regressions by plotting only favorable samples, smooth away failures, or join results from different test versions.
 
-Generate the chart from the recorded history using the project's available plotting/export tools; provide an image the human can view and retain the source data. If no attempts were needed or none produced a valid new score, show the real baseline and annotate that outcome instead of fabricating progress. If chart generation is blocked, preserve the data and report the handoff as incomplete rather than silently falling back to a table.
+Generate the chart from the recorded history using the project's available plotting/export tools; provide an image the human can view and retain the source data. If execution was blocked before any attempt or no attempt produced a valid new score, show the real baseline and annotate that outcome instead of fabricating progress. If chart generation is blocked, preserve the data and report the handoff as incomplete rather than silently falling back to a table.
 
 Verify the delivered candidate within the reserved time. If only a prior measurement is available, reuse it only when source state, test version, and conditions match, and explicitly say it was not freshly rerun. Otherwise mark verification incomplete.
 
