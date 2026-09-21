@@ -2,11 +2,11 @@
   <strong>English</strong> · <a href="./README_ZH.md">简体中文</a>
 </p>
 
-# autodev
+<p align="center">
+  <img src="docs/assets/autodev-brand.png" alt="AutoDev" width="720">
+</p>
 
-![autodev core workflow: Clarify, Loop, Handoff for feature development and performance optimization](docs/assets/autodev-overview.png)
-
-[Diagram source](docs/diagrams/autodev.overview.json) · Drawn with [Archify](https://github.com/tt-a1i/archify), in dark mode.
+![autodev in three steps: Clarify, Loop, Handoff](docs/assets/autodev-overview.png)
 
 **autodev is a clarify-first Agent Skill: align with the human, implement within the agreement, and hand off visible evidence.**
 
@@ -24,7 +24,7 @@ autodev exists to **align the agent and the human, reduce misunderstanding, and 
 
 The intended benefit is better **quality, stability, and overall efficiency**, while improving the human's **understanding of the project and ability to take over**. Autonomous execution is useful only when both sides agree on what it should achieve.
 
-## Verifiable & measurable & visible
+## Verifiable & Measurable & Visible
 
 | Principle | Meaning |
 |---|---|
@@ -117,7 +117,7 @@ This repository distributes the skill, not a bundled test runner or evaluation s
 
 ## Contributing
 
-Keep the skill, bilingual READMEs, and Archify workflow sources consistent. See [CONTRIBUTING.md](CONTRIBUTING.md) for diagram regeneration and verification, and [AGENTS.md](AGENTS.md) for repository conventions.
+Keep the skill, bilingual READMEs, and diagram sources consistent. See [CONTRIBUTING.md](CONTRIBUTING.md) for diagram regeneration and verification, and [AGENTS.md](AGENTS.md) for repository conventions.
 
 ## License
 

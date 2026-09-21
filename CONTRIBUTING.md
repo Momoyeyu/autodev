@@ -28,21 +28,41 @@ for f in autodev/SKILL.md autodev/references/*.md; do
 done
 ```
 
-## README and core diagram
+## README, brand and diagrams
 
-Keep English and Chinese README ordering, scenario sequences, reference inventories, and handoff requirements equivalent. Place the core flow image immediately below the title, before installation and explanatory sections.
+Keep English and Chinese README ordering, scenario sequences, reference inventories, and handoff requirements equivalent. The README has no text title: the brand image replaces it, followed immediately by the overview, before installation and explanatory sections.
 
-The README diagrams are generated with [Archify](https://github.com/tt-a1i/archify), each in English and Chinese:
+The brand and overview are hand-authored SVG rendered with headless Chrome; the scenario detail diagrams are generated with [Archify](https://github.com/tt-a1i/archify). All but the brand exist in English and Chinese:
 
 | Source | README image | Role |
 |---|---|---|
-| `docs/diagrams/autodev.overview(.zh).json` | `docs/assets/autodev-overview(.zh).png` | Hero: one shared three-step path, without scenario detail |
+| `docs/diagrams/autodev.brand.svg` | `docs/assets/autodev-brand.png` | Title: mark on the left, AutoDev wordmark on the right, transparent background |
+| `docs/diagrams/autodev.overview(.zh).svg` | `docs/assets/autodev-overview(.zh).png` | Hero: artistic three-step composition, without scenario detail |
 | `docs/diagrams/autodev.development(.zh).json` | `docs/assets/autodev-development(.zh).png` | Feature flow inside the workflow section |
 | `docs/diagrams/autodev.optimization(.zh).json` | `docs/assets/autodev-optimization(.zh).png` | Optimization flow inside the workflow section |
 
+### Brand and overview
+
+The mark is an original crossbar-less "A" with a cyan loop arrow inside; it is not derived from any company logo. Palette: `#3259B4`, `#3C8CFF`, `#00C8D2`, `#78E6DD`. The wordmark reads `AutoDev`, "Auto" in royal blue and "Dev" in a blue-to-cyan gradient, after a thin vertical divider. Keep the composition minimal.
+
+The overview shows Clarify as scattered intent converging into one focused point, Loop as an orbit around code, and Handoff as the path opening into measured evidence, connected by a single left-to-right spine. Change labels in both language files together; keep geometry identical.
+
+```bash
+CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+render() { "$CHROME" --headless=new --disable-gpu --hide-scrollbars "$@" 2>/dev/null; }
+render --force-device-scale-factor=2 --default-background-color=00000000 --window-size=1600,400 --screenshot=docs/assets/autodev-brand.png "file://$PWD/docs/diagrams/autodev.brand.svg"
+for locale in '' '.zh'; do
+  render --window-size=1920,700 --screenshot="docs/assets/autodev-overview${locale}.png" "file://$PWD/docs/diagrams/autodev.overview${locale}.svg"
+done
+```
+
+The overview is rendered at 1x (1920×700); the 2x version is over 1.9 MB because of the gradients and glows.
+
+### Detail diagrams
+
 The process maps use Archify's `architecture` schema v1 and grid layout, not its workflow-lane template. This provides explicit canvas bounds without unused columns or full-width empty stage lanes. `components` are process steps, `connections` are directed control flow, and the named regions group stages, not deployment infrastructure. Keep `quality_profile: showcase` and identical topology and geometry within each language pair.
 
-The overview has exactly three nodes and two arrows. Detail maps use a compact two-row path: Clarify reads left to right, then Loop and Handoff follow the arrows right to left. Three numbered stage regions remain distinct. Dashed return paths show review and implementation feedback; solid paths show progression and delivery. The optimization loop is post-tested (do-while): limits → optimize → measure and retain → stop check. A negative decision returns to optimization; target reached or time exhausted leads to the chart. Do not introduce a limits-to-stop-check shortcut.
+Detail maps use a compact two-row path: Clarify reads left to right, then Loop and Handoff follow the arrows right to left. Three numbered stage regions remain distinct. Dashed return paths show review and implementation feedback; solid paths show progression and delivery. The optimization loop is post-tested (do-while): limits → optimize → measure and retain → stop check. A negative decision returns to optimization; target reached or time exhausted leads to the chart. Do not introduce a limits-to-stop-check shortcut.
 
 This renderer does not support workflow `semanticChecks`. Check directed connections explicitly: approval precedes baseline; optimization limits follow baseline; each detail map has a review cycle and an execution cycle; only the required table/chart is terminal. Do not treat successful geometry validation as a semantic check.
 
@@ -55,7 +75,7 @@ Use the installed skill root containing `SKILL.md` and `bin/archify.mjs`. The ch
 ```bash
 ARCHIFY_SKILL=/path/to/archify/archify
 OUT=$(mktemp -d)
-for name in overview development optimization; do
+for name in development optimization; do
   for locale in '' '.zh'; do
     source="docs/diagrams/autodev.${name}${locale}.json"
     output="$OUT/autodev-${name}${locale}.html"
@@ -68,7 +88,7 @@ done
 
 Require all nine artifact checks, zero composition errors, and zero warnings. Never inspect stale HTML after a failed delivery. Browser evidence and perceptual review are separate from deterministic validation.
 
-Open each successfully delivered HTML with `?theme=dark`, keep Editorial selected, and use Export → PNG. Save the canonical downloads to the corresponding image paths above. Inspect all six exported PNGs at a 960px README reading width for legibility, balanced margins, clear local cycles, unclipped labels, no viewer UI, and an opaque dark background. Review one detail composition before producing its translated counterpart; a nine-check pass alone is not visual acceptance. Keep validation and export receipts with the generation artifacts; source JSON and final images belong in Git.
+Open each successfully delivered HTML with `?theme=dark`, keep Editorial selected, and use Export → PNG. Save the canonical downloads to the corresponding image paths above. Inspect all four exported PNGs at a 960px README reading width for legibility, balanced margins, clear local cycles, unclipped labels, no viewer UI, and an opaque dark background. Review one detail composition before producing its translated counterpart; a nine-check pass alone is not visual acceptance. Keep validation and export receipts with the generation artifacts; source JSON and final images belong in Git.
 
 Archify renders this repository's explanatory workflow. It is not a mandatory dependency for producing a target project's optimization-result chart.
 
@@ -82,8 +102,8 @@ Before committing:
 - Check local links, anchors, frontmatter, and code fences; verify the deleted reference names are no longer used.
 - Check that runnable-test approval precedes formal baseline and optimization limits follow baseline.
 - Verify the feature table and optimization process chart are mandatory everywhere, not optional presentation choices.
-- Confirm bilingual diagram topology and geometry match and all six PNGs are dark canonical exports.
-- Run Archify validation/browser checks and review the actual images; retain the evidence.
+- Confirm bilingual diagram topology and geometry match; detail PNGs are dark canonical exports and the brand PNG keeps a transparent background.
+- Run Archify validation/browser checks for the detail diagrams and review every actual image, including the brand and overview; retain the evidence.
 - Run `git diff --check` and confirm `git ls-files -- tests evals` is empty.
 - Keep ignored historical run artifacts and unrelated user work untouched.
 - State whether model behavior was evaluated; document and image checks do not prove agent adherence.

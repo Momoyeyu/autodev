@@ -2,11 +2,11 @@
   <a href="./README.md">English</a> · <strong>简体中文</strong>
 </p>
 
-# autodev
+<p align="center">
+  <img src="docs/assets/autodev-brand.png" alt="AutoDev" width="720">
+</p>
 
-![autodev 核心流程：功能开发与性能优化的 Clarify、Loop、Handoff](docs/assets/autodev-overview.zh.png)
-
-[流程图源文件](docs/diagrams/autodev.overview.zh.json) · 使用 [Archify](https://github.com/tt-a1i/archify) 以暗色模式绘制。
+![autodev 三步走：Clarify、Loop、Handoff](docs/assets/autodev-overview.zh.png)
 
 **autodev 是一个以 clarify 为核心的 Agent Skill：先与人对齐，在共识内执行，再交付直观的证据。**
 
@@ -24,7 +24,7 @@ autodev 的目的是**确保 Agent 与人对齐，降低理解偏差，减少返
 
 希望提高的是产出的**质量、稳定性和综合效率**，以及人对项目的**理解和接管能力**。只有双方对目标达成共识，自主执行才有价值。
 
-## Verifiable & measurable & visible
+## Verifiable & Measurable & Visible
 
 | 理念 | 含义 |
 |---|---|
@@ -117,7 +117,7 @@ Clarify 不只是问问题。查代码、维护测试、试运行和测量 basel
 
 ## 参与贡献
 
-保持 skill、双语 README 和 Archify 流程图源文件一致。配图再生成与验证方式见 [CONTRIBUTING.md](CONTRIBUTING.md)，仓库约定见 [AGENTS.md](AGENTS.md)。
+保持 skill、双语 README 和配图源文件一致。配图再生成与验证方式见 [CONTRIBUTING.md](CONTRIBUTING.md)，仓库约定见 [AGENTS.md](AGENTS.md)。
 
 ## 许可
 
