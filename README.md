@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/autodev-brand.png" alt="AutoDev" width="720">
+  <img src="docs/assets/autodev-brand.png" alt="AutoDev · Open the black box of vibe coding" width="720">
 </p>
 
 ![autodev in three steps: Clarify, Loop, Handoff](docs/assets/autodev-overview.png)

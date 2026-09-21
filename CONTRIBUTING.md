@@ -32,26 +32,26 @@ done
 
 Keep English and Chinese README ordering, scenario sequences, reference inventories, and handoff requirements equivalent. The README has no text title: the brand image replaces it, followed immediately by the overview, before installation and explanatory sections.
 
-The brand and overview are hand-authored SVG rendered with headless Chrome; the scenario detail diagrams are generated with [Archify](https://github.com/tt-a1i/archify). All but the brand exist in English and Chinese:
+The brand and overview are hand-authored SVG rendered with headless Chrome; the scenario detail diagrams are generated with [Archify](https://github.com/tt-a1i/archify). All exist in English and Chinese:
 
 | Source | README image | Role |
 |---|---|---|
-| `docs/diagrams/autodev.brand.svg` | `docs/assets/autodev-brand.png` | Title: mark on the left, AutoDev wordmark on the right, transparent background |
+| `docs/diagrams/autodev.brand(.zh).svg` | `docs/assets/autodev-brand(.zh).png` | Title: mark on the left, AutoDev wordmark and slogan on the right, transparent background |
 | `docs/diagrams/autodev.overview(.zh).svg` | `docs/assets/autodev-overview(.zh).png` | Hero: artistic three-step composition, without scenario detail |
 | `docs/diagrams/autodev.development(.zh).json` | `docs/assets/autodev-development(.zh).png` | Feature flow inside the workflow section |
 | `docs/diagrams/autodev.optimization(.zh).json` | `docs/assets/autodev-optimization(.zh).png` | Optimization flow inside the workflow section |
 
 ### Brand and overview
 
-The mark is an original crossbar-less "A" with a cyan loop arrow inside; it is not derived from any company logo. Palette: `#3259B4`, `#3C8CFF`, `#00C8D2`, `#78E6DD`. The wordmark reads `AutoDev`, "Auto" in royal blue and "Dev" in a blue-to-cyan gradient, after a thin vertical divider. Keep the composition minimal.
+The mark is an original crossbar-less "A" with a cyan loop arrow inside; it is not derived from any company logo. Palette: `#3259B4`, `#3C8CFF`, `#00C8D2`, `#78E6DD`. The wordmark reads `AutoDev`, "Auto" in royal blue and "Dev" in a blue-to-cyan gradient, after a thin vertical divider. The slogan sits under the wordmark: `Open the black box of vibe coding` / `打开 VibeCoding 的黑盒`. Keep the composition minimal.
 
 The overview shows Clarify as scattered intent converging into one focused point, Loop as an orbit around code, and Handoff as the path opening into measured evidence, connected by a single left-to-right spine. Change labels in both language files together; keep geometry identical.
 
 ```bash
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 render() { "$CHROME" --headless=new --disable-gpu --hide-scrollbars "$@" 2>/dev/null; }
-render --force-device-scale-factor=2 --default-background-color=00000000 --window-size=1600,400 --screenshot=docs/assets/autodev-brand.png "file://$PWD/docs/diagrams/autodev.brand.svg"
 for locale in '' '.zh'; do
+  render --force-device-scale-factor=2 --default-background-color=00000000 --window-size=1600,400 --screenshot="docs/assets/autodev-brand${locale}.png" "file://$PWD/docs/diagrams/autodev.brand${locale}.svg"
   render --window-size=1920,700 --screenshot="docs/assets/autodev-overview${locale}.png" "file://$PWD/docs/diagrams/autodev.overview${locale}.svg"
 done
 ```

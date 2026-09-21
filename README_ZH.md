@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/autodev-brand.png" alt="AutoDev" width="720">
+  <img src="docs/assets/autodev-brand.zh.png" alt="AutoDev · 打开 VibeCoding 的黑盒" width="720">
 </p>
 
 ![autodev 三步走：Clarify、Loop、Handoff](docs/assets/autodev-overview.zh.png)
