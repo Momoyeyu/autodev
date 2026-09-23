@@ -59,10 +59,14 @@ class Harness(unittest.TestCase):
         return sh(self.root, sys.executable, SCRIPT, "--home", self.home, *args)
 
     def init(self, *extra, scenario=None, editable="src", frozen="bench", test_cmd="python3 bench/run.py"):
-        return self.run_v("init", "--repo", self.repo, "--scenario", scenario or self.scenario,
-                          "--editable", editable, "--frozen", frozen, "--test-cmd", test_cmd,
-                          *self.budget, *(self.init_extra if (scenario or self.scenario) == "optimization" else []),
-                          *extra)
+        scen = scenario or self.scenario
+        args = ["init", "--repo", self.repo, "--scenario", scen, "--editable", editable]
+        if frozen is not None:
+            args += ["--frozen", frozen]
+        if test_cmd is not None:
+            args += ["--test-cmd", test_cmd]
+        return self.run_v(*args, *self.budget,
+                          *(self.init_extra if scen == "optimization" else []), *extra)
 
     def start(self):
         git(self.repo, "worktree", "add", "-q", "-b", "autodev/t", self.wt, "HEAD")
@@ -277,15 +281,23 @@ class TestHigherDirection(Harness):
         self.assertTrue(self.status()["target_met"])
 
 
-class TestDevelopment(Harness):
-    scenario = "development"
+class TestBugfix(Harness):
+    scenario = "bugfix"
 
     def seed(self):
         write(self.repo, "src/impl.py", "\n")
         write(self.repo, "tests/test_x.py",
               'import sys; sys.path.insert(0, "src"); import impl\nassert impl.add(1, 2) == 3\n')
 
-    def test_development_scenario(self):
+    def test_bugfix_requires_test_cmd(self):
+        r = self.init(frozen="tests", test_cmd=None)
+        self.assertEqual(r.returncode, 3)
+
+    def test_bugfix_requires_frozen(self):
+        r = self.init(frozen=None, test_cmd="python3 tests/test_x.py")
+        self.assertEqual(r.returncode, 3)
+
+    def test_bugfix_scenario(self):
         r = self.init(frozen="tests", test_cmd="python3 tests/test_x.py")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertFalse(self.contract()["baseline"]["passed"])
@@ -306,12 +318,141 @@ class TestDevelopment(Harness):
             table = f.read()
         self.assertIn("| fail (exit 1) | pass (exit 0) |", table)
 
-    def test_development_frozen_test_edit_is_invalid(self):
+    def test_bugfix_frozen_test_edit_is_invalid(self):
         self.init(frozen="tests", test_cmd="python3 tests/test_x.py")
         self.start()
         code, rec = self.attempt({"tests/test_x.py": "pass\n", "src/impl.py": "x=1\n"})
         self.assertEqual((code, rec["verdict"]), (2, "invalid"))
         self.assertIn("assert impl.add", self.read("tests/test_x.py"))
+
+
+BLUEPRINT = ("graph TD\n%% autodev-elements: user_service, billing_api\n"
+             "user_service --> billing_api\n")
+ASIS = "graph TD\nlegacy --> db\n"
+
+
+class TestDevelopment(Harness):
+    scenario = "development"
+    check = "python3 checks/run.py"
+
+    def seed(self):
+        write(self.repo, "docs/blueprint.md", BLUEPRINT)
+        write(self.repo, "docs/asis.md", ASIS)
+        write(self.repo, "src/impl.py", "OK=False\n")
+        write(self.repo, "checks/run.py",
+              'import sys; sys.path.insert(0, "src"); import impl\nassert impl.OK\n')
+
+    def init_dev(self, *extra, check=None, asbuilt="src/asbuilt.md", frozen=None, test_cmd=None):
+        args = ["--blueprint", "docs/blueprint.md", "--asis", "docs/asis.md",
+                "--asbuilt", asbuilt]
+        if check:
+            args += ["--check-cmd", check]
+        return self.init(*args, *extra, frozen=frozen, test_cmd=test_cmd)
+
+    def test_init_stores_elements_and_freezes_docs(self):
+        r = self.init_dev()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        c = self.contract()
+        self.assertEqual(c["elements"], ["user_service", "billing_api"])
+        self.assertIn("docs/blueprint.md", c["frozen"])
+        self.assertIn("docs/asis.md", c["frozen"])
+        self.assertEqual(c["asbuilt"], "src/asbuilt.md")
+        self.assertIsNone(c["check_cmd"])
+        self.assertEqual(c["baseline"]["blueprint"], "docs/blueprint.md")
+        self.assertEqual(c["baseline"]["asis"], "docs/asis.md")
+        self.assertTrue(os.path.exists(os.path.join(self.home, "blueprint.md")))
+        self.assertTrue(os.path.exists(os.path.join(self.home, "asis.md")))
+
+    def test_init_dies_without_elements_line(self):
+        write(self.repo, "docs/blueprint.md", "graph TD\na --> b\n")
+        git(self.repo, "commit", "-qam", "no elements")
+        r = self.init_dev()
+        self.assertEqual(r.returncode, 3)
+
+    def test_asbuilt_outside_editable_dies(self):
+        r = self.init_dev(asbuilt="docs/asbuilt.md")
+        self.assertEqual(r.returncode, 3)
+
+    def test_init_rejects_test_cmd(self):
+        r = self.init_dev(test_cmd="true")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("--check-cmd", r.stderr)
+
+    def test_checkpoint_verdict_keeps_commit(self):
+        self.init_dev()
+        self.start()
+        head = self.commit({"src/note.py": "x=1\n"})
+        code, rec = self.attempt()
+        self.assertEqual((code, rec["verdict"]), (1, "checkpoint"))
+        self.assertNotIn("raw", rec)
+        self.assertEqual(git(self.wt, "rev-parse", "HEAD"), head)
+        self.assertEqual(self.contract()["best"], head)
+
+    def test_green_and_failing_via_check_cmd(self):
+        r = self.init_dev(check=self.check)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.contract()["baseline"]["exit"], 1)
+        self.start()
+        code, rec = self.attempt({"src/impl.py": "OK=False  # still\n"})
+        self.assertEqual((code, rec["verdict"]), (1, "failing"))
+        self.assertIn("raw", rec)
+        code, rec = self.attempt({"src/impl.py": "OK=True\n"})
+        self.assertEqual((code, rec["verdict"], rec["passed"]), (0, "green", True))
+
+    def test_frozen_edit_is_invalid_and_rolled_back(self):
+        self.init_dev()
+        self.start()
+        head = git(self.wt, "rev-parse", "HEAD")
+        code, rec = self.attempt({"docs/asis.md": "changed\n", "src/impl.py": "x=1\n"})
+        self.assertEqual((code, rec["verdict"]), (2, "invalid"))
+        self.assertIn("docs/asis.md", rec["files"])
+        self.assertEqual(git(self.wt, "rev-parse", "HEAD"), head)
+        self.assertEqual(self.read("docs/asis.md"), ASIS)
+        self.assertTrue(self.clean())
+
+    def test_status_gates_on_asbuilt_elements_and_check(self):
+        self.init_dev(check=self.check)
+        self.start()
+        self.attempt({"src/impl.py": "OK=True\n"})
+        s = self.status()
+        self.assertFalse(s["asbuilt_exists"])
+        self.assertEqual(s["decision"], "continue")
+        code, rec = self.attempt({"src/asbuilt.md": "graph TD\nuser_service --> x\n"})
+        self.assertEqual((code, rec["verdict"]), (0, "green"))
+        s = self.status()
+        self.assertTrue(s["asbuilt_exists"])
+        self.assertEqual(s["elements_missing"], ["billing_api"])
+        self.assertEqual(s["decision"], "continue")
+        self.attempt({"src/asbuilt.md": "graph TD\nuser_service --> billing_api\n"})
+        s = self.status()
+        self.assertEqual(s["elements_missing"], [])
+        self.assertTrue(s["check_green"])
+        self.assertEqual(s["decision"], "handoff")
+
+    def test_status_handoff_without_check_cmd(self):
+        self.init_dev()
+        self.start()
+        self.attempt({"src/asbuilt.md": "graph TD\nuser_service --> billing_api\n"})
+        s = self.status()
+        self.assertTrue(s["check_green"])
+        self.assertEqual(s["decision"], "handoff")
+
+    def test_report_writes_blueprint_handoff(self):
+        self.init_dev(check=self.check)
+        self.start()
+        self.attempt({"src/impl.py": "OK=True\n",
+                      "src/asbuilt.md": "graph TD\nuser_service --> billing_api\n"})
+        r = self.run_v("report")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        with open(os.path.join(self.home, "blueprint-handoff.md")) as f:
+            text = f.read()
+        self.assertIn("## Agreed blueprint", text)
+        self.assertIn("```mermaid", text)
+        self.assertIn("## As-built (delivered)", text)
+        self.assertIn("## Element coverage", text)
+        self.assertIn("| `user_service` | yes |", text)
+        self.assertIn("| `billing_api` | yes |", text)
+        self.assertIn(self.check, text)
 
 
 if __name__ == "__main__":

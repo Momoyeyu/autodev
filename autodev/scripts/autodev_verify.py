@@ -2,12 +2,12 @@
 """Mechanical judge for the autodev Loop. Standard library only.
 
 Commands follow the flow one to one:
-  init     Clarify §3: run the approved test for baseline, record limits and frozen hashes
+  init     Clarify §3: record limits and frozen hashes, run the baseline check if any
   start    Loop entry: bind the worktree, set the deadline, self-test the checks
   smoke    Prove that a frozen-file edit and an out-of-scope edit are both rejected
-  attempt  One Loop round: scope check, frozen check, run test, judge, accept or roll back
-  status   Exit decision: target met under the agreed rule, or budget exhausted
-  report   Handoff artifact: comparison table (development) or process chart (optimization)
+  attempt  One Loop round: scope check, frozen check, run the check, judge, keep or roll back
+  status   Exit decision: agreed rule met (bugfix test, dev blueprint, opt target), or budget out
+  report   Handoff artifact: comparison table (bugfix), blueprint handoff (development), chart (optimization)
 """
 import argparse
 import datetime as dt
@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -83,6 +84,24 @@ def in_editable(rel, editable):
     return False
 
 
+def blueprint_elements(path):
+    ids = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            m = re.search(r"%%\s*autodev-elements:\s*(.+)", line)
+            if m:
+                ids += [t for t in re.split(r"[\s,]+", m.group(1))
+                        if re.fullmatch(r"[A-Za-z0-9_-]+", t)]
+    ids = list(dict.fromkeys(ids))
+    if not ids:
+        die("blueprint has no %% autodev-elements line")
+    return ids
+
+
+def element_found(element, text):
+    return bool(re.search(r"(?<![A-Za-z0-9_-])" + re.escape(element) + r"(?![A-Za-z0-9_-])", text))
+
+
 class Home:
     def __init__(self, path):
         self.path = os.path.abspath(path)
@@ -121,7 +140,7 @@ class Home:
         return os.path.join(self.raw, name)
 
 
-def run_test(contract, cwd, raw_path, timeout):
+def run_command(contract, cwd, raw_path, timeout):
     t0 = time.monotonic()
     timed_out = False
     try:
@@ -203,14 +222,25 @@ def cmd_init(a):
             os.rename(home.attempts_path, home.attempts_path + f".{stamp}.bak")
     repo = os.path.abspath(a.repo)
     git(repo, "rev-parse", "--is-inside-work-tree")
+    if a.scenario == "development":
+        if a.test_cmd:
+            die("use --check-cmd for development")
+        for name in ("blueprint", "asis", "asbuilt"):
+            if getattr(a, name) is None:
+                die(f"--{name} is required for development")
+    else:
+        if not a.test_cmd:
+            die("--test-cmd is required")
+        if not a.frozen:
+            die("--frozen is required")
     contract = {
         "scenario": a.scenario,
         "created": iso(utc_now()),
         "repo": repo,
         "branch_from": a.branch_from or git(repo, "rev-parse", "--abbrev-ref", "HEAD"),
         "editable": [norm(e) for e in a.editable],
-        "frozen_paths": [norm(f) for f in a.frozen],
-        "frozen": hash_paths(repo, a.frozen),
+        "frozen_paths": [norm(f) for f in (a.frozen or [])],
+        "frozen": hash_paths(repo, a.frozen or []),
         "test_cmd": a.test_cmd,
         "budget_minutes": a.budget_minutes,
         "worktree": None,
@@ -218,6 +248,24 @@ def cmd_init(a):
         "best_score": None,
         "deadline": None,
     }
+    docs = {}
+    if a.scenario == "development":
+        if not in_editable(a.asbuilt, contract["editable"]):
+            die("--asbuilt must lie inside --editable")
+        contract["asbuilt"] = norm(a.asbuilt)
+        contract["check_cmd"] = a.check_cmd
+        contract["test_cmd"] = a.check_cmd
+        for name in ("blueprint", "asis"):
+            rel = norm(getattr(a, name))
+            src = os.path.join(repo, rel)
+            if not os.path.isfile(src):
+                die(f"--{name} file does not exist: {rel}")
+            docs[name] = (rel, src)
+        contract["elements"] = blueprint_elements(docs["blueprint"][1])
+        for rel, src in docs.values():
+            contract["frozen"][rel] = sha256_file(src)
+            if rel not in contract["frozen_paths"]:
+                contract["frozen_paths"].append(rel)
     if a.scenario == "optimization":
         for name in ("score_regex", "direction", "unit"):
             if getattr(a, name) is None:
@@ -232,26 +280,35 @@ def cmd_init(a):
             if in_editable(f, [e]):
                 die(f"frozen file {f} lies inside editable path {e}")
     home.ensure()
-    code, out, elapsed, timed_out = run_test(contract, repo, home.raw_path("baseline.log"), None)
-    baseline = {"exit": code, "elapsed_s": round(elapsed, 1), "source": git(repo, "rev-parse", "HEAD"),
-                "raw": "raw/baseline.log"}
-    if a.scenario == "optimization":
-        if code != 0:
-            die(f"baseline test exited {code}; the benchmark must run cleanly before limits are proposed (see raw/baseline.log)")
-        score = extract_score(contract, out)
-        if score is None:
-            die("baseline produced no score matching --score-regex; fix the test or the regex")
-        baseline["score"] = score
-        if a.delta_pct is not None:
-            contract["delta"] = round(a.delta_pct / 100.0 * abs(score), 10)
-            contract["delta_from"] = f"{a.delta_pct}% of baseline"
-        elif a.delta is not None:
-            contract["delta"] = a.delta
-            contract["delta_from"] = "absolute"
-        else:
-            die("--delta or --delta-pct is required for optimization")
+    source = git(repo, "rev-parse", "HEAD")
+    if a.scenario == "development":
+        for name in ("blueprint", "asis"):
+            shutil.copyfile(docs[name][1], os.path.join(home.path, name + ".md"))
+        baseline = {"source": source, "asis": docs["asis"][0], "blueprint": docs["blueprint"][0]}
+        if a.check_cmd:
+            code, out, elapsed, timed_out = run_command(contract, repo, home.raw_path("baseline.log"), None)
+            baseline.update(exit=code, elapsed_s=round(elapsed, 1), raw="raw/baseline.log")
     else:
-        baseline["passed"] = code == 0
+        code, out, elapsed, timed_out = run_command(contract, repo, home.raw_path("baseline.log"), None)
+        baseline = {"exit": code, "elapsed_s": round(elapsed, 1), "source": source,
+                    "raw": "raw/baseline.log"}
+        if a.scenario == "optimization":
+            if code != 0:
+                die(f"baseline test exited {code}; the benchmark must run cleanly before limits are proposed (see raw/baseline.log)")
+            score = extract_score(contract, out)
+            if score is None:
+                die("baseline produced no score matching --score-regex; fix the test or the regex")
+            baseline["score"] = score
+            if a.delta_pct is not None:
+                contract["delta"] = round(a.delta_pct / 100.0 * abs(score), 10)
+                contract["delta_from"] = f"{a.delta_pct}% of baseline"
+            elif a.delta is not None:
+                contract["delta"] = a.delta
+                contract["delta_from"] = "absolute"
+            else:
+                die("--delta or --delta-pct is required for optimization")
+        else:
+            baseline["passed"] = code == 0
     contract["baseline"] = baseline
     home.save(contract)
     print(json.dumps(contract, indent=2, ensure_ascii=False))
@@ -277,7 +334,7 @@ def cmd_start(a):
     c["deadline"] = iso(started + dt.timedelta(minutes=c["budget_minutes"])) if c.get("budget_minutes") else None
     home.save(c)
     home.log({"n": 0, "kind": "baseline", "commit": c["best"], "score": c["best_score"],
-              "verdict": "baseline", "raw": c["baseline"]["raw"], "time": c["started"]})
+              "verdict": "baseline", "raw": c["baseline"].get("raw"), "time": c["started"]})
     if not a.no_smoke:
         smoke(home, c)
     print(json.dumps({"worktree": wt, "best": c["best"], "best_score": c["best_score"],
@@ -357,7 +414,7 @@ def cmd_attempt(a):
         elif verdict in ("rejected", "invalid"):
             rollback(wt, best)
             record["rolled_back_to"] = best
-        elif verdict == "failing":
+        elif verdict in ("failing", "green", "checkpoint"):
             c["best"] = head
             home.save(c)
         home.log(record)
@@ -369,14 +426,20 @@ def cmd_attempt(a):
     changed = check_frozen(c, wt)
     if changed:
         finish("invalid", INVALID, reason="frozen files changed", files=changed)
+    if c["scenario"] == "development" and not c["check_cmd"]:
+        finish("checkpoint", REJECTED)
     raw_name = f"attempt-{n:03d}.log"
-    code, out, elapsed, timed_out = run_test(c, wt, home.raw_path(raw_name), remaining)
+    code, out, elapsed, timed_out = run_command(c, wt, home.raw_path(raw_name), remaining)
     record.update(raw=f"raw/{raw_name}", elapsed_s=round(elapsed, 1))
     if timed_out:
-        finish("invalid", INVALID, reason="test exceeded remaining budget")
-    if c["scenario"] == "development":
+        finish("invalid", INVALID, reason="command exceeded remaining budget")
+    if c["scenario"] == "bugfix":
         if code == 0:
             finish("accepted", ACCEPTED, passed=True, exit=code)
+        finish("failing", REJECTED, passed=False, exit=code)
+    if c["scenario"] == "development":
+        if code == 0:
+            finish("green", ACCEPTED, passed=True, exit=code)
         finish("failing", REJECTED, passed=False, exit=code)
     if code != 0:
         finish("invalid", INVALID, reason=f"test exited {code}", exit=code)
@@ -404,11 +467,26 @@ def cmd_status(a):
         out["decision"] = "handoff" if (out["target_met"] or exhausted) else "continue"
         out["stop_reason"] = ("target reached" if out["target_met"] else
                               "time budget exhausted" if exhausted else None)
-    else:
+    elif c["scenario"] == "bugfix":
         last = [r for r in home.attempts() if r.get("kind") == "attempt"]
         passing = bool(last) and last[-1]["verdict"] == "accepted"
         out["all_tests_pass"] = passing
         out["decision"] = "handoff" if passing else "continue"
+    else:
+        wt, text = c.get("worktree"), ""
+        asbuilt_exists = bool(wt) and os.path.isfile(os.path.join(wt, c["asbuilt"]))
+        if asbuilt_exists:
+            with open(os.path.join(wt, c["asbuilt"])) as f:
+                text = f.read()
+        attempts = [r for r in home.attempts() if r.get("kind") == "attempt"]
+        if c.get("check_cmd"):
+            out["check_green"] = bool(attempts) and attempts[-1]["verdict"] == "green"
+        else:
+            out["check_green"] = bool(attempts)
+        out["asbuilt_exists"] = asbuilt_exists
+        out["elements_missing"] = [e for e in c["elements"] if not element_found(e, text)]
+        out["decision"] = ("handoff" if asbuilt_exists and not out["elements_missing"]
+                           and out["check_green"] else "continue")
     print(json.dumps(out, indent=2))
 
 
@@ -416,8 +494,10 @@ def cmd_report(a):
     home = Home(a.home)
     c = home.load()
     rows = home.attempts()
-    if c["scenario"] == "development":
+    if c["scenario"] == "bugfix":
         report_table(home, c, rows, a.out)
+    elif c["scenario"] == "development":
+        report_blueprint(home, c, a.out)
     else:
         report_chart(home, c, rows, a.out)
 
@@ -443,6 +523,36 @@ def report_table(home, c, rows, out):
     path = out or os.path.join(home.path, "comparison.md")
     with open(path, "w") as f:
         f.write(text)
+    print(path)
+
+
+def report_blueprint(home, c, out):
+    wt = c.get("worktree") or c["repo"]
+    with open(os.path.join(home.path, "blueprint.md")) as f:
+        blueprint = f.read().rstrip()
+    asbuilt = None
+    asbuilt_path = os.path.join(wt, c["asbuilt"])
+    if os.path.isfile(asbuilt_path):
+        with open(asbuilt_path) as f:
+            asbuilt = f.read().rstrip()
+    def block(text):
+        return text if "```" in text else "```mermaid\n" + text + "\n```"
+
+    lines = ["## Agreed blueprint", "", block(blueprint), "",
+             "## As-built (delivered)", ""]
+    lines += [block(asbuilt)] if asbuilt is not None else [
+        f"as-built file is missing: `{c['asbuilt']}`"]
+    lines += ["", "## Element coverage", "", "| Element | In as-built |", "|---|---|"]
+    for e in c["elements"]:
+        found = asbuilt is not None and element_found(e, asbuilt)
+        lines.append(f"| `{e}` | {'yes' if found else 'no'} |")
+    tail = f"Delivered commit `{c.get('best')}`."
+    if c.get("check_cmd"):
+        tail += f" Rerun with `{c['check_cmd']}`."
+    lines += ["", tail]
+    path = out or os.path.join(home.path, "blueprint-handoff.md")
+    with open(path, "w") as f:
+        f.write("\n".join(lines) + "\n")
     print(path)
 
 
@@ -521,11 +631,15 @@ def main():
 
     i = sub.add_parser("init")
     i.add_argument("--repo", default=".")
-    i.add_argument("--scenario", choices=["development", "optimization"], required=True)
+    i.add_argument("--scenario", choices=["development", "bugfix", "optimization"], required=True)
     i.add_argument("--branch-from")
     i.add_argument("--editable", nargs="+", required=True)
-    i.add_argument("--frozen", nargs="+", required=True)
-    i.add_argument("--test-cmd", required=True)
+    i.add_argument("--frozen", nargs="+")
+    i.add_argument("--test-cmd")
+    i.add_argument("--check-cmd")
+    i.add_argument("--blueprint")
+    i.add_argument("--asis")
+    i.add_argument("--asbuilt")
     i.add_argument("--budget-minutes", type=float)
     i.add_argument("--score-regex")
     i.add_argument("--direction", choices=["lower", "higher"])
