@@ -3,6 +3,7 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "autodev · 性能优化",
+    "subtitle": "target = benchmark 达到约定分数",
     "locale": "zh-CN",
     "visual_preset": "editorial",
     "quality_profile": "showcase",
@@ -14,7 +15,7 @@
   "components": [
     { "id": "benchmark", "row": 0, "col": 0, "size": [140, 68], "type": "security", "label": "共建并试运行 benchmark", "sublabel": "单项 benchmark / 固定加权和" },
     { "id": "baseline", "row": 0, "col": 1, "size": [140, 68], "type": "security", "label": "记录 baseline", "sublabel": "原始实测分数" },
-    { "id": "limits", "row": 0, "col": 2, "size": [140, 68], "type": "security", "label": "提出限制", "sublabel": "目标 / 文件 / 时间" },
+    { "id": "limits", "row": 0, "col": 2, "size": [140, 68], "type": "database", "icon": "flag", "label": "提出限制", "sublabel": "target 分数 / 文件 / 时间" },
     { "id": "review", "row": 0, "col": 3, "size": [140, 68], "type": "security", "label": "用户确认？", "sublabel": "benchmark · baseline · 限制" },
     { "id": "optimize", "row": 1, "col": 3, "size": [140, 68], "type": "backend", "label": "优化实现", "sublabel": "仅修改允许的文件" },
     { "id": "measure", "row": 1, "col": 2, "size": [140, 68], "type": "backend", "label": "测量并保留最佳", "sublabel": "同一 benchmark / 已验证的结果" },

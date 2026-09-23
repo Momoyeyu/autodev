@@ -3,6 +3,7 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "autodev · Performance optimization",
+    "subtitle": "target = benchmark meets the agreed score",
     "locale": "en",
     "visual_preset": "editorial",
     "quality_profile": "showcase",
@@ -14,7 +15,7 @@
   "components": [
     { "id": "benchmark", "row": 0, "col": 0, "size": [140, 68], "type": "security", "label": "Prepare benchmark", "sublabel": "One score / weighted sum" },
     { "id": "baseline", "row": 0, "col": 1, "size": [140, 68], "type": "security", "label": "Capture baseline", "sublabel": "Original measured score" },
-    { "id": "limits", "row": 0, "col": 2, "size": [140, 68], "type": "security", "label": "Propose limits", "sublabel": "Target / files / time" },
+    { "id": "limits", "row": 0, "col": 2, "size": [140, 68], "type": "database", "icon": "flag", "label": "Propose limits", "sublabel": "Target score · files · time" },
     { "id": "review", "row": 0, "col": 3, "size": [140, 68], "type": "security", "label": "Human approval?", "sublabel": "Benchmark · baseline · limits" },
     { "id": "optimize", "row": 1, "col": 3, "size": [140, 68], "type": "backend", "label": "Optimize", "sublabel": "Allowed files only" },
     { "id": "measure", "row": 1, "col": 2, "size": [140, 68], "type": "backend", "label": "Measure & retain", "sublabel": "Same benchmark / keep best" },

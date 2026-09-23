@@ -3,6 +3,7 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "autodev · 功能开发",
+    "subtitle": "target = blueprint 全部落地",
     "locale": "zh-CN",
     "visual_preset": "editorial",
     "quality_profile": "showcase",
@@ -13,9 +14,9 @@
   "layout": { "mode": "grid", "origin": [40, 110], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
   "components": [
     { "id": "asis", "size": [140, 68], "row": 0, "col": 0, "type": "security", "label": "绘制 as-is 现状图", "sublabel": "从实际代码画架构与流程" },
-    { "id": "blueprint", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "起草 blueprint", "sublabel": "目标设计 · 元素 ID" },
+    { "id": "blueprint", "size": [140, 68], "row": 0, "col": 1, "type": "database", "icon": "flag", "label": "起草 blueprint", "sublabel": "target · 元素 ID" },
     { "id": "scope", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "提出修改范围", "sublabel": "可编辑文件 · 冻结测试" },
-    { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "用户确认？", "sublabel": "as-is · blueprint · 范围" },
+    { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "用户确认？", "sublabel": "baseline · target · 范围" },
     { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "逐元素实现", "sublabel": "不超出已确认的范围" },
     { "id": "asbuilt", "size": [140, 68], "row": 1, "col": 2, "type": "backend", "label": "绘制 as-built 竣工图", "sublabel": "按交付后的代码状态" },
     { "id": "match", "size": [140, 68], "row": 1, "col": 1, "type": "backend", "label": "实现 blueprint？", "sublabel": "元素覆盖 + 回归通过" },
