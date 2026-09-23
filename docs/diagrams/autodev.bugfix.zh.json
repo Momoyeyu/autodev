@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "autodev · 问题修复",
+    "locale": "zh-CN",
+    "visual_preset": "editorial",
+    "quality_profile": "showcase",
+    "viewBox": [820, 416],
+    "legend": { "mode": "hidden" },
+    "output": "autodev-bugfix-zh.html"
+  },
+  "layout": { "mode": "grid", "origin": [40, 110], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
+  "components": [
+    { "id": "tests", "size": [140, 68], "row": 0, "col": 0, "type": "security", "label": "准备测试", "sublabel": "复现 / 删改 / 新增 / 试运行" },
+    { "id": "baseline", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "记录 baseline", "sublabel": "复现用例应当失败" },
+    { "id": "impact", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "提出影响范围", "sublabel": "可编辑文件 / 保留的流程" },
+    { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "用户确认？", "sublabel": "测试 · baseline · 影响范围" },
+    { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "修复", "sublabel": "不超出已确认的影响范围" },
+    { "id": "verify", "size": [140, 68], "row": 1, "col": 2, "type": "backend", "label": "全部通过？", "sublabel": "运行完整测试集" },
+    { "id": "evidence", "size": [140, 68], "row": 1, "col": 1, "type": "frontend", "label": "复验交付状态", "sublabel": "同一测试 / 可比较的条件" },
+    { "id": "artifact", "size": [140, 68], "row": 1, "col": 0, "type": "frontend", "label": "通过的测试用例组", "sublabel": "约定用例全部变绿" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "01  CLARIFY · 对齐", "wraps": ["tests", "baseline", "impact", "review"], "pad": 20 },
+    { "kind": "region", "label": "02  LOOP · 迭代", "wraps": ["implement", "verify"], "pad": 20 },
+    { "kind": "region", "label": "03  HANDOFF · 交付", "wraps": ["evidence", "artifact"], "pad": 20 }
+  ],
+  "connections": [
+    { "id": "tests-base", "from": "tests", "to": "baseline" },
+    { "id": "base-impact", "from": "baseline", "to": "impact" },
+    { "id": "impact-review", "from": "impact", "to": "review" },
+    { "id": "revise", "from": "review", "to": "tests", "label": "否 · 重新 clarify", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[710, 70], [110, 70]] },
+    { "id": "start-loop", "from": "review", "to": "implement", "label": "是", "labelAt": [710, 192] },
+    { "id": "impl-verify", "from": "implement", "to": "verify" },
+    { "id": "retry", "from": "verify", "to": "implement", "label": "否 · 修复", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
+    { "id": "pass", "from": "verify", "to": "evidence", "label": "是", "variant": "emphasis" },
+    { "id": "deliver", "from": "evidence", "to": "artifact", "variant": "emphasis" }
+  ]
+}

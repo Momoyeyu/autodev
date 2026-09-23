@@ -7,33 +7,34 @@
     "visual_preset": "editorial",
     "quality_profile": "showcase",
     "viewBox": [820, 416],
-    "legend": { "mode": "hidden" }
+    "legend": { "mode": "hidden" },
+    "output": "autodev-development.html"
   },
   "layout": { "mode": "grid", "origin": [40, 110], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
   "components": [
-    { "id": "tests", "size": [140, 68], "row": 0, "col": 0, "type": "security", "label": "Prepare tests", "sublabel": "Inspect / revise / add / run" },
-    { "id": "baseline", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "Capture baseline", "sublabel": "Run the prepared suite" },
-    { "id": "impact", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "Propose impact", "sublabel": "Modules / workflows" },
-    { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "Human approval?", "sublabel": "Tests · baseline · impact" },
-    { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "Implement", "sublabel": "Within approved impact" },
-    { "id": "verify", "size": [140, 68], "row": 1, "col": 2, "type": "backend", "label": "All tests pass?", "sublabel": "Run the complete suite" },
-    { "id": "evidence", "size": [140, 68], "row": 1, "col": 1, "type": "frontend", "label": "Verify final state", "sublabel": "Same tests / same conditions" },
-    { "id": "table", "size": [140, 68], "row": 1, "col": 0, "type": "frontend", "label": "Comparison table", "sublabel": "Baseline vs final results" }
+    { "id": "asis", "size": [140, 68], "row": 0, "col": 0, "type": "security", "label": "Draw as-is state", "sublabel": "Architecture & flows from code" },
+    { "id": "blueprint", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "Draft blueprint", "sublabel": "To-be design · element IDs" },
+    { "id": "scope", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "Propose scope", "sublabel": "Editable files · frozen tests" },
+    { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "Human approval?", "sublabel": "As-is · blueprint · scope" },
+    { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "Implement elements", "sublabel": "Within approved scope" },
+    { "id": "asbuilt", "size": [140, 68], "row": 1, "col": 2, "type": "backend", "label": "Draw as-built state", "sublabel": "From the delivered code" },
+    { "id": "match", "size": [140, 68], "row": 1, "col": 1, "type": "backend", "label": "Realizes blueprint?", "sublabel": "Coverage + regression green" },
+    { "id": "artifact", "size": [140, 68], "row": 1, "col": 0, "type": "frontend", "label": "As-built diagrams", "sublabel": "Checked against blueprint" }
   ],
   "boundaries": [
-    { "kind": "region", "label": "01  CLARIFY", "wraps": ["tests", "baseline", "impact", "review"], "pad": 20 },
-    { "kind": "region", "label": "02  LOOP", "wraps": ["implement", "verify"], "pad": 20 },
-    { "kind": "region", "label": "03  HANDOFF", "wraps": ["evidence", "table"], "pad": 20 }
+    { "kind": "region", "label": "01  CLARIFY", "wraps": ["asis", "blueprint", "scope", "review"], "pad": 20 },
+    { "kind": "region", "label": "02  LOOP", "wraps": ["implement", "asbuilt", "match"], "pad": 20 },
+    { "kind": "region", "label": "03  HANDOFF", "wraps": ["artifact"], "pad": 20 }
   ],
   "connections": [
-    { "id": "tests-base", "from": "tests", "to": "baseline" },
-    { "id": "base-impact", "from": "baseline", "to": "impact" },
-    { "id": "impact-review", "from": "impact", "to": "review" },
-    { "id": "revise", "from": "review", "to": "tests", "label": "No · revise", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[710, 70], [110, 70]] },
+    { "id": "asis-blue", "from": "asis", "to": "blueprint" },
+    { "id": "blue-scope", "from": "blueprint", "to": "scope" },
+    { "id": "scope-review", "from": "scope", "to": "review" },
+    { "id": "revise", "from": "review", "to": "asis", "label": "No · revise", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[710, 70], [110, 70]] },
     { "id": "start-loop", "from": "review", "to": "implement", "label": "Yes", "labelAt": [710, 192] },
-    { "id": "impl-verify", "from": "implement", "to": "verify" },
-    { "id": "retry", "from": "verify", "to": "implement", "label": "No · fix", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
-    { "id": "pass", "from": "verify", "to": "evidence", "label": "Yes", "variant": "emphasis" },
-    { "id": "deliver", "from": "evidence", "to": "table", "variant": "emphasis" }
+    { "id": "impl-built", "from": "implement", "to": "asbuilt" },
+    { "id": "built-match", "from": "asbuilt", "to": "match" },
+    { "id": "retry", "from": "match", "to": "implement", "label": "No · fix", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
+    { "id": "pass", "from": "match", "to": "artifact", "label": "Yes", "variant": "emphasis" }
   ]
 }

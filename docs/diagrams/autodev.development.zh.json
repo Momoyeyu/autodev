@@ -7,33 +7,34 @@
     "visual_preset": "editorial",
     "quality_profile": "showcase",
     "viewBox": [820, 416],
-    "legend": { "mode": "hidden" }
+    "legend": { "mode": "hidden" },
+    "output": "autodev-development-zh.html"
   },
   "layout": { "mode": "grid", "origin": [40, 110], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
   "components": [
-    { "id": "tests", "size": [140, 68], "row": 0, "col": 0, "type": "security", "label": "共建可执行测试", "sublabel": "查询 / 删改 / 新增 / 试运行" },
-    { "id": "baseline", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "记录 baseline", "sublabel": "运行整理后的测试集" },
-    { "id": "impact", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "提出影响范围", "sublabel": "模块增减 / 已有流程变更" },
-    { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "用户确认？", "sublabel": "测试 · baseline · 影响范围" },
-    { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "开发实现", "sublabel": "不超出已确认的影响范围" },
-    { "id": "verify", "size": [140, 68], "row": 1, "col": 2, "type": "backend", "label": "全部通过？", "sublabel": "运行完整测试集" },
-    { "id": "evidence", "size": [140, 68], "row": 1, "col": 1, "type": "frontend", "label": "复验交付状态", "sublabel": "同一测试 / 可比较的条件" },
-    { "id": "table", "size": [140, 68], "row": 1, "col": 0, "type": "frontend", "label": "一张对比表", "sublabel": "baseline 与最终结果" }
+    { "id": "asis", "size": [140, 68], "row": 0, "col": 0, "type": "security", "label": "绘制 as-is 现状图", "sublabel": "从实际代码画架构与流程" },
+    { "id": "blueprint", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "起草 blueprint", "sublabel": "目标设计 · 元素 ID" },
+    { "id": "scope", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "提出修改范围", "sublabel": "可编辑文件 · 冻结测试" },
+    { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "用户确认？", "sublabel": "as-is · blueprint · 范围" },
+    { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "逐元素实现", "sublabel": "不超出已确认的范围" },
+    { "id": "asbuilt", "size": [140, 68], "row": 1, "col": 2, "type": "backend", "label": "绘制 as-built 竣工图", "sublabel": "按交付后的代码状态" },
+    { "id": "match", "size": [140, 68], "row": 1, "col": 1, "type": "backend", "label": "实现 blueprint？", "sublabel": "元素覆盖 + 回归通过" },
+    { "id": "artifact", "size": [140, 68], "row": 1, "col": 0, "type": "frontend", "label": "竣工架构图与流程图", "sublabel": "与 blueprint 对照" }
   ],
   "boundaries": [
-    { "kind": "region", "label": "01  CLARIFY · 对齐", "wraps": ["tests", "baseline", "impact", "review"], "pad": 20 },
-    { "kind": "region", "label": "02  LOOP · 迭代", "wraps": ["implement", "verify"], "pad": 20 },
-    { "kind": "region", "label": "03  HANDOFF · 交付", "wraps": ["evidence", "table"], "pad": 20 }
+    { "kind": "region", "label": "01  CLARIFY · 对齐", "wraps": ["asis", "blueprint", "scope", "review"], "pad": 20 },
+    { "kind": "region", "label": "02  LOOP · 迭代", "wraps": ["implement", "asbuilt", "match"], "pad": 20 },
+    { "kind": "region", "label": "03  HANDOFF · 交付", "wraps": ["artifact"], "pad": 20 }
   ],
   "connections": [
-    { "id": "tests-base", "from": "tests", "to": "baseline" },
-    { "id": "base-impact", "from": "baseline", "to": "impact" },
-    { "id": "impact-review", "from": "impact", "to": "review" },
-    { "id": "revise", "from": "review", "to": "tests", "label": "否 · 重新 clarify", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[710, 70], [110, 70]] },
+    { "id": "asis-blue", "from": "asis", "to": "blueprint" },
+    { "id": "blue-scope", "from": "blueprint", "to": "scope" },
+    { "id": "scope-review", "from": "scope", "to": "review" },
+    { "id": "revise", "from": "review", "to": "asis", "label": "否 · 重新 clarify", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[710, 70], [110, 70]] },
     { "id": "start-loop", "from": "review", "to": "implement", "label": "是", "labelAt": [710, 192] },
-    { "id": "impl-verify", "from": "implement", "to": "verify" },
-    { "id": "retry", "from": "verify", "to": "implement", "label": "否 · 修复", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
-    { "id": "pass", "from": "verify", "to": "evidence", "label": "是", "variant": "emphasis" },
-    { "id": "deliver", "from": "evidence", "to": "table", "variant": "emphasis" }
+    { "id": "impl-built", "from": "implement", "to": "asbuilt" },
+    { "id": "built-match", "from": "asbuilt", "to": "match" },
+    { "id": "retry", "from": "match", "to": "implement", "label": "否 · 修复", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
+    { "id": "pass", "from": "match", "to": "artifact", "label": "是", "variant": "emphasis" }
   ]
 }

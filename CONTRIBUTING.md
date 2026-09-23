@@ -4,18 +4,19 @@ Improve alignment between agents and humans. Changes should reduce misunderstand
 
 ## Keep the protocol faithful
 
-Use **Clarify → Loop → Handoff** as the only top-level working stages. User input triggers the workflow.
+Use **Clarify → Loop → Handoff** as the only top-level working stages. User input triggers the workflow. Each scenario agrees on a different **target**: a blueprint for feature development, a passing test set for a bug fix, a numeric threshold for performance optimization.
 
-- **Development Clarify:** query, update/remove, add, and trial-run tests; record baseline; propose architecture/workflow impact; then one human review of the whole pass.
+- **Development Clarify:** draw as-is diagrams from the code (the baseline); draft the to-be blueprint in Mermaid with stable element IDs; propose the editable scope; then one human review of the whole pass.
+- **Bug-fix Clarify:** write the reproduction test that fails on the unchanged source; query, update/remove, add, and trial-run regression tests; record baseline; propose impact; then one human review of the whole pass.
 - **Optimization Clarify:** prepare one runnable numeric benchmark or fixed weighted score; record baseline; propose target, editable files, and wall-clock budget; then one human review of the whole pass.
-- **Loop:** in a dedicated git worktree, develop until all agreed tests pass, or optimize until target/time limit with post-checked (do-while) exits. Every round is judged by `autodev/scripts/autodev_verify.py`; keep its behavior identical to the prose in `loop.md`.
-- **Handoff:** one baseline/final comparison table for development; one chart of the measured optimization process for optimization.
+- **Loop:** in a dedicated git worktree, implement until the as-built state realizes every blueprint element and checks stay green, fix until all agreed tests pass, or optimize until target/time limit with post-checked (do-while) exits. Every round is judged by `autodev/scripts/autodev_verify.py`; keep its behavior identical to the prose in `loop.md`.
+- **Handoff:** as-built architecture/flow diagrams checked against the blueprint for development; the passing test set for a bug fix; one chart of the measured optimization process for optimization.
 
-Do not split the single human review into per-step approvals, move test preparation outside the human review cycle, equate executable tests with already-passing tests, replace the optimization chart with a table, or add convergence/attempt-count exits. Changes to test meaning or permitted scope return to Clarify.
+Do not split the single human review into per-step approvals, move target preparation outside the human review cycle, equate executable tests with already-passing tests, substitute the blueprint for as-built diagrams drawn from the delivered state, replace the optimization chart with a table, or add convergence/attempt-count exits. Changes to target meaning or permitted scope return to Clarify. An unsatisfying handoff starts a fresh autodev round, typically a bug fix — do not resume a closed loop.
 
 ## Progressive disclosure
 
-`autodev/SKILL.md` is the compact entry point. `references/clarify.md` contains shared alignment rules and routes to exactly one of `clarify-development.md` or `clarify-optimization.md`. `loop.md` and `handoff.md` load when those stages are reached.
+`autodev/SKILL.md` is the compact entry point. `references/clarify.md` contains shared alignment rules and routes to exactly one of `clarify-development.md`, `clarify-bugfix.md`, or `clarify-optimization.md`. `loop.md` and `handoff.md` load when those stages are reached.
 
 Keep shared rules with the selected scenario; do not preload the whole directory. Every reference needs a clear trigger and a reachable link inside the installed skill. Preserve framework independence and reuse the target project's tools.
 
@@ -38,7 +39,8 @@ The brand and overview are hand-authored SVG rendered with headless Chrome; the 
 |---|---|---|
 | `docs/diagrams/autodev.brand(.zh).svg` | `docs/assets/autodev-brand(.zh).png` | Title: mark on the left, AutoDev wordmark and slogan on the right, transparent background |
 | `docs/diagrams/autodev.overview(.zh).svg` | `docs/assets/autodev-overview(.zh).png` | Hero: artistic three-step composition, without scenario detail |
-| `docs/diagrams/autodev.development(.zh).json` | `docs/assets/autodev-development(.zh).png` | Feature flow inside the workflow section |
+| `docs/diagrams/autodev.development(.zh).json` | `docs/assets/autodev-development(.zh).png` | Feature (blueprint) flow inside the workflow section |
+| `docs/diagrams/autodev.bugfix(.zh).json` | `docs/assets/autodev-bugfix(.zh).png` | Bug-fix flow inside the workflow section |
 | `docs/diagrams/autodev.optimization(.zh).json` | `docs/assets/autodev-optimization(.zh).png` | Optimization flow inside the workflow section |
 
 ### Brand and overview
@@ -64,7 +66,7 @@ The process maps use Archify's `architecture` schema v1 and grid layout, not its
 
 Detail maps use a compact two-row path: Clarify reads left to right, then Loop and Handoff follow the arrows right to left. Three numbered stage regions remain distinct. Dashed return paths show review and implementation feedback; solid paths show progression and delivery. The optimization loop is post-tested (do-while): limits → optimize → measure and retain → stop check. A negative decision returns to optimization; target reached or time exhausted leads to the chart. Do not introduce a limits-to-stop-check shortcut.
 
-This renderer does not support workflow `semanticChecks`. Check directed connections explicitly: test preparation → baseline → proposed impact/limits → one human review; the review's "No" edge returns to test preparation and its "Yes" edge enters Loop; each detail map has that Clarify cycle and an execution cycle; only the required table/chart is terminal. Do not treat successful geometry validation as a semantic check.
+This renderer does not support workflow `semanticChecks`. Check directed connections explicitly: target preparation → baseline → proposed scope/limits → one human review; the review's "No" edge returns to preparation and its "Yes" edge enters Loop; each detail map has that Clarify cycle and an execution cycle; only the required artifact is terminal. Do not treat successful geometry validation as a semantic check.
 
 Keep the PNGs opaque and dark regardless of the README viewer's color scheme. Use Archify's Editorial preset and canonical PNG export, not a screenshot containing viewer controls or manually recolored output. These are workflow illustrations, not test-result charts; do not reintroduce the removed result screenshot.
 
@@ -75,7 +77,7 @@ Use the installed skill root containing `SKILL.md` and `bin/archify.mjs`. The ch
 ```bash
 ARCHIFY_SKILL=/path/to/archify/archify
 OUT=$(mktemp -d)
-for name in development optimization; do
+for name in development bugfix optimization; do
   for locale in '' '.zh'; do
     source="docs/diagrams/autodev.${name}${locale}.json"
     output="$OUT/autodev-${name}${locale}.html"
@@ -102,7 +104,7 @@ Run its tests before committing changes to it or to the Loop rules:
 python3 -m unittest discover -s tests
 ```
 
-The cases in `tests/test_verify.py` are the acceptance criteria from the issue tracker: a frozen-file edit, an out-of-scope file, a regression, a sub-`δ` improvement, a crash, a dirty worktree, a spent budget, and the development scenario must each get the documented verdict, and rollback must leave no residue.
+The cases in `tests/test_verify.py` are the acceptance criteria from the issue tracker: a frozen-file edit, an out-of-scope file, a regression, a sub-`δ` improvement, a crash, a dirty worktree, a spent budget, the bug-fix scenario, and the blueprint-driven development scenario (element coverage gating `status`) must each get the documented verdict, and rollback must leave no residue.
 
 ## Verify changes
 
@@ -110,11 +112,11 @@ The legacy evaluation suite remains retired; `tests/` covers only the judge scri
 
 Before committing:
 
-- Walk through both scenario paths against the skill, READMEs, and diagram sources.
+- Walk through all three scenario paths against the skill, READMEs, and diagram sources.
 - Check local links, anchors, frontmatter, and code fences; verify the deleted reference names are no longer used.
 - Confirm the judge script's commands named in `loop.md`, `clarify-*.md`, and `handoff.md` exist with those flags.
-- Check that baseline precedes the scope proposal and that the single human review closes the whole Clarify pass in both scenarios.
-- Verify the feature table and optimization process chart are mandatory everywhere, not optional presentation choices.
+- Check that baseline precedes the scope proposal and that the single human review closes the whole Clarify pass in all three scenarios.
+- Verify the as-built diagrams, the passing test set, and the optimization process chart are mandatory everywhere, not optional presentation choices.
 - Confirm bilingual diagram topology and geometry match; detail PNGs are dark canonical exports and the brand PNG keeps a transparent background.
 - Run Archify validation/browser checks for the detail diagrams and review every actual image, including the brand and overview; retain the evidence.
 - Run `git diff --check` and `python3 -m unittest discover -s tests`; confirm `git ls-files -- evals` is empty.
