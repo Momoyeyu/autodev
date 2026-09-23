@@ -1,54 +1,60 @@
 # Clarify: feature development
 
-Read for a feature request, alongside the shared [Clarify](clarify.md) rules. One pass runs steps 1–3 in order; the human reviews the whole pass in step 4. Do not implement the feature during Clarify.
+Read for a feature request, alongside the shared [Clarify](clarify.md) rules. The target of this scenario is a **blueprint**: the agreed architecture and flow diagrams the implementation must realize. One pass runs steps 1–3 in order; the human reviews the whole pass in step 4. Do not implement the feature during Clarify.
 
-## 1. Prepare runnable tests
+## 1. Draw the as-is picture
 
-Test maintenance happens here, before baseline, not after approval:
+Inspect the relevant code and draw the current state in Mermaid:
 
-1. **Query existing tests.** Map coverage to the intended behavior and identify outdated expectations and missing cases.
-2. **Remove or update outdated tests.** Explain how each change follows from the requested behavior. Keep still-relevant tests and regressions; do not discard a test merely because it fails.
-3. **Add missing tests.** Give cases stable IDs and observable outcomes. Cover meaningful inputs, boundaries, errors, and behavior that must remain unchanged, using the project's existing tools.
-4. **Verify the tests can run.** Check discovery, dependencies, fixtures, and execution. Trial runs must produce meaningful results; failure caused by an unimplemented requested behavior is valid, while unrelated setup errors need repair.
+- the overall architecture around the change: modules, responsibilities, dependencies;
+- the existing business flows the feature touches.
 
-“Can run” does not mean “already passes.” Do not implement the feature merely to obtain a green trial run. The prepared set includes retained coverage as well as updated and new cases, not only the easiest passing subset.
+These as-is diagrams are the baseline. They must be drawn from the actual code, not from memory or documentation. Save them to a file outside the editable surface, for example `BLUEPRINT-ASIS.md` at the repository root.
 
-Judge test changes by what they still constrain, not by how many assertions remain. Counts prove nothing: `expect(x).toBe(42)` and `expect(x).toBeDefined()` are one assertion each, and merging repeated assertions into one structural comparison loses no coverage. For every removed or changed test, show the old and new expectation side by side and state which behavior it constrained and where that behavior is now covered. Flag anything that widens accepted results, narrows inputs, adds skips or expected failures, or moves a check behind a condition. Where a case guards the requested behavior, run it once against the unchanged source: it must fail there, which shows it can detect the behavior's absence; regression cases must pass there. During Loop the test files are frozen and hash-checked, so this review is the only point at which weakening can enter.
+## 2. Draft the blueprint
 
-## 2. Capture baseline
+Draw the agreed end state in Mermaid, same granularity as the as-is picture:
 
-Run the prepared test set on the pre-implementation source state. Record case IDs, actual outcomes, failure reasons, totals, the command, and test/source identities.
+- the target architecture: modules, responsibilities, and boundaries after the change, including modules to be added or removed;
+- the target business flows: sequence, outputs, and side effects after the change.
 
-This baseline uses the reconciled suite. Removing outdated tests is preparation, not a development gain. Use the same test version and comparable conditions for the final results.
+Give every element a stable ID — node names in Mermaid are IDs already; reuse the same IDs across as-is and blueprint where an element survives unchanged. Collect all blueprint element IDs on one comment line so the judge can check coverage mechanically:
 
-## 3. Propose the impact
+```mermaid
+%% autodev-elements: order-api order-service inventory-client checkout-flow
+```
 
-Inspect the relevant code and make the proposed changes and preserved behavior explicit, informed by which baseline cases fail and why.
+The blueprint is the target: Loop ends only when the delivered state realizes every element. Keep it at the level of architecture and flows, not pseudocode — the point is to fix *what* is built and *how the parts connect*, leaving implementation detail to Loop.
+
+If the feature legitimately changes existing behavior, say so explicitly and mark the affected test files as editable in step 3; otherwise existing tests stay frozen and must remain green.
+
+## 3. Propose the scope
 
 | Boundary | Propose for the human's confirmation |
 |---|---|
-| Overall architecture | Which modules and interfaces are affected? May modules be added or removed? Which architectural boundaries must remain? |
-| Existing workflows | Which user/system flows are affected? May their sequence, outputs, or side effects change? Which behavior must remain compatible? |
-
-A feature request is not unrestricted permission to redesign the project.
+| Editable files | Explicit paths the agent may change to realize the blueprint |
+| Existing tests | Frozen by default; list the test paths the blueprint is allowed to change, if any |
+| Regression check | An existing test/lint command that must stay green, if the project has one |
+| As-built path | Where Loop writes the delivered-state diagrams, inside the editable surface |
 
 Write the proposal as a contract with the judge script, from the user's checkout, into a directory outside the repository (pass `--home` as an absolute path; every later command uses the same value):
 
 ```bash
 python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
-  --scenario development --editable src/ --frozen tests/ \
-  --test-cmd "pytest -q tests/"
+  --scenario development --editable src/ docs/ \
+  --blueprint BLUEPRINT.md --asis BLUEPRINT-ASIS.md \
+  --asbuilt docs/asbuilt.md --check-cmd "pytest -q"
 ```
 
-`--editable` is the file-level form of the permitted impact; `--frozen` is the agreed test set, which Loop may not edit. `init` runs the tests once more to record the baseline and its raw output and prints the contract for the human to review in step 4.
+`init` copies the as-is and blueprint files into the contract directory, freezes their hashes, parses the element list, runs the regression check once as the recorded baseline, and prints the contract for the human to review in step 4. Both files must live outside the editable surface and be committed — either on the starting branch or inside the worktree's baseline commit — so the Loop worktree carries them.
 
 ## 4. Human review of the whole pass
 
-Show the runnable tests, the old/new expectation for every changed or removed test, the baseline results with any coverage gaps, and the proposed impact, together. The human decides:
+Show the as-is diagrams, the blueprint, and the proposed scope together. The human decides:
 
-- **Revise:** apply the feedback and repeat from step 1. Rerun baseline on the updated suite; a changed test set needs a new baseline, so rerun `init --renew`.
-- **Approve:** record the approved tests, baseline, and impact, then enter Loop.
+- **Revise:** apply the feedback and repeat from step 1. A changed blueprint needs a new contract, so rerun `init --renew`.
+- **Approve:** record the approved blueprint, as-is baseline, and scope, then enter Loop.
 
-If every prepared test already passes at baseline, say so in the review; the human may confirm the behavior already exists or point out what the tests missed. An approved all-green baseline still requires final verification and the comparison table in [Handoff](handoff.md#feature-development-one-table).
+The human confirms the blueprint is the right design, not merely that it was drawn. If the blueprint reveals disagreement about the architecture or a flow, resolve it here — not during Loop.
 
-**Exit:** the human has approved one complete pass — runnable tests, their baseline, and the permitted impact. Continue to [Loop: development](loop.md#feature-development).
+**Exit:** the human has approved one complete pass — the blueprint, its as-is baseline, and the permitted scope. Continue to [Loop: development](loop.md#feature-development).

@@ -1,12 +1,20 @@
 # Handoff
 
-Read when preparing delivery, including an incomplete or blocked result. The required primary artifact depends on the scenario: **one comparison table** or **one optimization process chart**. Show unresolved failures and missing evidence without claiming completion.
+Read when preparing delivery, including an incomplete or blocked result. The required primary artifact depends on the scenario: **as-built diagrams** for feature development, **the passing test set** for a bug fix, or **one optimization process chart**. Show unresolved failures and missing evidence without claiming completion.
 
-Both must use the approved test and the original baseline. Add only the reproduction details and context needed for the human to verify, understand, and take over the result.
+Each artifact is checked against the approved target — blueprint, test set, or benchmark — and the original baseline. Add only the reproduction details and context needed for the human to verify, understand, and take over the result.
 
-## Feature development: one table
+## Feature development: as-built diagrams
 
-Run the complete agreed test set on the delivered source state under comparable conditions. Present one table comparing baseline and final results.
+Deliver the architecture and flow diagrams **drawn from the delivered state**, in Mermaid at the agreed `--asbuilt` path — not the Clarify blueprint copied over. The blueprint describes the agreed target; the as-built diagrams describe what was actually built. If the two disagree, the development is wrong: return to [Loop](loop.md#feature-development) instead of handing off.
+
+Start from `autodev_verify.py --home <contract dir> report`, which writes `blueprint-handoff.md`: the agreed blueprint and the as-built diagrams side by side, plus the element-coverage table showing every blueprint element ID found in the as-built file. Keep that structure and fill in anything the human needs to compare the two.
+
+Explain meaningful divergences the human approved along the way — an element realized differently, a boundary moved — rather than hiding them. A silent mismatch means the loop exited early; a documented, approved one belongs in the handoff text. Include the regression check's final raw output and the rerun command.
+
+## Bug fix: the passing test set
+
+Deliver the agreed test set passing on the delivered state: the reproduction case and every agreed regression case green, under the same test version and comparable conditions as baseline.
 
 Start from `autodev_verify.py --home <contract dir> report`, which writes `comparison.md` with the baseline and final runs of the agreed command and their raw-output paths. Expand it with stable case IDs or agreed groups from those logs, include totals, and link to the full execution evidence. A suitable structure is:
 
@@ -14,9 +22,9 @@ Start from `autodev_verify.py --home <contract dir> report`, which writes `compa
 |---|---|---|---|
 | case ID or agreed group | recorded outcome | recorded outcome | output or artifact location |
 
-Populate it with actual results, not illustrative passes. Distinguish failed, skipped, blocked, and unrun cases. Every agreed test must pass to claim feature completion.
+Populate it with actual results, not illustrative passes. Distinguish failed, skipped, blocked, and unrun cases. Every agreed test must pass to claim the bug is fixed.
 
-Compare the same test version. Outdated-test removal happened in Clarify and must not be counted as an implementation gain. Summarize relevant architecture/workflow changes and provide the exact rerun command alongside the table.
+Compare the same test version. Outdated-test removal happened in Clarify and must not be counted as a fix gain. Summarize relevant changes and provide the exact rerun command alongside the table.
 
 ## Performance optimization: one chart
 
@@ -39,12 +47,14 @@ Verify the delivered candidate within the reserved time. If only a prior measure
 
 In the chart caption or accompanying short text, give baseline/final values, actual time spent, target status, absolute/relative improvement, and the rerun command. For lower-is-better, improvement is `baseline - final`; for higher-is-better, it is `final - baseline`. Divide by the absolute baseline for a percentage; at zero baseline, report the absolute change and no percentage.
 
-For a weighted test, include the fixed formula and retain component readings with the evidence. They explain the one score, not additional optimization objectives. A timeout can end the work without meeting the target; state that plainly.
+For a weighted score, include the fixed formula and retain component readings with the evidence. They explain the one score, not additional optimization objectives. A timeout can end the work without meeting the target; state that plainly.
 
 ## Merge back and remove the worktree
 
-The delivered state is the loop branch's final commit: the passing checkpoint for a feature, `best` for an optimization. Verify it there, then merge the loop branch into the branch the user was on when Loop started, with a regular merge so the attempt history stays visible. If the merge conflicts with work the user did meanwhile, stop and report; do not resolve it by force or rewrite the user's branch. After a clean merge, remove the worktree and the loop branch. Ignored build products disappear with the worktree.
+The delivered state is the loop branch's final commit: the completed blueprint state for a feature, the passing checkpoint for a bug fix, `best` for an optimization. Verify it there, then merge the loop branch into the branch the user was on when Loop started, with a regular merge so the attempt history stays visible. If the merge conflicts with work the user did meanwhile, stop and report; do not resolve it by force or rewrite the user's branch. After a clean merge, remove the worktree and the loop branch. Ignored build products disappear with the worktree.
+
+If the human is not satisfied with a handoff, the follow-up is a new autodev round — typically a bug fix against the concrete problem — not a resume of the closed loop.
 
 ## Keep the handoff trustworthy
 
-Tie the table or chart to raw results, test/source identities, execution conditions, and the delivered changes. Every verdict in `attempts.jsonl` points to its `raw/attempt-NNN.log`; hand over the contract directory so the human can trace each round. Note limitations and any unresolved next action concisely. Never use fabricated measurements or a polished visual to conceal missing verification.
+Tie the artifact to raw results, source identities, execution conditions, and the delivered changes. Every verdict in `attempts.jsonl` points to its `raw/attempt-NNN.log`; hand over the contract directory so the human can trace each round. Note limitations and any unresolved next action concisely. Never use fabricated measurements or a polished visual to conceal missing verification.
