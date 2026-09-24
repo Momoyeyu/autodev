@@ -95,8 +95,8 @@
     <text x="560" y="590" font-size="46" font-weight="700" letter-spacing="8" fill="#FFFFFF">CLARIFY</text>
     <text x="1000" y="590" font-size="46" font-weight="700" letter-spacing="8" fill="#FFFFFF">LOOP</text>
     <text x="1555" y="590" font-size="46" font-weight="700" letter-spacing="8" fill="#FFFFFF">HANDOFF</text>
-    <text x="560" y="646" font-size="28" fill="#9DB5E8">Agree on a runnable test and baseline</text>
-    <text x="1000" y="646" font-size="28" fill="#9DB5E8">Iterate until the test decides</text>
+    <text x="560" y="646" font-size="28" fill="#9DB5E8">Agree on a target and baseline</text>
+    <text x="1000" y="646" font-size="28" fill="#9DB5E8">Iterate until the target is met</text>
     <text x="1555" y="646" font-size="28" fill="#9DB5E8">Hand off verifiable evidence</text>
   </g>
   <g font-family="'Helvetica Neue', 'PingFang SC', Arial, sans-serif" fill="#9DB5E8">

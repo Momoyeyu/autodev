@@ -95,8 +95,8 @@
     <text x="560" y="590" font-size="46" font-weight="700" letter-spacing="8" fill="#FFFFFF">CLARIFY</text>
     <text x="1000" y="590" font-size="46" font-weight="700" letter-spacing="8" fill="#FFFFFF">LOOP</text>
     <text x="1555" y="590" font-size="46" font-weight="700" letter-spacing="8" fill="#FFFFFF">HANDOFF</text>
-    <text x="560" y="646" font-size="28" fill="#9DB5E8">与人对齐出可执行的 test 与 baseline</text>
-    <text x="1000" y="646" font-size="28" fill="#9DB5E8">开发或优化，直到 test 给出结论</text>
+    <text x="560" y="646" font-size="28" fill="#9DB5E8">与人对齐 target 与 baseline</text>
+    <text x="1000" y="646" font-size="28" fill="#9DB5E8">开发、修复、优化，直到 target 达成</text>
     <text x="1555" y="646" font-size="28" fill="#9DB5E8">交付可验证、可接管的证据</text>
   </g>
   <g font-family="'Helvetica Neue', 'PingFang SC', Arial, sans-serif" fill="#9DB5E8">
