@@ -68,7 +68,7 @@ Detail maps use a compact two-row path: Clarify reads left to right, then Loop a
 
 This renderer does not support workflow `semanticChecks`. Check directed connections explicitly: target preparation → baseline → proposed scope/limits → one human review; the review's "No" edge returns to preparation and its "Yes" edge enters Loop; each detail map has that Clarify cycle and an execution cycle; only the required artifact is terminal. Do not treat successful geometry validation as a semantic check.
 
-Keep the PNGs opaque and dark regardless of the README viewer's color scheme. Use Archify's Editorial preset and canonical PNG export, not a screenshot containing viewer controls or manually recolored output. These are workflow illustrations, not test-result charts; do not reintroduce the removed result screenshot.
+Keep the PNGs opaque and dark regardless of the README viewer's color scheme. Use Archify's Editorial preset and canonical PNG export, not a screenshot containing viewer controls or manually recolored output. These are workflow illustrations; do not add test-result screenshots.
 
 ### Regenerate with Archify
 

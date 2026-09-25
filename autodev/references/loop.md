@@ -46,7 +46,7 @@ The target is the agreed test set passing.
 3. Run relevant tests for feedback. At each checkpoint, commit and run `autodev_verify.py --home <contract dir> attempt --note "<what changed>"`: it rejects the checkpoint as invalid if it touches frozen test files or paths outside the approved impact, runs the complete agreed test set, and logs the result. A failing checkpoint is kept (exit `1`); an invalid one is rolled back (exit `2`).
 4. Record remaining failures and repeat until `attempt` exits `0`, meaning **all agreed tests pass**; `status` then reports `handoff`.
 
-A still-failing case does not require discarding a partial fix. Fix the implementation and regressions rather than weakening tests or accepting only a passing subset. Do not impose an optimization timeout or an arbitrary attempt count on bug-fix work.
+A still-failing case does not require discarding a partial fix. Fix the implementation and regressions rather than weakening tests or accepting only a passing subset. The loop ends only when the complete agreed test set passes.
 
 Once the complete agreed set passes, run `autodev_verify.py --home <contract dir> verify` to rerun the agreed command on the retained `best` commit, and enter [Handoff](handoff.md#bug-fix-the-passing-test-set).
 

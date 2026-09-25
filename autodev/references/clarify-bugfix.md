@@ -14,7 +14,7 @@ A bug report usually names the concrete failing case, which makes the tests easi
 
 "Can run" does not mean "already passes." Do not fix the bug merely to obtain a green trial run.
 
-Judge test changes by what they still constrain, not by how many assertions remain. Counts prove nothing: `expect(x).toBe(42)` and `expect(x).toBeDefined()` are one assertion each, and merging repeated assertions into one structural comparison loses no coverage. For every removed or changed test, show the old and new expectation side by side and state which behavior it constrained and where that behavior is now covered. Flag anything that widens accepted results, narrows inputs, adds skips or expected failures, or moves a check behind a condition. The reproduction test must fail against the unchanged source; regression cases must pass there. During Loop the test files are frozen and hash-checked, so this review is the only point at which weakening can enter.
+Judge test changes by what they still constrain. For every removed or changed test, show the old and new expectation side by side and state which behavior it constrained and where that behavior is now covered. Flag anything that widens accepted results, narrows inputs, adds skips or expected failures, or moves a check behind a condition. The reproduction test must fail against the unchanged source; regression cases must pass there. During Loop the test files are frozen and hash-checked, so this review is the only point at which weakening can enter.
 
 ## 2. Capture baseline
 

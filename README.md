@@ -50,7 +50,7 @@ Clarify is not just a conversation. Inspecting code, drawing diagrams, maintaini
 
 ![Feature development flow: as-is diagrams, blueprint, proposed scope, human review, implement-check loop, as-built diagrams](docs/assets/autodev-development.png)
 
-Feature work is driven by a **blueprint**, not by new tests — writing correct tests up front is often harder than the feature itself. One Clarify pass is: draw the as-is architecture and flow diagrams from the actual code (the baseline); draft the to-be blueprint in Mermaid with stable element IDs; then propose the editable scope, including whether existing tests stay frozen.
+Feature work is driven by a **blueprint**. One Clarify pass is: draw the as-is architecture and flow diagrams from the actual code (the baseline); draft the to-be blueprint in Mermaid with stable element IDs; then propose the editable scope, including whether existing tests stay frozen.
 
 The human reviews the **whole pass at once** — as-is picture, blueprint, and proposed scope — and either sends it back for revision or approves it. Approval concerns an agreed design, not just a feature description.
 

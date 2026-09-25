@@ -50,7 +50,7 @@ Clarify 不只是问问题。查代码、画图、维护测试、试运行和测
 
 ![功能开发流程：as-is 图、blueprint、提出修改范围、用户确认、实现-检查循环、竣工图](docs/assets/autodev-development.zh.png)
 
-功能开发由 **blueprint** 驱动，而不是先写测试——在开发前就写出正确的测试，常常比开发本身更难。一轮 Clarify 是：从实际代码绘制 as-is 架构图与流程图（即 baseline）；用 Mermaid 起草 to-be 的 blueprint，每个元素带稳定 ID；再提出可编辑范围，明确现有 test 默认冻结还是允许 blueprint 修改。
+功能开发由 **blueprint** 驱动。一轮 Clarify 是：从实际代码绘制 as-is 架构图与流程图（即 baseline）；用 Mermaid 起草 to-be 的 blueprint，每个元素带稳定 ID；再提出可编辑范围，明确现有 test 默认冻结还是允许 blueprint 修改。
 
 用户**一次审阅整轮结果**——as-is 图、blueprint 和提出的范围——然后决定退回修订还是确认进入 Loop。用户确认的是一份设计，而不只是功能描述。
 
