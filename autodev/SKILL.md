@@ -36,7 +36,7 @@ User input starts the workflow; it is not another stage. Clarify is the core cap
 
 Do not preload the directory. Follow the current stage and scenario, keeping shared instructions with the selected branch.
 
-`scripts/autodev_verify.py` (Python 3, standard library) is the judge for the Loop. Clarify writes the agreement into it with `init`; Loop runs `start`, then `attempt` and `status` every round; Handoff runs `report`. It enforces the frozen surface, the editable scope, the time budget, the direction-bound comparison, blueprint-element coverage, and the rollback, and it keeps the raw output for every verdict. The rules below describe what it does and what remains your responsibility.
+`scripts/autodev_verify.py` (Python 3, standard library) is the judge for the Loop. Clarify writes the agreement into it with `init`; Loop runs `start`, then `attempt` and `status` every round; Handoff runs `verify` and `report`. It enforces the frozen surface, the editable scope, the time budget, the direction-bound comparison, blueprint-element coverage, and the rollback, and it keeps the raw output for every verdict. The rules below describe what it does and what remains your responsibility.
 
 ## Clarify
 

@@ -33,7 +33,7 @@ This is the original baseline for the handoff chart. Later improvements must not
 |---|---|
 | Optimization target | Threshold on the one score and whether equality counts, taken from how the human phrased it; reaching it permits early exit |
 | Editable files | Explicit implementation paths the agent may change; benchmark, inputs, weights, and scoring logic remain outside this surface |
-| Time budget | A mandatory wall-clock limit (`--budget-minutes`); `--reserve-minutes` marks its tail, during which `attempt` refuses new runs so final verification and Handoff fit inside the budget |
+| Time budget | A mandatory wall-clock limit (`--budget-minutes`); `--reserve-minutes` marks its tail, during which `attempt` refuses new runs so `verify` and Handoff fit inside the budget |
 
 Reuse values already supplied by the human, but do not silently invent missing permissions or an unlimited budget. State the proposal relative to the measured starting point.
 

@@ -98,7 +98,7 @@ autodev is a protocol plus one small judge. The Markdown tells the agent what to
 
 | Guarantee | Provided by |
 |---|---|
-| Frozen files unchanged (tests, benchmark, blueprint), changes only inside the approved scope, time budget respected, score compared in the agreed direction with the agreed margin, rejected attempts rolled back with no residue, blueprint elements covered by the as-built file, every verdict logged with its raw output | `autodev_verify.py`: `init` in Clarify, `start`/`attempt`/`status` in Loop, `report` in Handoff. `start` first proves the checks bite by editing a frozen file and adding an out-of-scope file and requiring both to be rejected. |
+| Frozen files unchanged (tests, benchmark, blueprint), changes only inside the approved scope, time budget respected, score compared in the agreed direction with the agreed margin, rejected attempts rolled back with no residue, blueprint elements covered by the as-built file, every verdict logged with its raw output | `autodev_verify.py`: `init` in Clarify, `start`/`attempt`/`status` in Loop, `verify`/`report` in Handoff. `start` first proves the checks bite by editing a frozen file and adding an out-of-scope file and requiring both to be rejected. |
 | The blueprint is the right design, the tests measure the right thing, the proposed impact or limits are reasonable, as-built diagrams truly match the blueprint, the contract itself is approved | The agent's judgment where a check cannot be mechanical, and the human's single review of the whole Clarify pass |
 | The artifact is read, the merged branch is accepted | The human at Handoff |
 
@@ -133,7 +133,7 @@ The first request starts with as-is diagrams and blueprint agreement. The second
 | [`references/clarify-optimization.md`](autodev/references/clarify-optimization.md) | Clarifying a performance goal (benchmark) |
 | [`references/loop.md`](autodev/references/loop.md) | Starting Loop after agreement and baseline are ready |
 | [`references/handoff.md`](autodev/references/handoff.md) | Preparing the required artifact |
-| [`scripts/autodev_verify.py`](autodev/scripts/autodev_verify.py) | Run, not read: `init` in Clarify, `start`/`attempt`/`status` in Loop, `report` in Handoff |
+| [`scripts/autodev_verify.py`](autodev/scripts/autodev_verify.py) | Run, not read: `init` in Clarify, `start`/`attempt`/`status` in Loop, `verify`/`report` in Handoff |
 
 Read the current stage's shared rules and the applicable scenario only. Do not preload later stages or the other Clarify branch. Progressive disclosure is about providing detail when it is needed, even when a task eventually visits all three stages.
 

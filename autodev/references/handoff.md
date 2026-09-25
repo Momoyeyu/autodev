@@ -43,7 +43,7 @@ A best-so-far line may accompany the measured attempts, but label it as derived 
 
 `autodev_verify.py --home <contract dir> report` renders `process.svg` from `attempts.jsonl` with exactly these elements and writes `caption.json` with the values below; use it unless the human asked for another format, and keep the source data. If execution was blocked before any attempt or no attempt produced a valid new score, show the real baseline and annotate that outcome instead of fabricating progress. If chart generation is blocked, preserve the data and report the handoff as incomplete rather than silently falling back to a table.
 
-Verify the delivered candidate within the reserved time. If only a prior measurement is available, reuse it only when source state, test version, and conditions match, and explicitly say it was not freshly rerun. Otherwise mark verification incomplete.
+Verify the delivered candidate within the reserved time with `autodev_verify.py --home <contract dir> verify`, which reruns the agreed command on `best` and records `raw/verify.log`. If only a prior measurement is available, reuse it only when source state, test version, and conditions match, and explicitly say it was not freshly rerun. Otherwise mark verification incomplete.
 
 In the chart caption or accompanying short text, give baseline/final values, actual time spent, target status, absolute/relative improvement, and the rerun command. For lower-is-better, improvement is `baseline - final`; for higher-is-better, it is `final - baseline`. Divide by the absolute baseline for a percentage; at zero baseline, report the absolute change and no percentage.
 

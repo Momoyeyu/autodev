@@ -35,7 +35,7 @@ The target is the approved blueprint: every element realized in the delivered co
 
 Do not weaken tests, skip the regression check, or claim coverage the diagrams do not show. Do not impose an optimization timeout or an arbitrary attempt count on feature work.
 
-Once `status` reports `handoff`, enter [Handoff](handoff.md#feature-development-as-built-diagrams).
+Once `status` reports `handoff`, rerun the regression check on the delivered commit with `autodev_verify.py --home <contract dir> verify` when a `--check-cmd` was agreed, then enter [Handoff](handoff.md#feature-development-as-built-diagrams).
 
 ## Bug fix
 
@@ -48,7 +48,7 @@ The target is the agreed test set passing.
 
 A still-failing case does not require discarding a partial fix. Fix the implementation and regressions rather than weakening tests or accepting only a passing subset. Do not impose an optimization timeout or an arbitrary attempt count on bug-fix work.
 
-Once the complete agreed set passes, verify the delivered state and enter [Handoff](handoff.md#bug-fix-the-passing-test-set).
+Once the complete agreed set passes, run `autodev_verify.py --home <contract dir> verify` to rerun the agreed command on the retained `best` commit, and enter [Handoff](handoff.md#bug-fix-the-passing-test-set).
 
 ## Performance optimization
 
@@ -75,6 +75,6 @@ Do not shrink workloads, hardcode answers, retune weights, or change benchmark c
 
 A crash or timeout has no numeric score: mark it invalid, not zero. Preserve enough history to distinguish measured attempts from the best-so-far state. Record which measured candidate is ultimately delivered, even if it is not the last attempt.
 
-Reserve final verification inside the agreed budget. Then enter [Handoff](handoff.md#performance-optimization-one-chart); do not replace the process chart with only a before/after number.
+Reserve final verification inside the agreed budget: run `autodev_verify.py --home <contract dir> verify`, which reruns the benchmark on the retained `best` commit and compares the fresh score with the recorded one (`verified` / `failed`). Then enter [Handoff](handoff.md#performance-optimization-one-chart); do not replace the process chart with only a before/after number.
 
 If permissions, dependencies, or the environment block any loop, report the blockage and last verified state rather than spinning indefinitely or claiming completion.

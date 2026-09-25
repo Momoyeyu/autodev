@@ -7,6 +7,7 @@ Commands follow the flow one to one:
   smoke    Prove that a frozen-file edit and an out-of-scope edit are both rejected
   attempt  One Loop round: scope check, frozen check, run the check, judge, keep or roll back
   status   Exit decision: agreed rule met (bugfix test, dev blueprint, opt target), or budget out
+  verify   Rerun the agreed command on the retained best commit before Handoff
   report   Handoff artifact: comparison table (bugfix), blueprint handoff (development), chart (optimization)
 """
 import argparse
@@ -407,7 +408,7 @@ def cmd_attempt(a):
             rollback(wt, best)
             home.log({"n": n, "kind": "attempt", "commit": head, "note": a.note, "time": iso(utc_now()),
                       "verdict": "invalid", "reason": reason, "rolled_back_to": best})
-        die(reason + "; run status and enter Handoff", PRECONDITION)
+        die(reason + "; run verify and status, then enter Handoff", PRECONDITION)
     if head == best:
         die("HEAD is already best; commit the attempt first")
     outside, err = check_scope(c, wt, best)
@@ -500,6 +501,37 @@ def cmd_status(a):
         out["decision"] = ("handoff" if asbuilt_exists and not out["elements_missing"]
                            and out["check_green"] else "continue")
     print(json.dumps(out, indent=2))
+
+
+def cmd_verify(a):
+    home = Home(a.home)
+    c = home.load()
+    wt, best = c.get("worktree"), c.get("best")
+    if not wt:
+        die("run start first")
+    if not c.get("test_cmd"):
+        die("no check command recorded for this contract")
+    if git(wt, "status", "--porcelain"):
+        die("worktree is dirty; commit or clean before verify")
+    head = git(wt, "rev-parse", "HEAD")
+    if head != best:
+        die("HEAD differs from the retained best; git reset --hard to best before verify")
+    code, out, elapsed, _ = run_command(c, wt, home.raw_path("verify.log"), None)
+    rec = {"n": 1 + max([r["n"] for r in home.attempts()] + [0]), "kind": "verify",
+           "commit": head, "time": iso(utc_now()), "raw": "raw/verify.log",
+           "exit": code, "elapsed_s": round(elapsed, 1)}
+    if c["scenario"] == "optimization":
+        score = extract_score(c, out)
+        rec.update(score=score, recorded_best=c.get("best_score"),
+                   target_met=meets_target(c, score),
+                   target_met_recorded=meets_target(c, c.get("best_score")))
+        ok = code == 0 and score is not None and rec["target_met"] == rec["target_met_recorded"]
+    else:
+        ok = code == 0
+    rec["verdict"] = "verified" if ok else "failed"
+    home.log(rec)
+    print(json.dumps(rec, indent=2))
+    sys.exit(0 if ok else INVALID)
 
 
 def cmd_report(a):
@@ -677,6 +709,8 @@ def main():
     t.set_defaults(fn=cmd_attempt)
 
     sub.add_parser("status").set_defaults(fn=cmd_status)
+
+    sub.add_parser("verify").set_defaults(fn=cmd_verify)
 
     r = sub.add_parser("report")
     r.add_argument("--out")

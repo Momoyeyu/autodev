@@ -289,6 +289,25 @@ class TestReserve(Harness):
         self.assertFalse(s["budget_exhausted"])
 
 
+class TestVerify(Harness):
+    def test_verify_reproduces_best_state(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=170\n"})
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        rec = json.loads(r.stdout)
+        self.assertEqual(rec["verdict"], "verified")
+        self.assertEqual((rec["score"], rec["recorded_best"]), (170.0, 170.0))
+        self.assertFalse(rec["target_met"])
+        self.assertFalse(rec["target_met_recorded"])
+        self.assertIn("verify", [x["kind"] for x in self.attempts()])
+
+    def test_verify_refuses_non_best_head(self):
+        self.ready()
+        self.commit({"src/impl.py": "N=170\n"})
+        self.assertEqual(self.run_v("verify").returncode, 3)
+
+
 class TestHigherDirection(Harness):
     init_extra = ["--score-regex", r"rps=([0-9.]+)", "--unit", "req/s", "--direction", "higher",
                   "--delta", "10", "--target", "1000"]
@@ -345,6 +364,17 @@ class TestBugfix(Harness):
         with open(os.path.join(self.home, "comparison.md")) as f:
             table = f.read()
         self.assertIn("| fail (exit 1) | pass (exit 0) |", table)
+
+    def test_bugfix_verify(self):
+        self.init(frozen="tests", test_cmd="python3 tests/test_x.py")
+        self.start()
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 2)
+        self.assertEqual(json.loads(r.stdout)["verdict"], "failed")
+        self.attempt({"src/impl.py": "def add(a, b):\n    return a + b\n"})
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout)["verdict"], "verified")
 
     def test_bugfix_frozen_test_edit_is_invalid(self):
         self.init(frozen="tests", test_cmd="python3 tests/test_x.py")
@@ -464,6 +494,11 @@ class TestDevelopment(Harness):
         s = self.status()
         self.assertTrue(s["check_green"])
         self.assertEqual(s["decision"], "handoff")
+
+    def test_verify_without_check_cmd_dies(self):
+        self.init_dev()
+        self.start()
+        self.assertEqual(self.run_v("verify").returncode, 3)
 
     def test_report_writes_blueprint_handoff(self):
         self.init_dev(check=self.check)
