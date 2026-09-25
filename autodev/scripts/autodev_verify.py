@@ -216,7 +216,12 @@ def cmd_init(a):
     home = Home(a.home)
     if os.path.exists(home.contract_path) and not a.renew:
         die("contract exists; use --renew after a new Clarify pass")
+    renewed_from = None
     if a.renew and os.path.exists(home.contract_path):
+        with open(home.contract_path) as f:
+            old = json.load(f)
+        renewed_from = {"created": old.get("created"), "scenario": old.get("scenario"),
+                        "best_score": old.get("best_score")}
         stamp = iso(utc_now()).replace(":", "")
         os.rename(home.contract_path, home.contract_path + f".{stamp}.bak")
         if os.path.exists(home.attempts_path):
@@ -245,6 +250,7 @@ def cmd_init(a):
         "test_cmd": a.test_cmd,
         "budget_minutes": a.budget_minutes,
         "reserve_minutes": a.reserve_minutes,
+        "renewed_from": renewed_from,
         "worktree": None,
         "best": None,
         "best_score": None,

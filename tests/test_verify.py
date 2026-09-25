@@ -308,6 +308,17 @@ class TestVerify(Harness):
         self.assertEqual(self.run_v("verify").returncode, 3)
 
 
+class TestRenew(Harness):
+    def test_renew_records_previous_contract(self):
+        self.init()
+        self.assertIsNone(self.contract()["renewed_from"])
+        old_created = self.contract()["created"]
+        r = self.init("--renew")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        rf = self.contract()["renewed_from"]
+        self.assertEqual((rf["created"], rf["scenario"]), (old_created, "optimization"))
+
+
 class TestHigherDirection(Harness):
     init_extra = ["--score-regex", r"rps=([0-9.]+)", "--unit", "req/s", "--direction", "higher",
                   "--delta", "10", "--target", "1000"]
