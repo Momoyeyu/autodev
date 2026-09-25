@@ -243,6 +243,7 @@ def cmd_init(a):
         "frozen": hash_paths(repo, a.frozen or []),
         "test_cmd": a.test_cmd,
         "budget_minutes": a.budget_minutes,
+        "reserve_minutes": a.reserve_minutes,
         "worktree": None,
         "best": None,
         "best_score": None,
@@ -272,6 +273,10 @@ def cmd_init(a):
                 die(f"--{name.replace('_', '-')} is required for optimization")
         if a.target is None:
             die("--target is required for optimization")
+        if a.budget_minutes is None:
+            die("--budget-minutes is required for optimization; agree a wall-clock limit in Clarify")
+        if a.reserve_minutes is not None and a.reserve_minutes >= a.budget_minutes:
+            die("--reserve-minutes must be smaller than --budget-minutes")
         contract["score"] = {"regex": a.score_regex, "direction": a.direction, "unit": a.unit}
         contract["target"] = a.target
         contract["inclusive"] = not a.exclusive
@@ -382,6 +387,10 @@ def remaining_seconds(c):
     return (parse_iso(c["deadline"]) - utc_now()).total_seconds()
 
 
+def reserve_seconds(c):
+    return (c.get("reserve_minutes") or 0) * 60
+
+
 def cmd_attempt(a):
     home = Home(a.home)
     c = home.load()
@@ -391,12 +400,14 @@ def cmd_attempt(a):
     n = 1 + max([r["n"] for r in home.attempts()] + [0])
     remaining = remaining_seconds(c)
     head = git(wt, "rev-parse", "HEAD")
-    if remaining is not None and remaining <= 0:
+    if remaining is not None and remaining <= reserve_seconds(c):
+        reason = ("time budget exhausted before the run" if remaining <= 0
+                  else "inside the reserve window kept for final verification")
         if head != best:
             rollback(wt, best)
             home.log({"n": n, "kind": "attempt", "commit": head, "note": a.note, "time": iso(utc_now()),
-                      "verdict": "invalid", "reason": "time budget exhausted before the run", "rolled_back_to": best})
-        die("time budget exhausted; run status and enter Handoff", PRECONDITION)
+                      "verdict": "invalid", "reason": reason, "rolled_back_to": best})
+        die(reason + "; run status and enter Handoff", PRECONDITION)
     if head == best:
         die("HEAD is already best; commit the attempt first")
     outside, err = check_scope(c, wt, best)
@@ -462,11 +473,12 @@ def cmd_status(a):
         out["target"] = c["target"]
         out["inclusive"] = c["inclusive"]
         out["target_met"] = meets_target(c, c.get("best_score"))
-        exhausted = remaining is not None and remaining <= 0
-        out["budget_exhausted"] = exhausted
+        out["budget_exhausted"] = remaining is not None and remaining <= 0
+        exhausted = remaining is not None and remaining <= reserve_seconds(c)
         out["decision"] = "handoff" if (out["target_met"] or exhausted) else "continue"
         out["stop_reason"] = ("target reached" if out["target_met"] else
-                              "time budget exhausted" if exhausted else None)
+                              "time budget exhausted" if out["budget_exhausted"] else
+                              "reserve window reached" if exhausted else None)
     elif c["scenario"] == "bugfix":
         last = [r for r in home.attempts() if r.get("kind") == "attempt"]
         passing = bool(last) and last[-1]["verdict"] == "accepted"
@@ -641,6 +653,8 @@ def main():
     i.add_argument("--asis")
     i.add_argument("--asbuilt")
     i.add_argument("--budget-minutes", type=float)
+    i.add_argument("--reserve-minutes", type=float,
+                   help="tail of the budget kept for verify and Handoff; new attempts are refused inside it")
     i.add_argument("--score-regex")
     i.add_argument("--direction", choices=["lower", "higher"])
     i.add_argument("--unit")

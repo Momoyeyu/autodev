@@ -33,7 +33,7 @@ This is the original baseline for the handoff chart. Later improvements must not
 |---|---|
 | Optimization target | Threshold on the one score and whether equality counts, taken from how the human phrased it; reaching it permits early exit |
 | Editable files | Explicit implementation paths the agent may change; benchmark, inputs, weights, and scoring logic remain outside this surface |
-| Time budget | A wall-clock limit, loop start and deadline; include attempt measurements and reserve time for final verification |
+| Time budget | A mandatory wall-clock limit (`--budget-minutes`); `--reserve-minutes` marks its tail, during which `attempt` refuses new runs so final verification and Handoff fit inside the budget |
 
 Reuse values already supplied by the human, but do not silently invent missing permissions or an unlimited budget. State the proposal relative to the measured starting point.
 
@@ -44,7 +44,7 @@ python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
   --scenario optimization --editable src/api \
   --frozen bench/ --test-cmd "python bench/run.py" \
   --score-regex "p95=([0-9.]+)" --unit ms --direction lower \
-  --delta-pct 5 --target 200 --exclusive --budget-minutes 20
+  --delta-pct 5 --target 200 --exclusive --budget-minutes 20 --reserve-minutes 3
 ```
 
 `init` runs the benchmark once more to record the baseline and its raw output, converts `δ`, hashes the frozen paths, and prints the contract. That printed contract is what the human reviews in step 4; the same fields drive every Loop verdict, so nothing agreed here depends on the agent remembering it.

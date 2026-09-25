@@ -261,6 +261,34 @@ class TestBudget(Harness):
         self.assertEqual((s["decision"], s["stop_reason"]), ("handoff", "time budget exhausted"))
 
 
+class TestBudgetRequired(Harness):
+    budget = []
+
+    def test_optimization_requires_budget(self):
+        r = self.init()
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("--budget-minutes", r.stderr)
+
+    def test_reserve_must_be_smaller_than_budget(self):
+        r = self.init("--budget-minutes", "10", "--reserve-minutes", "20")
+        self.assertEqual(r.returncode, 3)
+
+
+class TestReserve(Harness):
+    budget = ["--budget-minutes", "0.05", "--reserve-minutes", "0.03"]
+
+    def test_reserve_window_blocks_attempts(self):
+        self.ready()
+        time.sleep(1.5)
+        self.commit({"src/impl.py": "N=170\n"})
+        r = self.run_v("attempt")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("reserve", r.stderr)
+        s = self.status()
+        self.assertEqual((s["decision"], s["stop_reason"]), ("handoff", "reserve window reached"))
+        self.assertFalse(s["budget_exhausted"])
+
+
 class TestHigherDirection(Harness):
     init_extra = ["--score-regex", r"rps=([0-9.]+)", "--unit", "req/s", "--direction", "higher",
                   "--delta", "10", "--target", "1000"]
