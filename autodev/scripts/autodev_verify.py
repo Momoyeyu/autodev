@@ -22,6 +22,7 @@ import sys
 import time
 
 ACCEPTED, REJECTED, INVALID, PRECONDITION = 0, 1, 2, 3
+CONSTITUTION = ".autodev/constitution.json"
 
 
 def utc_now():
@@ -108,6 +109,24 @@ def diagram_body(text):
     return [line for line in lines if line and not line.startswith("%%") and not line.startswith("```")]
 
 
+def load_constitution(repo, rel):
+    path = os.path.join(repo, rel or CONSTITUTION)
+    if not os.path.isfile(path):
+        if rel:
+            die(f"constitution file does not exist: {rel}")
+        return None, None
+    try:
+        with open(path, encoding="utf-8") as f:
+            law = json.load(f)
+    except ValueError as e:
+        die(f"constitution is not valid JSON: {e}")
+    unknown = set(law) - {"frozen", "guard_cmd", "budget"}
+    unknown |= {f"budget.{k}" for k in set(law.get("budget", {})) - {"default_minutes", "max_minutes", "reserve_minutes"}}
+    if unknown:
+        die(f"constitution has unknown keys: {sorted(unknown)}")
+    return law, norm(os.path.relpath(path, repo))
+
+
 class Home:
     def __init__(self, path):
         self.path = os.path.abspath(path)
@@ -146,11 +165,11 @@ class Home:
         return os.path.join(self.raw, name)
 
 
-def run_command(contract, cwd, raw_path, timeout):
+def run_command(cmd, cwd, raw_path, timeout):
     t0 = time.monotonic()
     timed_out = False
     try:
-        r = subprocess.run(contract["test_cmd"], shell=True, cwd=cwd, text=True,
+        r = subprocess.run(cmd, shell=True, cwd=cwd, text=True,
                            capture_output=True, timeout=timeout)
         code, out = r.returncode, r.stdout + r.stderr
     except subprocess.TimeoutExpired as e:
@@ -159,7 +178,7 @@ def run_command(contract, cwd, raw_path, timeout):
         out = "".join(x.decode() if isinstance(x, bytes) else (x or "") for x in (e.stdout, e.stderr))
     elapsed = time.monotonic() - t0
     with open(raw_path, "w") as f:
-        f.write(f"$ {contract['test_cmd']}\n# cwd={cwd} exit={code} elapsed={elapsed:.1f}s timed_out={timed_out}\n")
+        f.write(f"$ {cmd}\n# cwd={cwd} exit={code} elapsed={elapsed:.1f}s timed_out={timed_out}\n")
         f.write(out)
     return code, out, elapsed, timed_out
 
@@ -244,6 +263,18 @@ def cmd_init(a):
             die("--test-cmd is required")
         if not a.frozen:
             die("--frozen is required")
+    law, law_rel = load_constitution(repo, a.constitution)
+    if law:
+        a.frozen = list(dict.fromkeys((a.frozen or []) + law.get("frozen", []) + [law_rel]))
+        budget = law.get("budget", {})
+        if a.scenario == "optimization":
+            if a.budget_minutes is None:
+                a.budget_minutes = budget.get("default_minutes")
+            if a.reserve_minutes is None:
+                a.reserve_minutes = budget.get("reserve_minutes")
+        cap = budget.get("max_minutes")
+        if cap is not None and a.budget_minutes is not None and a.budget_minutes > cap:
+            die(f"--budget-minutes {a.budget_minutes:g} exceeds the constitution's max_minutes {cap:g}")
     contract = {
         "scenario": a.scenario,
         "created": iso(utc_now()),
@@ -256,6 +287,8 @@ def cmd_init(a):
         "budget_minutes": a.budget_minutes,
         "reserve_minutes": a.reserve_minutes,
         "renewed_from": renewed_from,
+        "constitution": {"path": law_rel, "sha256": sha256_file(os.path.join(repo, law_rel))} if law else None,
+        "guard_cmd": law.get("guard_cmd") if law else None,
         "worktree": None,
         "best": None,
         "best_score": None,
@@ -304,15 +337,20 @@ def cmd_init(a):
                 die(f"frozen file {f} lies inside editable path {e}")
     home.ensure()
     source = git(repo, "rev-parse", "HEAD")
+    if contract["guard_cmd"]:
+        code, _, _, _ = run_command(contract["guard_cmd"], repo, home.raw_path("guard-baseline.log"), None)
+        if code != 0:
+            die(f"the constitution's guard exited {code} on the unchanged source; a floor that is already "
+                "broken cannot judge attempts (see raw/guard-baseline.log)")
     if a.scenario == "development":
         for name in ("blueprint", "asis"):
             shutil.copyfile(docs[name][1], os.path.join(home.path, name + ".md"))
         baseline = {"source": source, "asis": docs["asis"][0], "blueprint": docs["blueprint"][0]}
         if a.check_cmd:
-            code, out, elapsed, timed_out = run_command(contract, repo, home.raw_path("baseline.log"), None)
+            code, out, elapsed, timed_out = run_command(contract["test_cmd"], repo, home.raw_path("baseline.log"), None)
             baseline.update(exit=code, elapsed_s=round(elapsed, 1), raw="raw/baseline.log")
     else:
-        code, out, elapsed, timed_out = run_command(contract, repo, home.raw_path("baseline.log"), None)
+        code, out, elapsed, timed_out = run_command(contract["test_cmd"], repo, home.raw_path("baseline.log"), None)
         baseline = {"exit": code, "elapsed_s": round(elapsed, 1), "source": source,
                     "raw": "raw/baseline.log"}
         if a.scenario == "optimization":
@@ -330,7 +368,7 @@ def cmd_init(a):
                 contract["delta_from"] = "absolute"
             else:
                 die("--delta or --delta-pct is required for optimization")
-            code, out, _, _ = run_command(contract, repo, home.raw_path("control.log"), None)
+            code, out, _, _ = run_command(contract["test_cmd"], repo, home.raw_path("control.log"), None)
             control = extract_score(contract, out) if code == 0 else None
             if control is None:
                 die("the benchmark did not score on an unchanged rerun (see raw/control.log)")
@@ -489,10 +527,17 @@ def cmd_attempt(a):
     changed = check_frozen(c, wt)
     if changed:
         finish("invalid", INVALID, reason="frozen files changed", files=changed)
+    if c.get("guard_cmd"):
+        guard_name = f"attempt-{n:03d}.guard.log"
+        code, _, _, timed_out = run_command(c["guard_cmd"], wt, home.raw_path(guard_name), remaining)
+        if code != 0:
+            finish("invalid", INVALID, reason="guard timed out" if timed_out else f"guard exited {code}",
+                   raw=f"raw/{guard_name}")
+        remaining = remaining_seconds(c)
     if c["scenario"] == "development" and not c["check_cmd"]:
         finish("checkpoint", REJECTED)
     raw_name = f"attempt-{n:03d}.log"
-    code, out, elapsed, timed_out = run_command(c, wt, home.raw_path(raw_name), remaining)
+    code, out, elapsed, timed_out = run_command(c["test_cmd"], wt, home.raw_path(raw_name), remaining)
     record.update(raw=f"raw/{raw_name}", elapsed_s=round(elapsed, 1))
     if timed_out:
         finish("invalid", INVALID, reason="command exceeded remaining budget")
@@ -564,25 +609,30 @@ def cmd_verify(a):
     wt, best = c.get("worktree"), c.get("best")
     if not wt:
         die("run start first")
-    if not c.get("test_cmd"):
+    if not c.get("test_cmd") and not c.get("guard_cmd"):
         die("no check command recorded for this contract")
     if git(wt, "status", "--porcelain"):
         die("worktree is dirty; commit or clean before verify")
     head = git(wt, "rev-parse", "HEAD")
     if head != best:
         die("HEAD differs from the retained best; git reset --hard to best before verify")
-    code, out, elapsed, _ = run_command(c, wt, home.raw_path("verify.log"), None)
     rec = {"n": 1 + max([r["n"] for r in home.attempts()] + [0]), "kind": "verify",
-           "commit": head, "time": iso(utc_now()), "raw": "raw/verify.log",
-           "exit": code, "elapsed_s": round(elapsed, 1)}
-    if c["scenario"] == "optimization":
-        score = extract_score(c, out)
-        rec.update(score=score, recorded_best=c.get("best_score"),
-                   target_met=meets_target(c, score),
-                   target_met_recorded=meets_target(c, c.get("best_score")))
-        ok = code == 0 and score is not None and rec["target_met"] == rec["target_met_recorded"]
-    else:
+           "commit": head, "time": iso(utc_now())}
+    ok = True
+    if c.get("guard_cmd"):
+        code, _, _, _ = run_command(c["guard_cmd"], wt, home.raw_path("verify.guard.log"), None)
+        rec.update(guard_exit=code, guard_raw="raw/verify.guard.log")
         ok = code == 0
+    if c.get("test_cmd"):
+        code, out, elapsed, _ = run_command(c["test_cmd"], wt, home.raw_path("verify.log"), None)
+        rec.update(raw="raw/verify.log", exit=code, elapsed_s=round(elapsed, 1))
+        ok = ok and code == 0
+        if c["scenario"] == "optimization":
+            score = extract_score(c, out)
+            rec.update(score=score, recorded_best=c.get("best_score"),
+                       target_met=meets_target(c, score),
+                       target_met_recorded=meets_target(c, c.get("best_score")))
+            ok = ok and score is not None and rec["target_met"] == rec["target_met_recorded"]
     rec["verdict"] = "verified" if ok else "failed"
     home.log(rec)
     print(json.dumps(rec, indent=2))
@@ -754,6 +804,7 @@ def main():
     i.add_argument("--target", type=float)
     i.add_argument("--exclusive", action="store_true", help="target excludes equality")
     i.add_argument("--renew", action="store_true")
+    i.add_argument("--constitution", help=f"standing project rules; defaults to {CONSTITUTION} when present")
     i.set_defaults(fn=cmd_init)
 
     s = sub.add_parser("start")

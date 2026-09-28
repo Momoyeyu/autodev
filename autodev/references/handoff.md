@@ -59,4 +59,6 @@ If the human is not satisfied with a handoff, the follow-up is a new autodev rou
 
 ## Keep the handoff trustworthy
 
+If a constraint had to be agreed again that an earlier round also needed, propose adding it to the [constitution](constitution.md); the human decides.
+
 Tie the artifact to raw results, source identities, execution conditions, and the delivered changes. Every verdict in `attempts.jsonl` points to its `raw/attempt-NNN.log`; hand over the contract directory so the human can trace each round. Note limitations and any unresolved next action concisely. Never use fabricated measurements or a polished visual to conceal missing verification.

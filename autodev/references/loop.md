@@ -9,7 +9,7 @@ Read after the human has approved a complete Clarify pass. Apply the shared rule
 - Save actual command output and source identities. Do not turn skips, setup errors, crashes, or unrun checks into passing results.
 - Return to [Clarify](clarify.md) for a new full pass if intent, the target's meaning, or scope changes. A defect in the agreed artifact also needs repair and a comparable baseline, not a silent adjustment during implementation.
 - Work in the dedicated worktree described below. Never reset, clean, or rewrite the user's own checkout or shared history.
-- Judge every round with `scripts/autodev_verify.py`, not by hand. It performs the scope check, frozen-surface check, command run, direction-bound comparison, rollback, and logging described below, and leaves the raw output that Handoff cites. Its exit code is the verdict: `0` accepted or green, `1` rejected, failing, or checkpoint, `2` invalid, `3` precondition not met.
+- Judge every round with `scripts/autodev_verify.py`, not by hand. It performs the scope check, frozen-surface check, command run, direction-bound comparison, rollback, and logging described below, and leaves the raw output that Handoff cites. With a [constitution](constitution.md) guard, it also runs the guard before the agreed command; a failing guard makes the attempt invalid in every scenario. Its exit code is the verdict: `0` accepted or green, `1` rejected, failing, or checkpoint, `2` invalid, `3` precondition not met.
 
 ## Isolate the loop in a git worktree
 

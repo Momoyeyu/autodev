@@ -27,6 +27,7 @@ User input starts the workflow; it is not another stage. Clarify is the core cap
 
 | Reference | Load when |
 |---|---|
+| [Constitution](references/constitution.md) | The repository has `.autodev/`, or the human wants rules for every round |
 | [Clarify](references/clarify.md) | Starting a task or revisiting its agreement |
 | [Clarify: development](references/clarify-development.md) | Clarifying a feature request; do not load other branches |
 | [Clarify: bug fix](references/clarify-bugfix.md) | Clarifying a defect report; do not load other branches |
@@ -41,6 +42,8 @@ Do not preload the directory. Follow the current stage and scenario, keeping sha
 ## Clarify
 
 Clarify is a human-in-the-loop cycle around the **whole pass**, not around each sub-step. Run one complete pass, present everything it produced, and let the human decide: revise and repeat Clarify, or enter Loop.
+
+If the repository has a constitution (`.autodev/constitution.json`), its frozen paths, guard command, and budget limits bind every round; `init` inherits them, and a round may tighten them but never loosen them.
 
 For a feature, one pass is: draw the as-is architecture and flow diagrams from the actual code; draft the to-be blueprint in Mermaid with stable element IDs; then propose the editable scope, including whether existing tests stay frozen or the blueprint may change them.
 

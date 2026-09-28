@@ -16,7 +16,7 @@ Do not split the single human review into per-step approvals, move target prepar
 
 ## Progressive disclosure
 
-`autodev/SKILL.md` is the compact entry point. `references/clarify.md` contains shared alignment rules and routes to exactly one of `clarify-development.md`, `clarify-bugfix.md`, or `clarify-optimization.md`. `loop.md` and `handoff.md` load when those stages are reached.
+`autodev/SKILL.md` is the compact entry point. `references/clarify.md` contains shared alignment rules and routes to exactly one of `clarify-development.md`, `clarify-bugfix.md`, or `clarify-optimization.md`. `loop.md` and `handoff.md` load when those stages are reached. `constitution.md` loads only when the target repository has `.autodev/` or the human wants standing rules.
 
 Keep shared rules with the selected scenario; do not preload the whole directory. Every reference needs a clear trigger and a reachable link inside the installed skill. Preserve framework independence and reuse the target project's tools.
 

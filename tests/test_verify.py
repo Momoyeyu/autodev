@@ -295,6 +295,91 @@ class TestRouteLedger(Harness):
         self.assertEqual(routes["vectorize"]["accepted"], 1)
 
 
+GUARD = 'import sys; sys.path.insert(0, "src"); import impl; assert impl.N > 100\n'
+LAW = {"frozen": ["legacy"], "guard_cmd": "python3 guard.py",
+       "budget": {"default_minutes": 10, "max_minutes": 30, "reserve_minutes": 1}}
+
+
+class TestConstitution(Harness):
+    budget = []
+    law = LAW
+
+    def seed(self):
+        super().seed()
+        write(self.repo, "legacy/old.py", "x = 1\n")
+        write(self.repo, "guard.py", GUARD)
+        write(self.repo, ".autodev/constitution.json", json.dumps(self.law))
+
+    def test_init_inherits_frozen_guard_and_budget(self):
+        r = self.init()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        c = self.contract()
+        self.assertIn("legacy/old.py", c["frozen"])
+        self.assertIn(".autodev/constitution.json", c["frozen"])
+        self.assertEqual(c["guard_cmd"], "python3 guard.py")
+        self.assertEqual(c["constitution"]["path"], ".autodev/constitution.json")
+        self.assertEqual((c["budget_minutes"], c["reserve_minutes"]), (10, 1))
+
+    def test_round_cannot_edit_constitution_frozen_paths(self):
+        r = self.init(editable="legacy")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("legacy/old.py", r.stderr)
+
+    def test_budget_above_max_dies(self):
+        r = self.init("--budget-minutes", "60")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("max_minutes", r.stderr)
+
+    def test_guard_failure_is_invalid_and_rolled_back(self):
+        self.ready()
+        code, rec = self.attempt({"src/impl.py": "N=50\n"})
+        self.assertEqual((code, rec["verdict"]), (2, "invalid"))
+        self.assertIn("guard", rec["reason"])
+        self.assertTrue(rec["raw"].endswith(".guard.log"))
+        self.assertEqual(self.read("src/impl.py"), "N=200\n")
+
+    def test_guard_passing_attempt_is_judged_normally(self):
+        self.ready()
+        code, rec = self.attempt({"src/impl.py": "N=170\n"})
+        self.assertEqual((code, rec["verdict"]), (0, "accepted"))
+
+    def test_verify_runs_guard(self):
+        self.ready()
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout)["guard_exit"], 0)
+
+    def test_broken_guard_at_baseline_dies(self):
+        write(self.repo, "guard.py", "raise SystemExit(1)\n")
+        git(self.repo, "commit", "-qam", "broken guard")
+        r = self.init()
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("guard", r.stderr)
+
+    def test_unknown_key_dies(self):
+        write(self.repo, ".autodev/constitution.json", json.dumps({"forzen": ["legacy"]}))
+        git(self.repo, "commit", "-qam", "typo")
+        r = self.init("--budget-minutes", "10")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("forzen", r.stderr)
+
+
+class TestConstitutionDevelopmentBudget(Harness):
+    scenario = "bugfix"
+    budget = []
+
+    def seed(self):
+        write(self.repo, "src/impl.py", "\n")
+        write(self.repo, "tests/test_x.py",
+              'import sys; sys.path.insert(0, "src"); import impl\nassert impl.add(1, 2) == 3\n')
+        write(self.repo, ".autodev/constitution.json", json.dumps({"budget": {"default_minutes": 10}}))
+
+    def test_default_budget_applies_only_to_optimization(self):
+        r = self.init(frozen="tests", test_cmd="python3 tests/test_x.py")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIsNone(self.contract()["budget_minutes"])
+
+
 class TestExclusiveTarget(Harness):
     def test_exclusive_target_excludes_equality(self):
         self.ready("--exclusive")
@@ -332,7 +417,7 @@ class TestBudgetRequired(Harness):
 
 
 class TestReserve(Harness):
-    budget = ["--budget-minutes", "0.05", "--reserve-minutes", "0.03"]
+    budget = ["--budget-minutes", "0.2", "--reserve-minutes", "0.18"]
 
     def test_reserve_window_blocks_attempts(self):
         self.ready()
