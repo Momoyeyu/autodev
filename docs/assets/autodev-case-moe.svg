@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="480" viewBox="0 0 960 480" font-family="Helvetica, Arial, sans-serif" font-size="13">
+<rect width="960" height="480" fill="#0B1220"/>
+<line x1="90" y1="40" x2="90" y2="410" stroke="#6B7A99"/>
+<line x1="90" y1="410" x2="930" y2="410" stroke="#6B7A99"/>
+<line x1="90" y1="110.4" x2="930" y2="110.4" stroke="#78E6DD" stroke-dasharray="6 6"/>
+<text x="930" y="104.4" text-anchor="end" fill="#78E6DD">target 28.8746 bleu</text>
+<polyline fill="none" stroke="#3C8CFF" stroke-width="2" points="90.0,145.1 90.0,145.1 117.1,145.1 117.1,134.4 144.2,134.4 144.2,134.4 171.3,134.4 171.3,134.4 198.4,134.4 198.4,134.4 225.5,134.4 225.5,110.2 252.6,110.2 252.6,110.2 279.7,110.2 279.7,110.2 306.8,110.2 306.8,110.2 333.9,110.2 333.9,110.2 361.0,110.2 361.0,98.3 388.1,98.3 388.1,98.3 415.2,98.3 415.2,98.3 442.3,98.3 442.3,98.3 469.4,98.3 469.4,98.3 496.5,98.3 496.5,98.3 523.5,98.3 523.5,98.3 550.6,98.3 550.6,98.3 577.7,98.3 577.7,98.3 604.8,98.3 604.8,98.3 631.9,98.3 631.9,98.3 659.0,98.3 659.0,89.3 686.1,89.3 686.1,89.3 713.2,89.3 713.2,89.3 740.3,89.3 740.3,89.3 767.4,89.3 767.4,89.3 794.5,89.3 794.5,89.3 821.6,89.3 821.6,89.3 848.7,89.3 848.7,89.3 875.8,89.3 875.8,89.3 902.9,89.3 902.9,89.3 930.0,89.3 930.0,89.3"/>
+<circle cx="90.0" cy="145.1" r="5" fill="#FFFFFF"/>
+<text x="90.0" y="428" text-anchor="middle" fill="#9DB5E8">0</text>
+<circle cx="117.1" cy="134.4" r="5" fill="#00C8D2"/>
+<text x="117.1" y="428" text-anchor="middle" fill="#9DB5E8">1</text>
+<circle cx="144.2" cy="130.5" r="5" fill="#FF7A7A"/>
+<text x="144.2" y="428" text-anchor="middle" fill="#9DB5E8">2</text>
+<circle cx="171.3" cy="132.3" r="5" fill="#FF7A7A"/>
+<text x="171.3" y="428" text-anchor="middle" fill="#9DB5E8">3</text>
+<circle cx="198.4" cy="157.1" r="5" fill="#FF7A7A"/>
+<text x="198.4" y="428" text-anchor="middle" fill="#9DB5E8">4</text>
+<circle cx="225.5" cy="110.2" r="5" fill="#00C8D2"/>
+<text x="225.5" y="428" text-anchor="middle" fill="#9DB5E8">5</text>
+<circle cx="252.6" cy="357.7" r="5" fill="#FF7A7A"/>
+<text x="252.6" y="428" text-anchor="middle" fill="#9DB5E8">6</text>
+<circle cx="279.7" cy="107.1" r="5" fill="#FF7A7A"/>
+<text x="279.7" y="428" text-anchor="middle" fill="#9DB5E8">7</text>
+<circle cx="306.8" cy="106.7" r="5" fill="#FF7A7A"/>
+<text x="306.8" y="428" text-anchor="middle" fill="#9DB5E8">8</text>
+<circle cx="333.9" cy="113.4" r="5" fill="#FF7A7A"/>
+<text x="333.9" y="428" text-anchor="middle" fill="#9DB5E8">9</text>
+<circle cx="361.0" cy="98.3" r="5" fill="#00C8D2"/>
+<text x="361.0" y="428" text-anchor="middle" fill="#9DB5E8">10</text>
+<circle cx="388.1" cy="125.8" r="5" fill="#FF7A7A"/>
+<text x="388.1" y="428" text-anchor="middle" fill="#9DB5E8">11</text>
+<text x="415.2" y="402.0" text-anchor="middle" fill="#FF7A7A">✕</text>
+<text x="415.2" y="428" text-anchor="middle" fill="#9DB5E8">12</text>
+<circle cx="442.3" cy="103.3" r="5" fill="#FF7A7A"/>
+<text x="442.3" y="428" text-anchor="middle" fill="#9DB5E8">13</text>
+<circle cx="469.4" cy="113.9" r="5" fill="#FF7A7A"/>
+<text x="469.4" y="428" text-anchor="middle" fill="#9DB5E8">14</text>
+<circle cx="496.5" cy="98.7" r="5" fill="#FF7A7A"/>
+<text x="496.5" y="428" text-anchor="middle" fill="#9DB5E8">15</text>
+<circle cx="523.5" cy="103.0" r="5" fill="#FF7A7A"/>
+<text x="523.5" y="428" text-anchor="middle" fill="#9DB5E8">16</text>
+<circle cx="550.6" cy="101.3" r="5" fill="#FF7A7A"/>
+<text x="550.6" y="428" text-anchor="middle" fill="#9DB5E8">17</text>
+<circle cx="577.7" cy="118.1" r="5" fill="#FF7A7A"/>
+<text x="577.7" y="428" text-anchor="middle" fill="#9DB5E8">18</text>
+<circle cx="604.8" cy="99.2" r="5" fill="#FF7A7A"/>
+<text x="604.8" y="428" text-anchor="middle" fill="#9DB5E8">19</text>
+<circle cx="631.9" cy="367.3" r="5" fill="#FF7A7A"/>
+<text x="631.9" y="428" text-anchor="middle" fill="#9DB5E8">20</text>
+<circle cx="659.0" cy="89.3" r="5" fill="#00C8D2"/>
+<text x="659.0" y="428" text-anchor="middle" fill="#9DB5E8">21</text>
+<circle cx="686.1" cy="91.3" r="5" fill="#FF7A7A"/>
+<text x="686.1" y="428" text-anchor="middle" fill="#9DB5E8">22</text>
+<circle cx="713.2" cy="113.0" r="5" fill="#FF7A7A"/>
+<text x="713.2" y="428" text-anchor="middle" fill="#9DB5E8">23</text>
+<circle cx="740.3" cy="93.3" r="5" fill="#FF7A7A"/>
+<text x="740.3" y="428" text-anchor="middle" fill="#9DB5E8">24</text>
+<circle cx="767.4" cy="82.7" r="5" fill="#FF7A7A"/>
+<text x="767.4" y="428" text-anchor="middle" fill="#9DB5E8">25</text>
+<circle cx="794.5" cy="87.2" r="5" fill="#FF7A7A"/>
+<text x="794.5" y="428" text-anchor="middle" fill="#9DB5E8">26</text>
+<circle cx="821.6" cy="86.4" r="5" fill="#FF7A7A"/>
+<text x="821.6" y="428" text-anchor="middle" fill="#9DB5E8">27</text>
+<circle cx="848.7" cy="104.5" r="5" fill="#FF7A7A"/>
+<text x="848.7" y="428" text-anchor="middle" fill="#9DB5E8">28</text>
+<circle cx="875.8" cy="88.6" r="5" fill="#FF7A7A"/>
+<text x="875.8" y="428" text-anchor="middle" fill="#9DB5E8">29</text>
+<circle cx="902.9" cy="367.0" r="5" fill="#FF7A7A"/>
+<text x="902.9" y="428" text-anchor="middle" fill="#9DB5E8">30</text>
+<circle cx="930.0" cy="89.7" r="5" fill="#FF7A7A"/>
+<text x="930.0" y="428" text-anchor="middle" fill="#9DB5E8">31</text>
+<text x="82" y="371.3" text-anchor="end" fill="#9DB5E8">0.0029</text>
+<text x="82" y="86.7" text-anchor="end" fill="#9DB5E8">31.9905</text>
+<text x="90" y="26" fill="#FFFFFF" font-size="15">score (bleu, higher is better) — white baseline, cyan accepted, red rejected, ✕ invalid, blue line = retained best</text>
+<text x="480" y="466" text-anchor="middle" fill="#9DB5E8">attempt</text>
+</svg>

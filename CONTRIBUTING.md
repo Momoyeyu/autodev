@@ -42,6 +42,8 @@ The brand and overview are hand-authored SVG rendered with headless Chrome; the 
 | `docs/diagrams/autodev.development(.zh).json` | `docs/assets/autodev-development(.zh).png` | Feature (blueprint) flow inside the workflow section |
 | `docs/diagrams/autodev.bugfix(.zh).json` | `docs/assets/autodev-bugfix(.zh).png` | Bug-fix flow inside the workflow section |
 | `docs/diagrams/autodev.optimization(.zh).json` | `docs/assets/autodev-optimization(.zh).png` | Optimization flow inside the workflow section |
+| none — judge `report` output | `docs/assets/autodev-case-moe.svg` | Real-run chart; verbatim artifact, never regenerate |
+| Embedded `case-data` metadata: per-case raw latencies, fixed reference vector, and historical verdicts | `docs/assets/autodev-case-cann2026.svg` | Initial baseline plus 16 cumulative attempts; one continuous `report_chart` curve and one shared scale; dashed line is the final-round target |
 
 ### Brand and overview
 

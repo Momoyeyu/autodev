@@ -16,6 +16,18 @@ npx skills add Momoyeyu/autodev -g
 
 For **feature development**, **bug fixes**, and **performance optimization**. It works with agents that load `SKILL.md` and reuses the target project's existing tools.
 
+## In practice
+
+Two real optimization histories, drawn from recorded measurements using the skill's `report_chart` renderer.
+
+**MoE Transformer — English→French translation (PyTorch, single RTX 4090D).** Target: BLEU ≥ 28.87 (the dense reference), baseline 24.97, only `src/train.py` editable, a fixed wall-clock budget per run. Re-running the benchmark on the unchanged source moved the score by 0.62, so the improvement margin was set at 0.8. Thirty-one attempts, thirty named routes, four retained — `top1-n4`, `batch-up`, `dropout-down`, `cosine-sched` — reached 31.25; the verify re-run scored 30.91. The other routes (torch.compile, EMA, fused AdamW, capacity and depth variants…) all measured under the margin and were rolled back.
+
+![Score trajectory of the MoE optimization loop: 31 attempts, 4 retained improvements, target exceeded](docs/assets/autodev-case-moe.svg)
+
+**cann2026 — rotary position embedding kernel (AscendC, CANN 9.0).** Six rounds on one editable kernel file, shown as one continuous history: attempts 1–16 follow the initial baseline at 0. All scores are recomputed from the 15 per-case raw latencies against the same fixed reference vector used in rounds 3–6, giving one shared y axis from 19.7026 to the retained 0.7168. Historical accept/reject decisions are preserved; baseline remeasurements are not counted as attempts. The dashed line marks the final round's target, 0.680, not a target shared by all six rounds. Four rounds met their own targets; rounds 2 and 6 did not. In round 6, three ideas measured under the keep margin, one attempt failed to compile and was rolled back invalid, and the retained contiguous-token change scored 0.7168 against a 0.680 target; the final verify then hit a judge-service outage, which the report records as an outage, not a number.
+
+![Continuous cann2026 optimization history: baseline followed by 16 cumulative attempts on one fixed-reference scale](docs/assets/autodev-case-cann2026.svg)
+
 ## Why autodev exists
 
 Natural-language agreement does not guarantee shared understanding. An agent may implement the wrong behavior, change a workflow the human wanted to preserve, or optimize a number that does not represent the goal.
@@ -157,7 +169,7 @@ The first request starts with as-is diagrams and blueprint agreement. The second
 
 Read the current stage's shared rules and the applicable scenario only. Do not preload later stages or the other Clarify branch. Progressive disclosure is about providing detail when it is needed, even when a task eventually visits all three stages.
 
-This repository distributes the skill and its judge script, not a test runner or evaluation suite. Targets are agreed with the human in the project where the skill is used; the judge only executes the agreed commands and records the verdicts. The README illustrations show the workflow itself, not example results.
+This repository distributes the skill and its judge script, not a test runner or evaluation suite. Targets are agreed with the human in the project where the skill is used; the judge only executes the agreed commands and records the verdicts. The workflow illustrations show the process itself; the case-study charts use recorded measurements and the skill's chart renderer, with the cross-round metric explained alongside the chart.
 
 ## Contributing
 
