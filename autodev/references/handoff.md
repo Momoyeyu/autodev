@@ -8,7 +8,7 @@ Each artifact is checked against the approved target — blueprint, test set, or
 
 Deliver the architecture and flow diagrams **drawn from the delivered state**, in Mermaid at the agreed `--asbuilt` path — not the Clarify blueprint copied over. The blueprint describes the agreed target; the as-built diagrams describe what was actually built. If the two disagree, the development is wrong: return to [Loop](loop.md#feature-development) instead of handing off.
 
-Start from `autodev_verify.py --home <contract dir> report`, which writes `blueprint-handoff.md`: the agreed blueprint and the as-built diagrams side by side, plus the element-coverage table showing every blueprint element ID found in the as-built file. Keep that structure and fill in anything the human needs to compare the two.
+Start from `autodev_verify.py --home <contract dir> report`, which writes `blueprint-handoff.md`: the agreed blueprint and the as-built diagrams side by side; the element-coverage table with each element's dependencies, the commit that realized it, and whether the as-built file covers it; the build order; and a dependency graph colored by progress. Keep that structure and fill in anything the human needs to compare the two.
 
 Explain meaningful divergences the human approved along the way — an element realized differently, a boundary moved — rather than hiding them. A silent mismatch means the loop exited early; a documented, approved one belongs in the handoff text. Include the regression check's final raw output and the rerun command.
 

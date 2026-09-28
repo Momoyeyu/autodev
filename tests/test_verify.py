@@ -633,7 +633,7 @@ class TestDevelopment(Harness):
     def test_status_gates_on_asbuilt_elements_and_check(self):
         self.init_dev(check=self.check)
         self.start()
-        self.attempt({"src/impl.py": "OK=True\n"})
+        self.attempt({"src/impl.py": "OK=True\n"}, "", None, "--elements", "user_service", "billing_api")
         s = self.status()
         self.assertFalse(s["asbuilt_exists"])
         self.assertEqual(s["decision"], "continue")
@@ -654,7 +654,12 @@ class TestDevelopment(Harness):
         self.start()
         self.attempt({"src/asbuilt.md": ASBUILT})
         s = self.status()
+        self.assertEqual(s["decision"], "continue")
+        self.assertEqual(s["elements_ready"], ["user_service", "billing_api"])
+        self.attempt({"src/impl.py": "x=1\n"}, "", None, "--elements", "user_service", "billing_api")
+        s = self.status()
         self.assertTrue(s["check_green"])
+        self.assertEqual(s["elements_done"], ["user_service", "billing_api"])
         self.assertEqual(s["decision"], "handoff")
 
     def test_verify_without_check_cmd_dies(self):
@@ -685,8 +690,9 @@ class TestDevelopment(Harness):
     def test_report_writes_blueprint_handoff(self):
         self.init_dev(check=self.check)
         self.start()
-        self.attempt({"src/impl.py": "OK=True\n",
-                      "src/asbuilt.md": ASBUILT})
+        self.attempt({"src/impl.py": "OK=True\n", "src/asbuilt.md": ASBUILT}, "", None,
+                     "--elements", "user_service")
+        commit = self.contract()["best"][:10]
         r = self.run_v("report")
         self.assertEqual(r.returncode, 0, r.stderr)
         with open(os.path.join(self.home, "blueprint-handoff.md")) as f:
@@ -695,9 +701,95 @@ class TestDevelopment(Harness):
         self.assertIn("```mermaid", text)
         self.assertIn("## As-built (delivered)", text)
         self.assertIn("## Element coverage", text)
-        self.assertIn("| `user_service` | yes |", text)
-        self.assertIn("| `billing_api` | yes |", text)
+        self.assertIn(f"| `user_service` | - | `{commit}` | yes |", text)
+        self.assertIn("| `billing_api` | - | not realized | yes |", text)
+        self.assertIn("## Dependency graph", text)
+        self.assertIn("class e0 done", text)
         self.assertIn(self.check, text)
+
+
+BLUEPRINT_DEP = ("graph TD\n%% autodev-elements: store api ui\n"
+                 "%% autodev-depends: api: store\n%% autodev-depends: ui: api\n"
+                 "ui --> api --> store\n")
+
+
+class TestBlueprintOrder(Harness):
+    scenario = "development"
+    check = TestDevelopment.check
+
+    def seed(self):
+        write(self.repo, "docs/blueprint.md", BLUEPRINT_DEP)
+        write(self.repo, "docs/asis.md", ASIS)
+        write(self.repo, "src/impl.py", "OK=False\n")
+        write(self.repo, "checks/run.py",
+              'import sys; sys.path.insert(0, "src"); import impl\nassert impl.OK\n')
+
+    init_dev = TestDevelopment.init_dev
+
+    def claim(self, files, *elements):
+        return self.attempt(files, "", None, "--elements", *elements)
+
+    def test_init_records_depends_and_batches(self):
+        self.assertEqual(self.init_dev().returncode, 0)
+        c = self.contract()
+        self.assertEqual(c["depends"], {"api": ["store"], "ui": ["api"]})
+        self.assertEqual(c["batches"], [["store"], ["api"], ["ui"]])
+
+    def test_cycle_dies(self):
+        write(self.repo, "docs/blueprint.md", BLUEPRINT_DEP + "%% autodev-depends: store: ui\n")
+        git(self.repo, "commit", "-qam", "cycle")
+        r = self.init_dev()
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("cycle", r.stderr)
+
+    def test_unknown_dependency_dies(self):
+        write(self.repo, "docs/blueprint.md", BLUEPRINT_DEP + "%% autodev-depends: api: cache\n")
+        git(self.repo, "commit", "-qam", "unknown")
+        r = self.init_dev()
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("cache", r.stderr)
+
+    def test_claim_with_unmet_dependency_is_refused(self):
+        self.init_dev()
+        self.start()
+        head = self.commit({"src/api.py": "x=1\n"})
+        r = self.run_v("attempt", "--elements", "api")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("store", r.stderr)
+        self.assertEqual(git(self.wt, "rev-parse", "HEAD"), head)
+        code, rec = self.claim(None, "store", "api")
+        self.assertEqual((code, rec["elements"]), (1, ["store", "api"]))
+
+    def test_progress_follows_dependency_order(self):
+        self.init_dev()
+        self.start()
+        s = self.status()
+        self.assertEqual((s["elements_ready"], s["elements_blocked"]), (["store"], ["api", "ui"]))
+        self.claim({"src/store.py": "x=1\n"}, "store")
+        s = self.status()
+        self.assertEqual((s["elements_done"], s["elements_ready"]), (["store"], ["api"]))
+
+    def test_failing_claim_is_pending_until_green(self):
+        self.init_dev(check=self.check)
+        self.start()
+        code, rec = self.claim({"src/store.py": "x=1\n"}, "store")
+        self.assertEqual(rec["verdict"], "failing")
+        s = self.status()
+        self.assertEqual((s["elements_done"], s["elements_pending"]), ([], ["store"]))
+        self.assertEqual(self.run_v("attempt", "--elements", "api").returncode, 3)
+        self.attempt({"src/impl.py": "OK=True\n"})
+        self.assertEqual(self.status()["elements_done"], ["store"])
+
+    def test_report_lists_build_order_and_dependencies(self):
+        self.init_dev()
+        self.start()
+        self.claim({"src/store.py": "x=1\n"}, "store")
+        self.assertEqual(self.run_v("report").returncode, 0)
+        with open(os.path.join(self.home, "blueprint-handoff.md")) as f:
+            text = f.read()
+        self.assertIn("1. `store`\n2. `api`\n3. `ui`", text)
+        self.assertIn("| `api` | `store` | not realized |", text)
+        self.assertIn("e0 --> e1", text)
 
 
 if __name__ == "__main__":

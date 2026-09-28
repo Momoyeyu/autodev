@@ -100,6 +100,54 @@ def blueprint_elements(path):
     return ids
 
 
+def blueprint_depends(path, elements):
+    deps = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            m = re.search(r"%%\s*autodev-depends:\s*([A-Za-z0-9_-]+)\s*:\s*(.+)", line)
+            if not m:
+                continue
+            node, needs = m.group(1), [t for t in re.split(r"[\s,]+", m.group(2)) if t]
+            unknown = [e for e in [node, *needs] if e not in elements]
+            if unknown:
+                die(f"autodev-depends names IDs missing from autodev-elements: {unknown}")
+            if node in needs:
+                die(f"element {node} depends on itself")
+            deps.setdefault(node, [])
+            deps[node] += [n for n in needs if n not in deps[node]]
+    return deps
+
+
+def build_batches(elements, deps):
+    batches, placed = [], set()
+    while len(placed) < len(elements):
+        batch = [e for e in elements if e not in placed and set(deps.get(e, [])) <= placed]
+        if not batch:
+            die(f"blueprint dependencies form a cycle among {[e for e in elements if e not in placed]}")
+        batches.append(batch)
+        placed |= set(batch)
+    return batches
+
+
+def element_progress(c, attempts):
+    pending, realized = set(), {}
+    for r in attempts:
+        if r.get("kind") != "attempt":
+            continue
+        claimed = set(r.get("elements", []))
+        if r["verdict"] == "failing":
+            pending |= claimed
+        elif r["verdict"] in ("green", "checkpoint"):
+            for e in pending | claimed:
+                realized.setdefault(e, r["commit"])
+            pending = set()
+    done = [e for e in c["elements"] if e in realized]
+    open_ = [e for e in c["elements"] if e not in realized]
+    ready = [e for e in open_ if set(c.get("depends", {}).get(e, [])) <= set(done)]
+    return {"done": done, "ready": ready, "blocked": [e for e in open_ if e not in ready],
+            "pending": [e for e in open_ if e in pending], "realized_in": realized}
+
+
 def element_found(element, text):
     return bool(re.search(r"(?<![A-Za-z0-9_-])" + re.escape(element) + r"(?![A-Za-z0-9_-])", text))
 
@@ -308,6 +356,8 @@ def cmd_init(a):
                 die(f"--{name} file does not exist: {rel}")
             docs[name] = (rel, src)
         contract["elements"] = blueprint_elements(docs["blueprint"][1])
+        contract["depends"] = blueprint_depends(docs["blueprint"][1], contract["elements"])
+        contract["batches"] = build_batches(contract["elements"], contract["depends"])
         with open(docs["asis"][1], encoding="utf-8") as f:
             asis_text = f.read()
         contract["elements_new"] = [e for e in contract["elements"] if not element_found(e, asis_text)]
@@ -496,6 +546,17 @@ def cmd_attempt(a):
         if dead and not a.differs:
             die(f"route '{a.route}' was already refuted against the current best (attempt {dead}); "
                 "pass --differs to say what is new, or try another route")
+    claimed = a.elements or []
+    if claimed and c["scenario"] != "development":
+        die("--elements applies to development only")
+    if claimed:
+        unknown = [e for e in claimed if e not in c["elements"]]
+        if unknown:
+            die(f"unknown blueprint elements: {unknown}")
+        done = set(element_progress(c, home.attempts())["done"])
+        unmet = sorted({d for e in claimed for d in c.get("depends", {}).get(e, [])} - done - set(claimed))
+        if unmet:
+            die(f"dependencies not yet realized: {unmet}; implement them first or claim them in this checkpoint")
     outside, err = check_scope(c, wt, best)
     if err:
         die(err)
@@ -504,6 +565,8 @@ def cmd_attempt(a):
         record["route"] = a.route
     if a.differs:
         record["differs"] = a.differs
+    if claimed:
+        record["elements"] = claimed
 
     def finish(verdict, code, **extra):
         record.update(verdict=verdict, **extra)
@@ -598,8 +661,12 @@ def cmd_status(a):
         out["asbuilt_exists"] = asbuilt_exists
         out["asbuilt_copies_blueprint"] = asbuilt_exists and diagram_body(text) == diagram_body(blueprint)
         out["elements_missing"] = [e for e in c["elements"] if not element_found(e, text)]
+        progress = element_progress(c, attempts)
+        out.update(elements_done=progress["done"], elements_ready=progress["ready"],
+                   elements_blocked=progress["blocked"], elements_pending=progress["pending"])
         out["decision"] = ("handoff" if asbuilt_exists and not out["asbuilt_copies_blueprint"]
-                           and not out["elements_missing"] and out["check_green"] else "continue")
+                           and not out["elements_missing"] and out["check_green"]
+                           and len(progress["done"]) == len(c["elements"]) else "continue")
     print(json.dumps(out, indent=2))
 
 
@@ -691,10 +758,29 @@ def report_blueprint(home, c, out):
              "## As-built (delivered)", ""]
     lines += [block(asbuilt)] if asbuilt is not None else [
         f"as-built file is missing: `{c['asbuilt']}`"]
-    lines += ["", "## Element coverage", "", "| Element | In as-built |", "|---|---|"]
+    progress = element_progress(c, home.attempts())
+    deps = c.get("depends", {})
+    lines += ["", "## Element coverage", "", "| Element | Depends on | Realized in | In as-built |",
+              "|---|---|---|---|"]
     for e in c["elements"]:
         found = asbuilt is not None and element_found(e, asbuilt)
-        lines.append(f"| `{e}` | {'yes' if found else 'no'} |")
+        needs = ", ".join(f"`{d}`" for d in deps.get(e, [])) or "-"
+        commit = progress["realized_in"].get(e)
+        lines.append(f"| `{e}` | {needs} | {f'`{commit[:10]}`' if commit else 'not realized'} | "
+                     f"{'yes' if found else 'no'} |")
+    lines += ["", "## Build order", ""]
+    batches = c.get("batches", [c["elements"]])
+    lines += [f"{i}. " + " ".join(f"`{e}`" for e in batch) for i, batch in enumerate(batches, 1)]
+    node = {e: f"e{i}" for i, e in enumerate(c["elements"])}
+    graph = ["graph LR"] + [f'  {node[e]}["{e}"]' for e in c["elements"]]
+    graph += [f"  {node[d]} --> {node[e]}" for e in c["elements"] for d in deps.get(e, [])]
+    graph += ["  classDef done fill:#0f5132,stroke:#75b798,color:#fff",
+              "  classDef pending fill:#664d03,stroke:#ffda6a,color:#fff"]
+    for state in ("done", "pending"):
+        if progress[state]:
+            graph.append(f"  class {','.join(node[e] for e in progress[state])} {state}")
+    lines += ["", "## Dependency graph", "", "Green: realized; amber: claimed while the check was failing.", "",
+              "```mermaid", *graph, "```"]
     tail = f"Delivered commit `{c.get('best')}`."
     if c.get("check_cmd"):
         tail += f" Rerun with `{c['check_cmd']}`."
@@ -818,6 +904,7 @@ def main():
     t.add_argument("--note", default="")
     t.add_argument("--route", help="label of the idea under test; required for optimization")
     t.add_argument("--differs", help="what is new when retrying a route refuted against the current best")
+    t.add_argument("--elements", nargs="+", help="blueprint element IDs this development checkpoint realizes")
     t.set_defaults(fn=cmd_attempt)
 
     sub.add_parser("status").set_defaults(fn=cmd_status)

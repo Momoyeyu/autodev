@@ -22,7 +22,11 @@ Give every element a stable ID — node names in Mermaid are IDs already; reuse 
 
 ```mermaid
 %% autodev-elements: order-api order-service inventory-client checkout-flow
+%% autodev-depends: order-api: order-service inventory-client
+%% autodev-depends: checkout-flow: order-api
 ```
+
+Declare build dependencies with `autodev-depends` lines, read as "the element before the colon needs the elements after it". A dependency means one element cannot be realized before another exists: a service before the API that calls it, a data model before the flow that writes it. It is build order, not every arrow in the diagram. `init` refuses unknown IDs and cycles, and prints the resulting **build order** as batches, for example `[1] order-service inventory-client → [2] order-api → [3] checkout-flow`. Elements without declared dependencies can be built in any order.
 
 The blueprint is the target: Loop ends only when the delivered state realizes every element. Keep it at the level of architecture and flows, not pseudocode — the point is to fix *what* is built and *how the parts connect*, leaving implementation detail to Loop.
 
@@ -46,11 +50,11 @@ python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
   --asbuilt docs/asbuilt.md --check-cmd "pytest -q"
 ```
 
-`init` copies the as-is and blueprint files into the contract directory, freezes their hashes, parses the element list, records which elements are new relative to the as-is diagrams (`elements_new`, refusing an empty list), runs the regression check once as the recorded baseline, and prints the contract for the human to review in step 4. Both files must live outside the editable surface and be committed — either on the starting branch or inside the worktree's baseline commit — so the Loop worktree carries them.
+`init` copies the as-is and blueprint files into the contract directory, freezes their hashes, parses the element list and its dependencies into `depends` and `batches`, records which elements are new relative to the as-is diagrams (`elements_new`, refusing an empty list), runs the regression check once as the recorded baseline, and prints the contract for the human to review in step 4. Both files must live outside the editable surface and be committed — either on the starting branch or inside the worktree's baseline commit — so the Loop worktree carries them.
 
 ## 4. Human review of the whole pass
 
-Show the as-is diagrams, the blueprint, and the proposed scope together. The human decides:
+Show the as-is diagrams, the blueprint with its build order, and the proposed scope together. The human decides:
 
 - **Revise:** apply the feedback and repeat from step 1. A changed blueprint needs a new contract, so rerun `init --renew`.
 - **Approve:** record the approved blueprint, as-is baseline, and scope, then enter Loop.

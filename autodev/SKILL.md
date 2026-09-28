@@ -45,7 +45,7 @@ Clarify is a human-in-the-loop cycle around the **whole pass**, not around each 
 
 If the repository has a constitution (`.autodev/constitution.json`), its frozen paths, guard command, and budget limits bind every round; `init` inherits them, and a round may tighten them but never loosen them.
 
-For a feature, one pass is: draw the as-is architecture and flow diagrams from the actual code; draft the to-be blueprint in Mermaid with stable element IDs; then propose the editable scope, including whether existing tests stay frozen or the blueprint may change them.
+For a feature, one pass is: draw the as-is architecture and flow diagrams from the actual code; draft the to-be blueprint in Mermaid with stable element IDs and their build dependencies; then propose the editable scope, including whether existing tests stay frozen or the blueprint may change them.
 
 For a bug fix, one pass is: write the reproduction test that fails on the unchanged source, query existing tests, remove or update outdated ones, add missing regressions, and verify the set executes; run it to record the baseline; then propose the impact.
 
@@ -55,7 +55,7 @@ The human reviews the prepared artifact, the baseline, and the proposed scope to
 
 ## Loop
 
-Work in a dedicated git worktree and branch created at Loop entry; every attempt is a commit judged by `autodev_verify.py attempt`, and an invalid attempt is rolled back with `git reset --hard` to the best commit. For a feature, implement the blueprint element by element, then draw the as-built diagrams at the agreed path covering every element ID; `status` reports `handoff` only when coverage is complete and the regression check is green — and if the as-built state does not truly match the blueprint, keep looping. For a bug fix, develop until all agreed tests pass. For optimization, use do-while order: optimize, measure and retain the best valid state, then check the target or time limit; label each attempt's idea with `--route`, and do not retry a route refuted against the current best without stating what differs. Record every attempt for the final artifact; do not bypass the first attempt merely because baseline meets the target.
+Work in a dedicated git worktree and branch created at Loop entry; every attempt is a commit judged by `autodev_verify.py attempt`, and an invalid attempt is rolled back with `git reset --hard` to the best commit. For a feature, implement the blueprint element by element in its declared build order, naming each checkpoint's elements with `--elements`, then draw the as-built diagrams at the agreed path covering every element ID; `status` reports `handoff` only when coverage is complete and the regression check is green — and if the as-built state does not truly match the blueprint, keep looping. For a bug fix, develop until all agreed tests pass. For optimization, use do-while order: optimize, measure and retain the best valid state, then check the target or time limit; label each attempt's idea with `--route`, and do not retry a route refuted against the current best without stating what differs. Record every attempt for the final artifact; do not bypass the first attempt merely because baseline meets the target.
 
 Do not weaken tests, shrink workloads, alter benchmark weights, change the measuring conditions, or copy the blueprint into the as-built file to manufacture progress. Changes to intent, target meaning, or permitted scope return to Clarify and require a comparable new baseline.
 
