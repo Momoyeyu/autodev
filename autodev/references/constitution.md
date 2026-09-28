@@ -24,7 +24,7 @@ Read when the repository has an `.autodev/` directory, or when the human wants r
 | `budget.default_minutes`, `budget.reserve_minutes` | Used for optimization rounds that do not pass `--budget-minutes` or `--reserve-minutes`. Feature and bug-fix rounds stay untimed. |
 | `budget.max_minutes` | Any round asking for a larger budget is refused. |
 
-Unknown keys are refused, so a misspelled rule fails loudly instead of silently not applying. `init` records the constitution's path and hash in the contract and freezes the file itself for the whole round.
+Unknown keys are refused, so a misspelled rule fails loudly instead of silently not applying. `init` records the constitution's path and hash in the contract and freezes the file itself for the whole round. Commit the constitution before Loop: the worktree is created from a commit, and `start` refuses a worktree whose frozen files, the constitution included, differ from what `init` recorded.
 
 ## Precedence
 
