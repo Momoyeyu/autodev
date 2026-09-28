@@ -667,7 +667,38 @@ def cmd_status(a):
         out["decision"] = ("handoff" if asbuilt_exists and not out["asbuilt_copies_blueprint"]
                            and not out["elements_missing"] and out["check_green"]
                            and len(progress["done"]) == len(c["elements"]) else "continue")
+    wt = c.get("worktree")
+    if wt and os.path.isdir(wt):
+        out["head"] = git(wt, "rev-parse", "HEAD")
+        out["head_is_best"] = out["head"] == c.get("best")
+        out["worktree_clean"] = not git(wt, "status", "--porcelain")
+    out["next"] = next_step(c, out)
     print(json.dumps(out, indent=2))
+
+
+def next_step(c, s):
+    if not c.get("worktree"):
+        return "create the loop worktree and run start"
+    if "head" not in s:
+        return f"worktree {c['worktree']} is missing; restore it at best {c.get('best')} or run a new Clarify"
+    if not s["worktree_clean"]:
+        return "uncommitted changes in the worktree: commit them and run attempt, or discard them"
+    if s["decision"] == "handoff":
+        return "run verify, then report, and enter Handoff"
+    if not s["head_is_best"]:
+        return "HEAD is a commit not yet judged: run attempt on it, or reset to best"
+    if c["scenario"] == "optimization":
+        dead = ", ".join(s["ruled_out"]) or "none"
+        return f"commit the next attempt under a new --route (refuted against best: {dead})"
+    if c["scenario"] == "bugfix":
+        return "fix within the approved impact and run attempt until the agreed tests pass"
+    if s["elements_pending"]:
+        return "make the regression check green to realize: " + " ".join(s["elements_pending"])
+    if s["elements_ready"]:
+        return "implement and claim with --elements: " + " ".join(s["elements_ready"])
+    if not s["check_green"]:
+        return "make the regression check green"
+    return "draw the as-built diagrams from the delivered code, covering: " + " ".join(s["elements_missing"] or c["elements"])
 
 
 def cmd_verify(a):

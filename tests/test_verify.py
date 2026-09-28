@@ -380,6 +380,38 @@ class TestConstitutionDevelopmentBudget(Harness):
         self.assertIsNone(self.contract()["budget_minutes"])
 
 
+class TestTakeover(Harness):
+    def test_status_before_start_points_to_start(self):
+        self.init()
+        s = self.status()
+        self.assertNotIn("head", s)
+        self.assertIn("start", s["next"])
+
+    def test_status_reports_in_flight_work(self):
+        self.ready()
+        s = self.status()
+        self.assertTrue(s["head_is_best"] and s["worktree_clean"])
+        self.assertIn("--route", s["next"])
+        write(self.wt, "src/impl.py", "N=170\n")
+        s = self.status()
+        self.assertFalse(s["worktree_clean"])
+        self.assertIn("uncommitted", s["next"])
+        git(self.wt, "commit", "-qam", "wip")
+        s = self.status()
+        self.assertFalse(s["head_is_best"])
+        self.assertIn("not yet judged", s["next"])
+
+    def test_status_names_ruled_out_routes(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=220\n"}, "", "cache")
+        self.assertIn("cache", self.status()["next"])
+
+    def test_handoff_points_to_verify(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=140\n"})
+        self.assertIn("verify", self.status()["next"])
+
+
 class TestExclusiveTarget(Harness):
     def test_exclusive_target_excludes_equality(self):
         self.ready("--exclusive")
@@ -768,6 +800,7 @@ class TestBlueprintOrder(Harness):
         self.claim({"src/store.py": "x=1\n"}, "store")
         s = self.status()
         self.assertEqual((s["elements_done"], s["elements_ready"]), (["store"], ["api"]))
+        self.assertIn("--elements: api", s["next"])
 
     def test_failing_claim_is_pending_until_green(self):
         self.init_dev(check=self.check)

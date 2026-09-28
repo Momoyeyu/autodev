@@ -32,7 +32,7 @@ User input starts the workflow; it is not another stage. Clarify is the core cap
 | [Clarify: development](references/clarify-development.md) | Clarifying a feature request; do not load other branches |
 | [Clarify: bug fix](references/clarify-bugfix.md) | Clarifying a defect report; do not load other branches |
 | [Clarify: optimization](references/clarify-optimization.md) | Clarifying a performance goal; do not load other branches |
-| [Loop](references/loop.md) | Agreement and baseline are ready; read shared rules and the relevant scenario |
+| [Loop](references/loop.md) | Agreement and baseline are ready, or taking over a running loop; read shared rules and the relevant scenario |
 | [Handoff](references/handoff.md) | Preparing the required artifact |
 
 Do not preload the directory. Follow the current stage and scenario, keeping shared instructions with the selected branch.
