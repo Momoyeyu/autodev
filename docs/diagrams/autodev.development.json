@@ -14,12 +14,12 @@
   "layout": { "mode": "grid", "origin": [40, 110], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
   "components": [
     { "id": "asis", "size": [140, 68], "row": 0, "col": 0, "type": "security", "label": "Draw as-is state", "sublabel": "Architecture & flows from code" },
-    { "id": "blueprint", "size": [140, 68], "row": 0, "col": 1, "type": "database", "icon": "flag", "label": "Draft blueprint", "sublabel": "the target · element IDs" },
+    { "id": "blueprint", "size": [140, 68], "row": 0, "col": 1, "type": "database", "icon": "flag", "label": "Draft blueprint", "sublabel": "Target · IDs · build order" },
     { "id": "scope", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "Propose scope", "sublabel": "Editable files · frozen tests" },
     { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "Human approval?", "sublabel": "Baseline · target · scope" },
-    { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "Implement elements", "sublabel": "Within approved scope" },
+    { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "Implement elements", "sublabel": "In build order · claimed" },
     { "id": "asbuilt", "size": [140, 68], "row": 1, "col": 2, "type": "backend", "label": "Draw as-built state", "sublabel": "From the delivered code" },
-    { "id": "match", "size": [140, 68], "row": 1, "col": 1, "type": "backend", "label": "Realizes blueprint?", "sublabel": "Coverage + regression green" },
+    { "id": "match", "size": [140, 68], "row": 1, "col": 1, "type": "backend", "label": "Realizes blueprint?", "sublabel": "Realized · covered · green" },
     { "id": "artifact", "size": [140, 68], "row": 1, "col": 0, "type": "frontend", "label": "As-built diagrams", "sublabel": "Checked against blueprint" }
   ],
   "boundaries": [

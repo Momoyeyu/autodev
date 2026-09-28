@@ -14,7 +14,7 @@
   "layout": { "mode": "grid", "origin": [40, 110], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
   "components": [
     { "id": "tests", "size": [140, 68], "row": 0, "col": 0, "type": "database", "icon": "flag", "label": "准备测试", "sublabel": "复现 / 删改 / 新增 / 试运行" },
-    { "id": "baseline", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "记录 baseline", "sublabel": "复现用例应当失败" },
+    { "id": "baseline", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "记录 baseline", "sublabel": "修复前必须失败" },
     { "id": "impact", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "提出影响范围", "sublabel": "可编辑文件 / 保留的流程" },
     { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "用户确认？", "sublabel": "target 测试 · baseline · 影响范围" },
     { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "修复", "sublabel": "不超出已确认的影响范围" },

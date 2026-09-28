@@ -14,7 +14,7 @@
   "layout": { "mode": "grid", "origin": [40, 110], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
   "components": [
     { "id": "tests", "size": [140, 68], "row": 0, "col": 0, "type": "database", "icon": "flag", "label": "Prepare tests", "sublabel": "Reproduce / revise / add / run" },
-    { "id": "baseline", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "Capture baseline", "sublabel": "Reproduction case fails" },
+    { "id": "baseline", "size": [140, 68], "row": 0, "col": 1, "type": "security", "label": "Capture baseline", "sublabel": "Must fail before the fix" },
     { "id": "impact", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "Propose impact", "sublabel": "Editable files / preserved flows" },
     { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "Human approval?", "sublabel": "Target tests · baseline · impact" },
     { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "Fix", "sublabel": "Within approved impact" },

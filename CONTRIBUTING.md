@@ -72,7 +72,7 @@ Keep the PNGs opaque and dark regardless of the README viewer's color scheme. Us
 
 ### Regenerate with Archify
 
-Use the installed skill root containing `SKILL.md` and `bin/archify.mjs`. The checked workflow was generated with Archify `2.17.0-dev.1`, checkout `72c750b`.
+Use the installed skill root containing `SKILL.md` and `bin/archify.mjs`. The checked workflow was generated with Archify `2.17.0-dev.1`, checkout `9102a91`.
 
 ```bash
 ARCHIFY_SKILL=/path/to/archify/archify

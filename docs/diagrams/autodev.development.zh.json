@@ -14,12 +14,12 @@
   "layout": { "mode": "grid", "origin": [40, 110], "cols": 4, "cellW": 140, "cellH": 68, "gapX": 60, "gapY": 110 },
   "components": [
     { "id": "asis", "size": [140, 68], "row": 0, "col": 0, "type": "security", "label": "绘制 as-is 现状图", "sublabel": "从实际代码画架构与流程" },
-    { "id": "blueprint", "size": [140, 68], "row": 0, "col": 1, "type": "database", "icon": "flag", "label": "起草 blueprint", "sublabel": "target · 元素 ID" },
+    { "id": "blueprint", "size": [140, 68], "row": 0, "col": 1, "type": "database", "icon": "flag", "label": "起草 blueprint", "sublabel": "target · 元素 ID · 构建顺序" },
     { "id": "scope", "size": [140, 68], "row": 0, "col": 2, "type": "security", "label": "提出修改范围", "sublabel": "可编辑文件 · 冻结测试" },
     { "id": "review", "size": [140, 68], "row": 0, "col": 3, "type": "security", "label": "用户确认？", "sublabel": "baseline · target · 范围" },
-    { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "逐元素实现", "sublabel": "不超出已确认的范围" },
+    { "id": "implement", "size": [140, 68], "row": 1, "col": 3, "type": "backend", "label": "逐元素实现", "sublabel": "按构建顺序 · 逐个声明" },
     { "id": "asbuilt", "size": [140, 68], "row": 1, "col": 2, "type": "backend", "label": "绘制 as-built 竣工图", "sublabel": "按交付后的代码状态" },
-    { "id": "match", "size": [140, 68], "row": 1, "col": 1, "type": "backend", "label": "实现 blueprint？", "sublabel": "元素覆盖 + 回归通过" },
+    { "id": "match", "size": [140, 68], "row": 1, "col": 1, "type": "backend", "label": "实现 blueprint？", "sublabel": "全部实现 · 覆盖 · 回归通过" },
     { "id": "artifact", "size": [140, 68], "row": 1, "col": 0, "type": "frontend", "label": "竣工架构图与流程图", "sublabel": "与 blueprint 对照" }
   ],
   "boundaries": [
