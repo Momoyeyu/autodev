@@ -18,7 +18,7 @@ Draw the agreed end state in Mermaid, same granularity as the as-is picture:
 - the target architecture: modules, responsibilities, and boundaries after the change, including modules to be added or removed;
 - the target business flows: sequence, outputs, and side effects after the change.
 
-Give every element a stable ID — node names in Mermaid are IDs already; reuse the same IDs across as-is and blueprint where an element survives unchanged. Collect all blueprint element IDs on one comment line so the judge can check coverage mechanically:
+Give every element a stable ID — node names in Mermaid are IDs already; reuse the same IDs across as-is and blueprint where an element survives unchanged, and give added or changed elements new IDs. At least one blueprint ID must be absent from the as-is diagrams, otherwise redrawing the starting state would already pass the coverage check. Collect all blueprint element IDs on one comment line so the judge can check coverage mechanically:
 
 ```mermaid
 %% autodev-elements: order-api order-service inventory-client checkout-flow
@@ -46,7 +46,7 @@ python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
   --asbuilt docs/asbuilt.md --check-cmd "pytest -q"
 ```
 
-`init` copies the as-is and blueprint files into the contract directory, freezes their hashes, parses the element list, runs the regression check once as the recorded baseline, and prints the contract for the human to review in step 4. Both files must live outside the editable surface and be committed — either on the starting branch or inside the worktree's baseline commit — so the Loop worktree carries them.
+`init` copies the as-is and blueprint files into the contract directory, freezes their hashes, parses the element list, records which elements are new relative to the as-is diagrams (`elements_new`, refusing an empty list), runs the regression check once as the recorded baseline, and prints the contract for the human to review in step 4. Both files must live outside the editable surface and be committed — either on the starting branch or inside the worktree's baseline commit — so the Loop worktree carries them.
 
 ## 4. Human review of the whole pass
 

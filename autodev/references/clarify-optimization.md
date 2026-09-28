@@ -47,7 +47,7 @@ python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
   --delta-pct 5 --target 200 --exclusive --budget-minutes 20 --reserve-minutes 3
 ```
 
-`init` runs the benchmark once more to record the baseline and its raw output, converts `δ`, hashes the frozen paths, and prints the contract. That printed contract is what the human reviews in step 4; the same fields drive every Loop verdict, so nothing agreed here depends on the agent remembering it.
+`init` runs the benchmark once more to record the baseline and its raw output, converts `δ`, hashes the frozen paths, and prints the contract. It then reruns the benchmark on the same unchanged source as a negative control and records the gap as `noise`: an unchanged candidate must never look like an improvement, so `init` refuses a `δ` that is not larger than that gap. Raise `δ` or stabilise the benchmark, and show the noise in the review. That printed contract is what the human reviews in step 4; the same fields drive every Loop verdict, so nothing agreed here depends on the agent remembering it.
 
 Bind both Loop comparisons to the approved `direction`. `best` is the retained best verified score and starts at baseline; `δ` is the improvement margin:
 

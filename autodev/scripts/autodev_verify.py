@@ -103,6 +103,11 @@ def element_found(element, text):
     return bool(re.search(r"(?<![A-Za-z0-9_-])" + re.escape(element) + r"(?![A-Za-z0-9_-])", text))
 
 
+def diagram_body(text):
+    lines = [" ".join(line.split()) for line in text.splitlines()]
+    return [line for line in lines if line and not line.startswith("%%") and not line.startswith("```")]
+
+
 class Home:
     def __init__(self, path):
         self.path = os.path.abspath(path)
@@ -270,6 +275,12 @@ def cmd_init(a):
                 die(f"--{name} file does not exist: {rel}")
             docs[name] = (rel, src)
         contract["elements"] = blueprint_elements(docs["blueprint"][1])
+        with open(docs["asis"][1], encoding="utf-8") as f:
+            asis_text = f.read()
+        contract["elements_new"] = [e for e in contract["elements"] if not element_found(e, asis_text)]
+        if not contract["elements_new"]:
+            die("every blueprint element already appears in the as-is diagrams, so the coverage check "
+                "cannot fail; give added or changed elements new IDs")
         for rel, src in docs.values():
             contract["frozen"][rel] = sha256_file(src)
             if rel not in contract["frozen_paths"]:
@@ -319,8 +330,20 @@ def cmd_init(a):
                 contract["delta_from"] = "absolute"
             else:
                 die("--delta or --delta-pct is required for optimization")
+            code, out, _, _ = run_command(contract, repo, home.raw_path("control.log"), None)
+            control = extract_score(contract, out) if code == 0 else None
+            if control is None:
+                die("the benchmark did not score on an unchanged rerun (see raw/control.log)")
+            noise = abs(control - score)
+            baseline.update(control_score=control, noise=noise, control_raw="raw/control.log")
+            if noise >= contract["delta"]:
+                die(f"an unchanged rerun moved the score by {noise:g}, not below delta {contract['delta']:g}; "
+                    "raise --delta/--delta-pct above the noise or stabilise the benchmark")
         else:
-            baseline["passed"] = code == 0
+            if code == 0:
+                die("the agreed tests already pass on the unchanged source; the reproduction test must fail "
+                    "before the fix (see raw/baseline.log)")
+            baseline["passed"] = False
     contract["baseline"] = baseline
     home.save(contract)
     print(json.dumps(contract, indent=2, ensure_ascii=False))
@@ -502,10 +525,13 @@ def cmd_status(a):
             out["check_green"] = bool(attempts) and attempts[-1]["verdict"] == "green"
         else:
             out["check_green"] = bool(attempts)
+        with open(os.path.join(home.path, "blueprint.md"), encoding="utf-8") as f:
+            blueprint = f.read()
         out["asbuilt_exists"] = asbuilt_exists
+        out["asbuilt_copies_blueprint"] = asbuilt_exists and diagram_body(text) == diagram_body(blueprint)
         out["elements_missing"] = [e for e in c["elements"] if not element_found(e, text)]
-        out["decision"] = ("handoff" if asbuilt_exists and not out["elements_missing"]
-                           and out["check_green"] else "continue")
+        out["decision"] = ("handoff" if asbuilt_exists and not out["asbuilt_copies_blueprint"]
+                           and not out["elements_missing"] and out["check_green"] else "continue")
     print(json.dumps(out, indent=2))
 
 

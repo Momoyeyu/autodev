@@ -132,6 +132,22 @@ class TestInitAndStart(Harness):
         self.assertEqual(r.returncode, 3)
         self.assertFalse(os.path.exists(os.path.join(self.home, "contract.json")))
 
+    def test_init_reruns_unchanged_benchmark_as_noise_control(self):
+        self.assertEqual(self.init().returncode, 0)
+        b = self.contract()["baseline"]
+        self.assertEqual((b["control_score"], b["noise"]), (200.0, 0.0))
+        self.assertTrue(os.path.exists(os.path.join(self.home, "raw", "control.log")))
+
+    def test_init_rejects_noise_not_below_delta(self):
+        write(self.repo, "bench/run.py",
+              'import os\nn = int(open(".c").read()) if os.path.exists(".c") else 0\n'
+              'open(".c", "w").write(str(n + 1))\nprint("p95=" + str(200 + 50 * n))\n')
+        git(self.repo, "commit", "-qam", "noisy")
+        r = self.init()
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("noise", r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(self.home, "contract.json")))
+
     def test_init_rejects_frozen_inside_editable(self):
         r = self.init(editable=".", frozen="bench")
         self.assertEqual(r.returncode, 3)
@@ -387,6 +403,14 @@ class TestBugfix(Harness):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(json.loads(r.stdout)["verdict"], "verified")
 
+    def test_bugfix_rejects_baseline_that_already_passes(self):
+        write(self.repo, "src/impl.py", "def add(a, b):\n    return a + b\n")
+        git(self.repo, "commit", "-qam", "already fixed")
+        r = self.init(frozen="tests", test_cmd="python3 tests/test_x.py")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("must fail", r.stderr)
+        self.assertFalse(os.path.exists(os.path.join(self.home, "contract.json")))
+
     def test_bugfix_frozen_test_edit_is_invalid(self):
         self.init(frozen="tests", test_cmd="python3 tests/test_x.py")
         self.start()
@@ -398,6 +422,7 @@ class TestBugfix(Harness):
 BLUEPRINT = ("graph TD\n%% autodev-elements: user_service, billing_api\n"
              "user_service --> billing_api\n")
 ASIS = "graph TD\nlegacy --> db\n"
+ASBUILT = "graph LR\nuser_service --> billing_api\nbilling_api --> ledger\n"
 
 
 class TestDevelopment(Harness):
@@ -492,7 +517,7 @@ class TestDevelopment(Harness):
         self.assertTrue(s["asbuilt_exists"])
         self.assertEqual(s["elements_missing"], ["billing_api"])
         self.assertEqual(s["decision"], "continue")
-        self.attempt({"src/asbuilt.md": "graph TD\nuser_service --> billing_api\n"})
+        self.attempt({"src/asbuilt.md": ASBUILT})
         s = self.status()
         self.assertEqual(s["elements_missing"], [])
         self.assertTrue(s["check_green"])
@@ -501,7 +526,7 @@ class TestDevelopment(Harness):
     def test_status_handoff_without_check_cmd(self):
         self.init_dev()
         self.start()
-        self.attempt({"src/asbuilt.md": "graph TD\nuser_service --> billing_api\n"})
+        self.attempt({"src/asbuilt.md": ASBUILT})
         s = self.status()
         self.assertTrue(s["check_green"])
         self.assertEqual(s["decision"], "handoff")
@@ -511,11 +536,31 @@ class TestDevelopment(Harness):
         self.start()
         self.assertEqual(self.run_v("verify").returncode, 3)
 
+    def test_init_rejects_blueprint_without_new_elements(self):
+        write(self.repo, "docs/asis.md", "graph TD\nuser_service --> billing_api\n")
+        git(self.repo, "commit", "-qam", "asis covers all")
+        r = self.init_dev()
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("new IDs", r.stderr)
+
+    def test_init_records_new_elements(self):
+        self.init_dev()
+        self.assertEqual(self.contract()["elements_new"], ["user_service", "billing_api"])
+
+    def test_copied_blueprint_does_not_hand_off(self):
+        self.init_dev()
+        self.start()
+        self.attempt({"src/asbuilt.md": "```mermaid\n" + BLUEPRINT + "```\n"})
+        s = self.status()
+        self.assertTrue(s["asbuilt_copies_blueprint"])
+        self.assertEqual(s["elements_missing"], [])
+        self.assertEqual(s["decision"], "continue")
+
     def test_report_writes_blueprint_handoff(self):
         self.init_dev(check=self.check)
         self.start()
         self.attempt({"src/impl.py": "OK=True\n",
-                      "src/asbuilt.md": "graph TD\nuser_service --> billing_api\n"})
+                      "src/asbuilt.md": ASBUILT})
         r = self.run_v("report")
         self.assertEqual(r.returncode, 0, r.stderr)
         with open(os.path.join(self.home, "blueprint-handoff.md")) as f:

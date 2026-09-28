@@ -41,7 +41,7 @@ python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
   --test-cmd "pytest -q tests/"
 ```
 
-`--editable` is the file-level form of the permitted impact; `--frozen` is the agreed test set, which Loop may not edit. `init` runs the tests once more to record the baseline and its raw output and prints the contract for the human to review in step 4.
+`--editable` is the file-level form of the permitted impact; `--frozen` is the agreed test set, which Loop may not edit. `init` runs the tests once more to record the baseline and its raw output and prints the contract for the human to review in step 4. This run is also the negative control: `init` refuses a test set that passes on the unchanged source, because a target that cannot fail before the fix proves nothing after it.
 
 ## 4. Human review of the whole pass
 
@@ -50,6 +50,6 @@ Show the runnable tests, the old/new expectation for every changed or removed te
 - **Revise:** apply the feedback and repeat from step 1. Rerun baseline on the updated suite; a changed test set needs a new baseline, so rerun `init --renew`.
 - **Approve:** record the approved tests, baseline, and impact, then enter Loop.
 
-If the reproduction test passes at baseline, say so in the review: either the bug is already fixed, the test does not capture it, or the environment differs. An approved all-green baseline still requires final verification and the passing test set in [Handoff](handoff.md#bug-fix-the-passing-test-set).
+If `init` refuses an all-green baseline, find out why before review: the bug is already fixed, the reproduction test does not capture it, or the environment differs from the report.
 
 **Exit:** the human has approved one complete pass — runnable tests, their baseline, and the permitted impact. Continue to [Loop: bug fix](loop.md#bug-fix).
