@@ -641,8 +641,8 @@ def cmd_status(a):
                               "reserve window reached" if exhausted else None)
         out["ruled_out"] = ruled_out(home, c)
     elif c["scenario"] == "bugfix":
-        last = [r for r in home.attempts() if r.get("kind") == "attempt"]
-        passing = bool(last) and last[-1]["verdict"] == "accepted"
+        kept = kept_attempts(home)
+        passing = bool(kept) and kept[-1]["verdict"] == "accepted"
         out["all_tests_pass"] = passing
         out["decision"] = "handoff" if passing else "continue"
     else:
@@ -651,7 +651,7 @@ def cmd_status(a):
         if asbuilt_exists:
             with open(os.path.join(wt, c["asbuilt"])) as f:
                 text = f.read()
-        attempts = [r for r in home.attempts() if r.get("kind") == "attempt"]
+        attempts = kept_attempts(home)
         if c.get("check_cmd"):
             out["check_green"] = bool(attempts) and attempts[-1]["verdict"] == "green"
         else:
@@ -676,6 +676,10 @@ def cmd_status(a):
     print(json.dumps(out, indent=2))
 
 
+def kept_attempts(home):
+    return [r for r in home.attempts() if r.get("kind") == "attempt" and r.get("verdict") != "invalid"]
+
+
 def next_step(c, s):
     if not c.get("worktree"):
         return "create the loop worktree and run start"
@@ -683,10 +687,10 @@ def next_step(c, s):
         return f"worktree {c['worktree']} is missing; restore it at best {c.get('best')} or run a new Clarify"
     if not s["worktree_clean"]:
         return "uncommitted changes in the worktree: commit them and run attempt, or discard them"
-    if s["decision"] == "handoff":
-        return "run verify, then report, and enter Handoff"
     if not s["head_is_best"]:
         return "HEAD is a commit not yet judged: run attempt on it, or reset to best"
+    if s["decision"] == "handoff":
+        return "run verify, then report, and enter Handoff"
     if c["scenario"] == "optimization":
         dead = ", ".join(s["ruled_out"]) or "none"
         return f"commit the next attempt under a new --route (refuted against best: {dead})"

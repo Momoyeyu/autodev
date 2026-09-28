@@ -411,6 +411,14 @@ class TestTakeover(Harness):
         self.attempt({"src/impl.py": "N=140\n"})
         self.assertIn("verify", self.status()["next"])
 
+    def test_unjudged_head_comes_before_handoff(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=140\n"})
+        self.commit({"src/impl.py": "N=130\n"})
+        s = self.status()
+        self.assertEqual(s["decision"], "handoff")
+        self.assertIn("not yet judged", s["next"])
+
 
 class TestExclusiveTarget(Harness):
     def test_exclusive_target_excludes_equality(self):
@@ -569,6 +577,15 @@ class TestBugfix(Harness):
         self.assertIn("must fail", r.stderr)
         self.assertFalse(os.path.exists(os.path.join(self.home, "contract.json")))
 
+    def test_rolled_back_attempt_keeps_passing_state(self):
+        self.init(frozen="tests", test_cmd="python3 tests/test_x.py")
+        self.start()
+        self.attempt({"src/impl.py": "def add(a, b):\n    return a + b\n"})
+        code, rec = self.attempt({"README_x.md": "x\n"})
+        self.assertEqual(rec["verdict"], "invalid")
+        s = self.status()
+        self.assertEqual((s["decision"], s["all_tests_pass"]), ("handoff", True))
+
     def test_bugfix_frozen_test_edit_is_invalid(self):
         self.init(frozen="tests", test_cmd="python3 tests/test_x.py")
         self.start()
@@ -698,6 +715,18 @@ class TestDevelopment(Harness):
         self.init_dev()
         self.start()
         self.assertEqual(self.run_v("verify").returncode, 3)
+
+    def test_rolled_back_attempt_keeps_green_state(self):
+        self.init_dev(check=self.check)
+        self.start()
+        self.attempt({"src/impl.py": "OK=True\n", "src/asbuilt.md": ASBUILT}, "", None,
+                     "--elements", "user_service", "billing_api")
+        code, rec = self.attempt({"docs/asis.md": "x\n"})
+        self.assertEqual(rec["verdict"], "invalid")
+        s = self.status()
+        self.assertTrue(s["check_green"])
+        self.assertEqual(s["decision"], "handoff")
+        self.assertIn("verify", s["next"])
 
     def test_init_rejects_blueprint_without_new_elements(self):
         write(self.repo, "docs/asis.md", "graph TD\nuser_service --> billing_api\n")
