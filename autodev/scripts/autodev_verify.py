@@ -421,6 +421,15 @@ def reserve_seconds(c):
     return (c.get("reserve_minutes") or 0) * 60
 
 
+def ruled_out(home, c):
+    dead = {}
+    for r in home.attempts():
+        refuted = r.get("verdict") == "rejected" or (r.get("verdict") == "invalid" and r.get("raw"))
+        if r.get("kind") == "attempt" and r.get("route") and refuted and r.get("base") == c.get("best"):
+            dead.setdefault(r["route"], []).append(r["n"])
+    return dead
+
+
 def cmd_attempt(a):
     home = Home(a.home)
     c = home.load()
@@ -440,10 +449,23 @@ def cmd_attempt(a):
         die(reason + "; run verify and status, then enter Handoff", PRECONDITION)
     if head == best:
         die("HEAD is already best; commit the attempt first")
+    if a.route and not re.fullmatch(r"[A-Za-z0-9_.-]+", a.route):
+        die("--route must be a short label of letters, digits, '.', '_' or '-'")
+    if c["scenario"] == "optimization":
+        if not a.route:
+            die("--route is required for optimization; name the idea this attempt tests")
+        dead = ruled_out(home, c).get(a.route)
+        if dead and not a.differs:
+            die(f"route '{a.route}' was already refuted against the current best (attempt {dead}); "
+                "pass --differs to say what is new, or try another route")
     outside, err = check_scope(c, wt, best)
     if err:
         die(err)
-    record = {"n": n, "kind": "attempt", "commit": head, "note": a.note, "time": iso(utc_now())}
+    record = {"n": n, "kind": "attempt", "commit": head, "note": a.note, "time": iso(utc_now()), "base": best}
+    if a.route:
+        record["route"] = a.route
+    if a.differs:
+        record["differs"] = a.differs
 
     def finish(verdict, code, **extra):
         record.update(verdict=verdict, **extra)
@@ -509,6 +531,7 @@ def cmd_status(a):
         out["stop_reason"] = ("target reached" if out["target_met"] else
                               "time budget exhausted" if out["budget_exhausted"] else
                               "reserve window reached" if exhausted else None)
+        out["ruled_out"] = ruled_out(home, c)
     elif c["scenario"] == "bugfix":
         last = [r for r in home.attempts() if r.get("kind") == "attempt"]
         passing = bool(last) and last[-1]["verdict"] == "accepted"
@@ -690,9 +713,13 @@ def report_chart(home, c, rows, out):
     final = c.get("best_score")
     imp = (baseline - final) if direction == "lower" else (final - baseline)
     pct = None if baseline == 0 else imp / abs(baseline) * 100
+    routes = {}
+    for r in pts[1:]:
+        tally = routes.setdefault(r.get("route") or "-", {"accepted": 0, "rejected": 0, "invalid": 0})
+        tally[r["verdict"]] = tally.get(r["verdict"], 0) + 1
     caption = {"baseline": baseline, "final": final, "unit": unit, "direction": direction,
                "improvement": imp, "improvement_pct": pct, "target": target,
-               "target_met": meets_target(c, final), "attempts": len(pts) - 1,
+               "target_met": meets_target(c, final), "attempts": len(pts) - 1, "routes": routes,
                "delivered_commit": c.get("best"), "rerun": c["test_cmd"], "chart": path}
     with open(os.path.join(home.path, "caption.json"), "w") as f:
         json.dump(caption, f, indent=2)
@@ -738,6 +765,8 @@ def main():
 
     t = sub.add_parser("attempt")
     t.add_argument("--note", default="")
+    t.add_argument("--route", help="label of the idea under test; required for optimization")
+    t.add_argument("--differs", help="what is new when retrying a route refuted against the current best")
     t.set_defaults(fn=cmd_attempt)
 
     sub.add_parser("status").set_defaults(fn=cmd_status)

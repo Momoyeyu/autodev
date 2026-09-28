@@ -47,6 +47,8 @@ Verify the delivered candidate within the reserved time with `autodev_verify.py 
 
 In the chart caption or accompanying short text, give baseline/final values, actual time spent, target status, absolute/relative improvement, and the rerun command. For lower-is-better, improvement is `baseline - final`; for higher-is-better, it is `final - baseline`. Divide by the absolute baseline for a percentage; at zero baseline, report the absolute change and no percentage.
 
+`caption.json` also tallies each route's accepted, rejected, and invalid attempts; summarize which ideas worked and which were ruled out, so the human does not retry dead ends.
+
 For a weighted score, include the fixed formula and retain component readings with the evidence. They explain the one score, not additional optimization objectives. A timeout can end the work without meeting the target; state that plainly.
 
 ## Merge back and remove the worktree

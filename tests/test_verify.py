@@ -86,10 +86,12 @@ class Harness(unittest.TestCase):
         git(self.wt, "commit", "-qm", msg)
         return git(self.wt, "rev-parse", "HEAD")
 
-    def attempt(self, files=None, note=""):
+    def attempt(self, files=None, note="", route=None, *extra):
         if files:
             self.commit(files)
-        r = self.run_v("attempt", "--note", note)
+        self.routes = getattr(self, "routes", 0) + 1
+        route = route or f"r{self.routes}"
+        r = self.run_v("attempt", "--note", note, "--route", route, *extra)
         rec = json.loads(r.stdout) if r.stdout.strip().startswith("{") else None
         return r.returncode, rec
 
@@ -252,6 +254,45 @@ class TestOptimizationLoop(Harness):
         self.assertEqual(cap["improvement"], 30.0)
         self.assertEqual(cap["improvement_pct"], 15.0)
         self.assertFalse(cap["target_met"])
+
+
+class TestRouteLedger(Harness):
+    def setUp(self):
+        super().setUp()
+        self.ready()
+
+    def test_route_is_required_for_optimization(self):
+        self.commit({"src/impl.py": "N=170\n"})
+        r = self.run_v("attempt")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("--route", r.stderr)
+
+    def test_refuted_route_needs_differs(self):
+        code, rec = self.attempt({"src/impl.py": "N=220\n"}, "", "cache")
+        self.assertEqual((rec["route"], rec["verdict"]), ("cache", "rejected"))
+        self.assertEqual(self.status()["ruled_out"], {"cache": [rec["n"]]})
+        self.commit({"src/impl.py": "N=230\n"})
+        r = self.run_v("attempt", "--route", "cache")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("refuted", r.stderr)
+        code, rec = self.attempt(None, "", "cache", "--differs", "bigger cache")
+        self.assertEqual((code, rec["differs"]), (1, "bigger cache"))
+
+    def test_new_best_reopens_refuted_routes(self):
+        self.attempt({"src/impl.py": "N=220\n"}, "", "cache")
+        self.attempt({"src/impl.py": "N=170\n"}, "", "vectorize")
+        self.assertEqual(self.status()["ruled_out"], {})
+        code, rec = self.attempt({"src/impl.py": "N=150\n"}, "", "cache")
+        self.assertEqual(code, 0)
+
+    def test_caption_tallies_routes(self):
+        self.attempt({"src/impl.py": "N=220\n"}, "", "cache")
+        self.attempt({"src/impl.py": "N=170\n"}, "", "vectorize")
+        self.assertEqual(self.run_v("report").returncode, 0)
+        with open(os.path.join(self.home, "caption.json")) as f:
+            routes = json.load(f)["routes"]
+        self.assertEqual(routes["cache"]["rejected"], 1)
+        self.assertEqual(routes["vectorize"]["accepted"], 1)
 
 
 class TestExclusiveTarget(Harness):

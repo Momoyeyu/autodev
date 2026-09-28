@@ -56,8 +56,8 @@ Keep the original baseline separate from the best verified candidate. Initialize
 
 Use a **do-while** loop: execute an attempt before evaluating the normal exit conditions.
 
-1. Modify only allowed implementation files and commit the attempt.
-2. Run `autodev_verify.py --home <contract dir> attempt --note "<what changed>"`. It runs the same benchmark with the agreed command inside the remaining budget and saves the raw output as `raw/attempt-NNN.log`.
+1. Pick the idea to test, give it a short route label such as `cache-layer`, modify only allowed implementation files, and commit the attempt.
+2. Run `autodev_verify.py --home <contract dir> attempt --route <label> --note "<what changed>"`. It runs the same benchmark with the agreed command inside the remaining budget and saves the raw output as `raw/attempt-NNN.log`.
 3. Before judging the score, the same command checks that the diff from `best` touches only editable files and that the frozen surface (benchmark, inputs, weights, scoring) still matches the hashes recorded in Clarify. A score measured with a tampered ruler is invalid regardless of its value, as are crashes, timeouts, and output without a score.
 4. It accepts the attempt only under the direction-bound rule from Clarify (lower: `score < best - δ`; higher: `score > best + δ`); accepted means the attempt commit becomes `best`.
 5. It logs the outcome to `attempts.jsonl`: attempt number, commit, your note, score or invalid reason, verdict, and raw-output path. Then, unless accepted, it rolls back with `git reset --hard <best>` followed by `git clean -fd` in the worktree, which removes modified, added, deleted, and staged changes alike. Rejected code is not kept; the log is what the chart and the human need.
@@ -68,6 +68,12 @@ Use a **do-while** loop: execute an attempt before evaluating the normal exit co
 Do not add convergence, rejection-count, or attempt-count exits. Do not extend the budget silently. At timeout, roll back any unverified in-flight candidate the same way and retain `best`. If no improvement was verified, retain baseline and say so.
 
 Do not shrink workloads, hardcode answers, retune weights, or change benchmark conditions to game the score.
+
+### Route ledger
+
+Every optimization attempt names its route, and `attempts.jsonl` records it with the `best` commit the attempt was measured against. A route is **refuted** once an attempt on it is rejected, or crashes, times out, or yields no score, against the current `best`. `status` lists refuted routes under `ruled_out`; read them before choosing the next idea. `attempt` refuses a refuted route unless `--differs "<what is new>"` states the change, and the reason is logged with the attempt. When a later attempt is accepted, `best` moves and every refuted route reopens, because it was refuted on a different starting point.
+
+Label honestly: one label per idea, reused when the same idea returns. The judge prevents silently repeating a label, not renaming an idea; the ledger is only as useful as the labels.
 
 ## Record the optimization process for the chart
 
