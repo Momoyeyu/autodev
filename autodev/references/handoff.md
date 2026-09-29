@@ -4,11 +4,20 @@ Read when preparing delivery, including an incomplete or blocked result. The req
 
 Each artifact is checked against the approved target — blueprint, test set, or benchmark — and the original baseline. Add only the reproduction details and context needed for the human to verify, understand, and take over the result.
 
+## Present the artifact
+
+Handoff ends by putting the artifact in front of the human, not by announcing it in prose. Run `autodev_verify.py --home <contract dir> report`, which writes a self-contained `handoff.html` — every scenario's deliverable rendered inside one page — and prints a manifest with its absolute path and an `open` command. Then:
+
+- if the platform has a preview mechanism, open `handoff.html` with it (or pass `report --open` to let the judge try `open`/`xdg-open`);
+- otherwise print the absolute path and the manifest's `open` command verbatim in the final message.
+
+A summary without the opened page or the path-plus-command is an incomplete handoff. The same rule applies to blocked or partial results — the page shows real state either way.
+
 ## Feature development: as-built diagrams
 
-Deliver the architecture and flow diagrams **drawn from the delivered state**, in Mermaid at the agreed `--asbuilt` path — not the Clarify blueprint copied over. The blueprint describes the agreed target; the as-built diagrams describe what was actually built. If the two disagree, the development is wrong: return to [Loop](loop.md#feature-development) instead of handing off.
+Deliver the architecture and flow diagrams **drawn from the delivered state**, as diagram JSON at the agreed `--asbuilt` path — not the Clarify blueprint copied over. The blueprint describes the agreed target; the as-built diagrams describe what was actually built. If the two disagree, the development is wrong: return to [Loop](loop.md#feature-development) instead of handing off.
 
-Start from `autodev_verify.py --home <contract dir> report`, which writes `blueprint-handoff.md`: the agreed blueprint and the as-built diagrams side by side; the element-coverage table with each element's dependencies, the commit that realized it, and whether the as-built file covers it; the build order; and a dependency graph colored by progress. Keep that structure and fill in anything the human needs to compare the two.
+`report` renders both diagrams side by side in `handoff.html`: the element-coverage table with each element's dependencies, the commit that realized it, and whether the as-built file covers it; the build order; and a dependency graph colored by progress.
 
 Explain meaningful divergences the human approved along the way — an element realized differently, a boundary moved — rather than hiding them. A silent mismatch means the loop exited early; a documented, approved one belongs in the handoff text. Include the regression check's final raw output and the rerun command.
 
@@ -16,15 +25,9 @@ Explain meaningful divergences the human approved along the way — an element r
 
 Deliver the agreed test set passing on the delivered state: the reproduction case and every agreed regression case green, under the same test version and comparable conditions as baseline.
 
-Start from `autodev_verify.py --home <contract dir> report`, which writes `comparison.md` with the baseline and final runs of the agreed command and their raw-output paths. Expand it with stable case IDs or agreed groups from those logs, include totals, and link to the full execution evidence. A suitable structure is:
+`report` writes `handoff.html` with a baseline → final stat strip and one row per run — baseline plus every attempt — each linking its raw log. Expand on it in your message with stable case IDs or agreed groups from those logs: distinguish failed, skipped, blocked, and unrun cases. Every agreed test must pass to claim the bug is fixed.
 
-| Test / expected behavior | Baseline result | Final result | Evidence |
-|---|---|---|---|
-| case ID or agreed group | recorded outcome | recorded outcome | output or artifact location |
-
-Populate it with actual results, not illustrative passes. Distinguish failed, skipped, blocked, and unrun cases. Every agreed test must pass to claim the bug is fixed.
-
-Compare the same test version. Outdated-test removal happened in Clarify and must not be counted as a fix gain. Summarize relevant changes and provide the exact rerun command alongside the table.
+Compare the same test version. Outdated-test removal happened in Clarify and must not be counted as a fix gain. Summarize relevant changes and provide the exact rerun command.
 
 ## Performance optimization: one chart
 
@@ -41,13 +44,13 @@ The chart must:
 
 A best-so-far line may accompany the measured attempts, but label it as derived retained state. Do not hide regressions by plotting only favorable samples, smooth away failures, or join results from different test versions.
 
-`autodev_verify.py --home <contract dir> report` renders `process.svg` from `attempts.jsonl` with exactly these elements and writes `caption.json` with the values below; use it unless the human asked for another format, and keep the source data. If execution was blocked before any attempt or no attempt produced a valid new score, show the real baseline and annotate that outcome instead of fabricating progress. If chart generation is blocked, preserve the data and report the handoff as incomplete rather than silently falling back to a table.
+`report` renders the chart from `attempts.jsonl` with exactly these elements — inline in `handoff.html` plus a standalone `process.svg` — and writes `caption.json` with headline values and each route's accepted, rejected, and invalid tallies; keep the source data. If execution was blocked before any attempt or no attempt produced a valid new score, show the real baseline and annotate that outcome instead of fabricating progress. If chart generation is blocked, preserve the data and report the handoff as incomplete rather than silently falling back to a table.
 
 Verify the delivered candidate within the reserved time with `autodev_verify.py --home <contract dir> verify`, which reruns the agreed command on `best` and records `raw/verify.log`. If only a prior measurement is available, reuse it only when source state, test version, and conditions match, and explicitly say it was not freshly rerun. Otherwise mark verification incomplete.
 
-In the chart caption or accompanying short text, give baseline/final values, actual time spent, target status, absolute/relative improvement, and the rerun command. For lower-is-better, improvement is `baseline - final`; for higher-is-better, it is `final - baseline`. Divide by the absolute baseline for a percentage; at zero baseline, report the absolute change and no percentage.
+In the handoff text, give baseline/final values, actual time spent, target status, absolute/relative improvement, and the rerun command. For lower-is-better, improvement is `baseline - final`; for higher-is-better, it is `final - baseline`. Divide by the absolute baseline for a percentage; at zero baseline, report the absolute change and no percentage.
 
-`caption.json` also tallies each route's accepted, rejected, and invalid attempts; summarize which ideas worked and which were ruled out, so the human does not retry dead ends.
+Summarize which routes worked and which were ruled out, so the human does not retry dead ends.
 
 For a weighted score, include the fixed formula and retain component readings with the evidence. They explain the one score, not additional optimization objectives. A timeout can end the work without meeting the target; state that plainly.
 
@@ -61,4 +64,4 @@ If the human is not satisfied with a handoff, the follow-up is a new autodev rou
 
 If a constraint had to be agreed again that an earlier round also needed, propose adding it to the [constitution](constitution.md); the human decides.
 
-Tie the artifact to raw results, source identities, execution conditions, and the delivered changes. Every verdict in `attempts.jsonl` points to its `raw/attempt-NNN.log`; hand over the contract directory so the human can trace each round. Note limitations and any unresolved next action concisely. Never use fabricated measurements or a polished visual to conceal missing verification.
+Tie the artifact to raw results, source identities, execution conditions, and the delivered changes. Every verdict in `attempts.jsonl` points to its `raw/attempt-NNN.log`; `handoff.html` links them so the human can trace each round. Note limitations and any unresolved next action concisely. Never use fabricated measurements or a polished visual to conceal missing verification.

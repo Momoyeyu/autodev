@@ -37,7 +37,7 @@ User input starts the workflow; it is not another stage. Clarify is the core cap
 
 Do not preload the directory. Follow the current stage and scenario, keeping shared instructions with the selected branch.
 
-`scripts/autodev_verify.py` (Python 3, standard library) is the judge for the Loop. Clarify writes the agreement into it with `init`; Loop runs `start`, then `attempt` and `status` every round; Handoff runs `verify` and `report`. It enforces the frozen surface, the editable scope, the time budget, the direction-bound comparison, blueprint-element coverage, and the rollback, and it keeps the raw output for every verdict. `init` also runs a negative control — the target must be able to fail on the unchanged source — so a check that cannot say no never reaches Loop. The rules below describe what it does and what remains your responsibility.
+`scripts/autodev_verify.py` (Python 3, standard library) is the judge for the Loop; `scripts/autodev_render.py` turns diagram JSON into self-contained HTML previews. Clarify writes the agreement into it with `init`; Loop runs `start`, then `attempt` and `status` every round; Handoff runs `verify` and `report`. It enforces the frozen surface, the editable scope, the time budget, the direction-bound comparison, blueprint-element coverage, and the rollback, and it keeps the raw output for every verdict. `init` also runs a negative control — the target must be able to fail on the unchanged source — so a check that cannot say no never reaches Loop. The rules below describe what it does and what remains your responsibility.
 
 ## Clarify
 
@@ -45,7 +45,7 @@ Clarify is a human-in-the-loop cycle around the **whole pass**, not around each 
 
 If the repository has a constitution (`.autodev/constitution.json`), its frozen paths, guard command, and budget limits bind every round; `init` inherits them, and a round may tighten them but never loosen them.
 
-For a feature, one pass is: draw the as-is architecture and flow diagrams from the actual code; draft the to-be blueprint in Mermaid with stable element IDs and their build dependencies; then propose the editable scope, including whether existing tests stay frozen or the blueprint may change them.
+For a feature, one pass is: draw the as-is architecture and flow diagrams from the actual code; draft the to-be blueprint as diagram JSON with stable element IDs and their build dependencies; then propose the editable scope, including whether existing tests stay frozen or the blueprint may change them.
 
 For a bug fix, one pass is: write the reproduction test that fails on the unchanged source, query existing tests, remove or update outdated ones, add missing regressions, and verify the set executes; run it to record the baseline; then propose the impact.
 
@@ -62,5 +62,7 @@ Do not weaken tests, shrink workloads, alter benchmark weights, change the measu
 ## Handoff
 
 The primary deliverable is mandatory: **as-built diagrams for a feature, the passing test set for a bug fix, a progress chart for an optimization**. A final number, prose summary, or table alone does not replace them.
+
+`report` writes one self-contained `handoff.html` holding the scenario's deliverable, and prints the absolute path plus an `open` command. End the handoff by opening that page for the human (platform preview, `open`, `report --open`) or by printing the path and command verbatim — a text claim without the visible artifact is not a handoff.
 
 Use actual recorded results, the original baseline, and the delivered source state. Merge the loop branch back into the branch the user started from, then remove the worktree. Include concise reproduction details and relevant changes so the human can verify and take over. Report missed targets, blocked checks, and missing evidence honestly; do not label an incomplete handoff complete.

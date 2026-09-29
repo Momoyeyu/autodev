@@ -62,11 +62,11 @@ Clarify 不只是问问题。查代码、画图、维护测试、试运行和测
 
 ![功能开发流程：as-is 图、blueprint、提出修改范围、用户确认、实现-检查循环、竣工图](docs/assets/autodev-development.zh.png)
 
-功能开发由 **blueprint** 驱动。一轮 Clarify 是：从实际代码绘制 as-is 架构图与流程图（即 baseline）；用 Mermaid 起草 to-be 的 blueprint，每个元素带稳定 ID 并声明构建依赖；再提出可编辑范围，明确现有 test 默认冻结还是允许 blueprint 修改。裁决脚本把依赖换算成**构建顺序**——哪些元素先做、哪些可以后做；如果 blueprint 的元素 ID 在 as-is 图里全都已经存在，照抄现状就能通过检查，脚本会拒绝。
+功能开发由 **blueprint** 驱动。一轮 Clarify 是：从实际代码绘制 as-is 架构图与流程图（即 baseline）；用 diagram JSON 起草 to-be 的 blueprint，每个元素带稳定 ID 并声明构建依赖；再提出可编辑范围，明确现有 test 默认冻结还是允许 blueprint 修改。裁决脚本把依赖换算成**构建顺序**——哪些元素先做、哪些可以后做；如果 blueprint 的元素 ID 在 as-is 图里全都已经存在，照抄现状就能通过检查，脚本会拒绝。
 
 用户**一次审阅整轮结果**——as-is 图、带构建顺序的 blueprint 和提出的范围——然后决定退回修订还是确认进入 Loop。用户确认的是一份设计，而不只是功能描述。
 
-Loop 在 worktree 里按构建顺序逐元素实现 blueprint：每个检查点都要声明本次实现了哪些元素，依赖还没建好的声明会被拒绝。代码完成后，agent 在约定路径按**竣工状态**绘制 as-built 图；裁决脚本只有在每个元素都已实现、都被 as-built 覆盖、该文件不是照抄的 blueprint、回归检查通过时才给出 `handoff`。如果竣工状态没有真正实现 blueprint，说明开发偏离——继续 loop 而不是退出。Handoff 把 blueprint 与 as-built 并排展示，附上每个元素由哪个 commit 实现，以及按进度着色的依赖图，让人对照目标与实际成果。
+Loop 在 worktree 里按构建顺序逐元素实现 blueprint：每个检查点都要声明本次实现了哪些元素，依赖还没建好的声明会被拒绝。代码完成后，agent 在约定路径按**竣工状态**绘制 as-built 图；裁决脚本只有在每个元素都已实现、都被 as-built 覆盖、该文件不是照抄的 blueprint、回归检查通过时才给出 `handoff`。如果竣工状态没有真正实现 blueprint，说明开发偏离——继续 loop 而不是退出。Handoff 打开一个自包含的 `handoff.html`，把 blueprint 与 as-built 并排展示，附上每个元素由哪个 commit 实现，以及按进度着色的依赖图，让人对照目标与实际成果。
 
 ### 问题修复
 
@@ -98,6 +98,8 @@ Loop 修复直到约定的 test 全部通过；测试文件逐轮冻结并校验
 | **展示内容** | 约定的目标设计与实际建成的状态逐元素对照 | 同一套确认后的 test 的结果，包含汇总和未解决失败 | 唯一分数随尝试次数或时间的变化、目标、保留的结果和停止状态 |
 | **复验依据** | blueprint 与 as-built 图、元素覆盖表、每个元素对应的 commit、重跑命令 | 测试与源码版本、原始结果、重跑命令 | benchmark 与源码版本、真实历史、尝试过的思路及结果、测量条件、重跑命令 |
 
+`report` 把三个场景的产物都写进契约目录里一个自包含的 `handoff.html`，并打印绝对路径和 `open` 命令；交付以打开这个页面（或原样给出路径与命令）收尾，而不是一句文字宣称。文件只需要浏览器，不依赖任何渲染工具。
+
 附上必要的变更、限制和后续入口说明即可。人应该能够理解结果并接管，而不必重新推导 Agent 做过的决定。
 
 **产物形式是约定的一部分：** 文字总结不能代替竣工图或全绿的测试用例组；表格或一个最终数字不能代替优化过程图。图必须展示记录下来的过程，而不只是两个好看的端点。失败或超时的尝试不能被伪造为某个分数。
@@ -124,7 +126,7 @@ loop 知道的一切都在它的契约目录和分支里，而不在对话里。
 
 ## 约束由什么保障
 
-autodev 是一套协议加一个小型裁决脚本。Markdown 告诉 agent 该做什么；随 skill 一起安装的 `autodev/scripts/autodev_verify.py`（Python 3 标准库）把其中能机械检查的部分变成每轮真正执行的检查，并保留原始输出。
+autodev 是一套协议加一个小型裁决脚本。Markdown 告诉 agent 该做什么；随 skill 一起安装的 `autodev/scripts/autodev_verify.py`（Python 3 标准库）把其中能机械检查的部分变成每轮真正执行的检查，并保留原始输出。图一律是 agent 可读写的纯 JSON，由 `autodev/scripts/autodev_render.py` 渲染成自包含 HTML 供人直接打开——渲染图由工具从源生成，不可能和检查过的源脱节。
 
 | 保障项 | 由谁提供 |
 |---|---|

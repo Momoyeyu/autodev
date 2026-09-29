@@ -554,9 +554,12 @@ class TestBugfix(Harness):
         self.assertEqual((s["decision"], s["all_tests_pass"]), ("handoff", True))
         r = self.run_v("report")
         self.assertEqual(r.returncode, 0, r.stderr)
-        with open(os.path.join(self.home, "comparison.md")) as f:
+        manifest = json.loads(r.stdout)
+        with open(manifest["handoff"]) as f:
             table = f.read()
-        self.assertIn("| fail (exit 1) | pass (exit 0) |", table)
+        self.assertIn("fail (exit 1)", table)
+        self.assertIn("pass (exit 0)", table)
+        self.assertIn("Agreed test runs", table)
 
     def test_bugfix_verify(self):
         self.init(frozen="tests", test_cmd="python3 tests/test_x.py")
@@ -594,10 +597,19 @@ class TestBugfix(Harness):
         self.assertIn("assert impl.add", self.read("tests/test_x.py"))
 
 
-BLUEPRINT = ("graph TD\n%% autodev-elements: user_service, billing_api\n"
-             "user_service --> billing_api\n")
-ASIS = "graph TD\nlegacy --> db\n"
-ASBUILT = "graph LR\nuser_service --> billing_api\nbilling_api --> ledger\n"
+def diag(nodes, edges=None, depends=None):
+    spec = {"meta": {"title": "test"}, "nodes": [{"id": n} for n in nodes]}
+    if edges:
+        spec["edges"] = [{"from": a, "to": b} for a, b in edges]
+    if depends:
+        spec["depends"] = depends
+    return json.dumps(spec)
+
+
+BLUEPRINT = diag(["user_service", "billing_api"], [("user_service", "billing_api")])
+ASIS = diag(["legacy", "db"], [("legacy", "db")])
+ASBUILT = diag(["user_service", "billing_api", "ledger"],
+               [("user_service", "billing_api"), ("billing_api", "ledger")])
 
 
 class TestDevelopment(Harness):
@@ -605,14 +617,14 @@ class TestDevelopment(Harness):
     check = "python3 checks/run.py"
 
     def seed(self):
-        write(self.repo, "docs/blueprint.md", BLUEPRINT)
-        write(self.repo, "docs/asis.md", ASIS)
+        write(self.repo, "docs/blueprint.json", BLUEPRINT)
+        write(self.repo, "docs/asis.json", ASIS)
         write(self.repo, "src/impl.py", "OK=False\n")
         write(self.repo, "checks/run.py",
               'import sys; sys.path.insert(0, "src"); import impl\nassert impl.OK\n')
 
-    def init_dev(self, *extra, check=None, asbuilt="src/asbuilt.md", frozen=None, test_cmd=None):
-        args = ["--blueprint", "docs/blueprint.md", "--asis", "docs/asis.md",
+    def init_dev(self, *extra, check=None, asbuilt="src/asbuilt.json", frozen=None, test_cmd=None):
+        args = ["--blueprint", "docs/blueprint.json", "--asis", "docs/asis.json",
                 "--asbuilt", asbuilt]
         if check:
             args += ["--check-cmd", check]
@@ -623,23 +635,25 @@ class TestDevelopment(Harness):
         self.assertEqual(r.returncode, 0, r.stderr)
         c = self.contract()
         self.assertEqual(c["elements"], ["user_service", "billing_api"])
-        self.assertIn("docs/blueprint.md", c["frozen"])
-        self.assertIn("docs/asis.md", c["frozen"])
-        self.assertEqual(c["asbuilt"], "src/asbuilt.md")
+        self.assertIn("docs/blueprint.json", c["frozen"])
+        self.assertIn("docs/asis.json", c["frozen"])
+        self.assertEqual(c["asbuilt"], "src/asbuilt.json")
         self.assertIsNone(c["check_cmd"])
-        self.assertEqual(c["baseline"]["blueprint"], "docs/blueprint.md")
-        self.assertEqual(c["baseline"]["asis"], "docs/asis.md")
-        self.assertTrue(os.path.exists(os.path.join(self.home, "blueprint.md")))
-        self.assertTrue(os.path.exists(os.path.join(self.home, "asis.md")))
+        self.assertEqual(c["baseline"]["blueprint"], "docs/blueprint.json")
+        self.assertEqual(c["baseline"]["asis"], "docs/asis.json")
+        for name in ("blueprint", "asis"):
+            self.assertTrue(os.path.exists(os.path.join(self.home, name + ".json")))
+            with open(os.path.join(self.home, name + ".html")) as f:
+                self.assertIn("<svg", f.read())
 
-    def test_init_dies_without_elements_line(self):
-        write(self.repo, "docs/blueprint.md", "graph TD\na --> b\n")
-        git(self.repo, "commit", "-qam", "no elements")
+    def test_init_dies_on_invalid_blueprint(self):
+        write(self.repo, "docs/blueprint.json", "graph TD\na --> b\n")
+        git(self.repo, "commit", "-qam", "not json")
         r = self.init_dev()
         self.assertEqual(r.returncode, 3)
 
     def test_asbuilt_outside_editable_dies(self):
-        r = self.init_dev(asbuilt="docs/asbuilt.md")
+        r = self.init_dev(asbuilt="docs/asbuilt.json")
         self.assertEqual(r.returncode, 3)
 
     def test_init_rejects_test_cmd(self):
@@ -672,11 +686,11 @@ class TestDevelopment(Harness):
         self.init_dev()
         self.start()
         head = git(self.wt, "rev-parse", "HEAD")
-        code, rec = self.attempt({"docs/asis.md": "changed\n", "src/impl.py": "x=1\n"})
+        code, rec = self.attempt({"docs/asis.json": "changed\n", "src/impl.py": "x=1\n"})
         self.assertEqual((code, rec["verdict"]), (2, "invalid"))
-        self.assertIn("docs/asis.md", rec["files"])
+        self.assertIn("docs/asis.json", rec["files"])
         self.assertEqual(git(self.wt, "rev-parse", "HEAD"), head)
-        self.assertEqual(self.read("docs/asis.md"), ASIS)
+        self.assertEqual(self.read("docs/asis.json"), ASIS)
         self.assertTrue(self.clean())
 
     def test_status_gates_on_asbuilt_elements_and_check(self):
@@ -686,13 +700,13 @@ class TestDevelopment(Harness):
         s = self.status()
         self.assertFalse(s["asbuilt_exists"])
         self.assertEqual(s["decision"], "continue")
-        code, rec = self.attempt({"src/asbuilt.md": "graph TD\nuser_service --> x\n"})
+        code, rec = self.attempt({"src/asbuilt.json": diag(["user_service"])})
         self.assertEqual((code, rec["verdict"]), (0, "green"))
         s = self.status()
         self.assertTrue(s["asbuilt_exists"])
         self.assertEqual(s["elements_missing"], ["billing_api"])
         self.assertEqual(s["decision"], "continue")
-        self.attempt({"src/asbuilt.md": ASBUILT})
+        self.attempt({"src/asbuilt.json": ASBUILT})
         s = self.status()
         self.assertEqual(s["elements_missing"], [])
         self.assertTrue(s["check_green"])
@@ -701,7 +715,7 @@ class TestDevelopment(Harness):
     def test_status_handoff_without_check_cmd(self):
         self.init_dev()
         self.start()
-        self.attempt({"src/asbuilt.md": ASBUILT})
+        self.attempt({"src/asbuilt.json": ASBUILT})
         s = self.status()
         self.assertEqual(s["decision"], "continue")
         self.assertEqual(s["elements_ready"], ["user_service", "billing_api"])
@@ -719,9 +733,9 @@ class TestDevelopment(Harness):
     def test_rolled_back_attempt_keeps_green_state(self):
         self.init_dev(check=self.check)
         self.start()
-        self.attempt({"src/impl.py": "OK=True\n", "src/asbuilt.md": ASBUILT}, "", None,
+        self.attempt({"src/impl.py": "OK=True\n", "src/asbuilt.json": ASBUILT}, "", None,
                      "--elements", "user_service", "billing_api")
-        code, rec = self.attempt({"docs/asis.md": "x\n"})
+        code, rec = self.attempt({"docs/asis.json": "x\n"})
         self.assertEqual(rec["verdict"], "invalid")
         s = self.status()
         self.assertTrue(s["check_green"])
@@ -729,7 +743,8 @@ class TestDevelopment(Harness):
         self.assertIn("verify", s["next"])
 
     def test_init_rejects_blueprint_without_new_elements(self):
-        write(self.repo, "docs/asis.md", "graph TD\nuser_service --> billing_api\n")
+        write(self.repo, "docs/asis.json", diag(["user_service", "billing_api"],
+                                                [("user_service", "billing_api")]))
         git(self.repo, "commit", "-qam", "asis covers all")
         r = self.init_dev()
         self.assertEqual(r.returncode, 3)
@@ -742,36 +757,39 @@ class TestDevelopment(Harness):
     def test_copied_blueprint_does_not_hand_off(self):
         self.init_dev()
         self.start()
-        self.attempt({"src/asbuilt.md": "```mermaid\n" + BLUEPRINT + "```\n"})
+        self.attempt({"src/asbuilt.json": BLUEPRINT})
         s = self.status()
         self.assertTrue(s["asbuilt_copies_blueprint"])
         self.assertEqual(s["elements_missing"], [])
         self.assertEqual(s["decision"], "continue")
 
-    def test_report_writes_blueprint_handoff(self):
+    def test_report_writes_handoff_html(self):
         self.init_dev(check=self.check)
         self.start()
-        self.attempt({"src/impl.py": "OK=True\n", "src/asbuilt.md": ASBUILT}, "", None,
+        self.attempt({"src/impl.py": "OK=True\n", "src/asbuilt.json": ASBUILT}, "", None,
                      "--elements", "user_service")
         commit = self.contract()["best"][:10]
         r = self.run_v("report")
         self.assertEqual(r.returncode, 0, r.stderr)
-        with open(os.path.join(self.home, "blueprint-handoff.md")) as f:
+        manifest = json.loads(r.stdout)
+        self.assertEqual(manifest["handoff"], os.path.join(self.home, "handoff.html"))
+        self.assertIn("open", manifest)
+        with open(manifest["handoff"]) as f:
             text = f.read()
-        self.assertIn("## Agreed blueprint", text)
-        self.assertIn("```mermaid", text)
-        self.assertIn("## As-built (delivered)", text)
-        self.assertIn("## Element coverage", text)
-        self.assertIn(f"| `user_service` | - | `{commit}` | yes |", text)
-        self.assertIn("| `billing_api` | - | not realized | yes |", text)
-        self.assertIn("## Dependency graph", text)
-        self.assertIn("class e0 done", text)
-        self.assertIn(self.check, text)
+        for needle in ("Agreed blueprint", "As-built (delivered)", "Element coverage",
+                       "Build order", "Dependency graph", "<svg", "user_service",
+                       "billing_api", commit, "not realized", self.check):
+            self.assertIn(needle, text)
 
 
-BLUEPRINT_DEP = ("graph TD\n%% autodev-elements: store api ui\n"
-                 "%% autodev-depends: api: store\n%% autodev-depends: ui: api\n"
-                 "ui --> api --> store\n")
+BLUEPRINT_DEP = diag(["store", "api", "ui"], [("ui", "api"), ("api", "store")],
+                     {"api": ["store"], "ui": ["api"]})
+
+
+def with_depends(text, depends):
+    spec = json.loads(text)
+    spec.setdefault("depends", {}).update(depends)
+    return json.dumps(spec)
 
 
 class TestBlueprintOrder(Harness):
@@ -779,8 +797,8 @@ class TestBlueprintOrder(Harness):
     check = TestDevelopment.check
 
     def seed(self):
-        write(self.repo, "docs/blueprint.md", BLUEPRINT_DEP)
-        write(self.repo, "docs/asis.md", ASIS)
+        write(self.repo, "docs/blueprint.json", BLUEPRINT_DEP)
+        write(self.repo, "docs/asis.json", ASIS)
         write(self.repo, "src/impl.py", "OK=False\n")
         write(self.repo, "checks/run.py",
               'import sys; sys.path.insert(0, "src"); import impl\nassert impl.OK\n')
@@ -797,14 +815,14 @@ class TestBlueprintOrder(Harness):
         self.assertEqual(c["batches"], [["store"], ["api"], ["ui"]])
 
     def test_cycle_dies(self):
-        write(self.repo, "docs/blueprint.md", BLUEPRINT_DEP + "%% autodev-depends: store: ui\n")
+        write(self.repo, "docs/blueprint.json", with_depends(BLUEPRINT_DEP, {"store": ["ui"]}))
         git(self.repo, "commit", "-qam", "cycle")
         r = self.init_dev()
         self.assertEqual(r.returncode, 3)
         self.assertIn("cycle", r.stderr)
 
     def test_unknown_dependency_dies(self):
-        write(self.repo, "docs/blueprint.md", BLUEPRINT_DEP + "%% autodev-depends: api: cache\n")
+        write(self.repo, "docs/blueprint.json", with_depends(BLUEPRINT_DEP, {"api": ["cache"]}))
         git(self.repo, "commit", "-qam", "unknown")
         r = self.init_dev()
         self.assertEqual(r.returncode, 3)
@@ -847,11 +865,12 @@ class TestBlueprintOrder(Harness):
         self.start()
         self.claim({"src/store.py": "x=1\n"}, "store")
         self.assertEqual(self.run_v("report").returncode, 0)
-        with open(os.path.join(self.home, "blueprint-handoff.md")) as f:
+        with open(os.path.join(self.home, "handoff.html")) as f:
             text = f.read()
-        self.assertIn("1. `store`\n2. `api`\n3. `ui`", text)
-        self.assertIn("| `api` | `store` | not realized |", text)
-        self.assertIn("e0 --> e1", text)
+        self.assertIn("<code>store</code>", text)
+        self.assertIn("not realized", text)
+        self.assertIn("Dependency graph", text)
+        self.assertIn("<svg", text)
 
 
 if __name__ == "__main__":

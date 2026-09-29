@@ -62,11 +62,11 @@ Clarify is not just a conversation. Inspecting code, drawing diagrams, maintaini
 
 ![Feature development flow: as-is diagrams, blueprint, proposed scope, human review, implement-check loop, as-built diagrams](docs/assets/autodev-development.png)
 
-Feature work is driven by a **blueprint**. One Clarify pass is: draw the as-is architecture and flow diagrams from the actual code (the baseline); draft the to-be blueprint in Mermaid with stable element IDs and their build dependencies; then propose the editable scope, including whether existing tests stay frozen. The judge turns the dependencies into a **build order** — which elements come first, which can wait — and refuses a blueprint whose IDs all exist already in the as-is picture, since copying the starting state would then pass.
+Feature work is driven by a **blueprint**. One Clarify pass is: draw the as-is architecture and flow diagrams from the actual code (the baseline); draft the to-be blueprint as diagram JSON with stable element IDs and their build dependencies; then propose the editable scope, including whether existing tests stay frozen. The judge turns the dependencies into a **build order** — which elements come first, which can wait — and refuses a blueprint whose IDs all exist already in the as-is picture, since copying the starting state would then pass.
 
 The human reviews the **whole pass at once** — as-is picture, blueprint with its build order, and proposed scope — and either sends it back for revision or approves it. Approval concerns an agreed design, not just a feature description.
 
-Loop implements the blueprint element by element in a worktree, following the build order: every checkpoint names the elements it realizes, and a claim whose dependencies are not yet built is refused. When the code is done, the agent draws **as-built** diagrams from the delivered state at the agreed path; the judge reports `handoff` only when every element is realized, every element is covered there, the file is not the blueprint copied over, and the regression check is green. If the as-built state does not truly realize the blueprint, the development is wrong — keep looping instead of exiting. Handoff shows blueprint and as-built side by side, with the commit that realized each element and a dependency graph colored by progress, so the human can see the target and what was actually built.
+Loop implements the blueprint element by element in a worktree, following the build order: every checkpoint names the elements it realizes, and a claim whose dependencies are not yet built is refused. When the code is done, the agent draws **as-built** diagrams from the delivered state at the agreed path; the judge reports `handoff` only when every element is realized, every element is covered there, the file is not the blueprint copied over, and the regression check is green. If the as-built state does not truly realize the blueprint, the development is wrong — keep looping instead of exiting. Handoff opens a self-contained `handoff.html` with blueprint and as-built side by side, the commit that realized each element, and a dependency graph colored by progress, so the human can see the target and what was actually built.
 
 ### Bug fix
 
@@ -98,6 +98,8 @@ Reuse decisions already supplied by the human. Do not impose a fixed question co
 | **What it shows** | The approved target design next to what was actually built, per element | Outcomes of the same approved tests, including totals and unresolved failures | The one score over attempt order or time, target, retained result, and stopping outcome |
 | **What makes it verifiable** | Blueprint and as-built diagrams, element coverage, the commit behind each element, and the rerun command | Test/source identities, raw results, and the rerun command | Benchmark/source identities, actual history, the ideas tried and their outcomes, measurement conditions, and the rerun command |
 
+`report` writes every scenario's deliverable into one self-contained `handoff.html` in the contract directory and prints the absolute path plus an `open` command; the handoff ends by opening that page or printing the path and command, not by a text claim. The file needs no tooling beyond a browser.
+
 Add concise notes about relevant changes, limitations, and where to continue. The human should be able to understand the result and take over without reconstructing the agent's decisions.
 
 **The artifact choice is part of the contract:** a prose summary does not replace the as-built diagrams or the passing test set, and a table or a final number does not replace the optimization chart. The chart must show the recorded process, not only two favorable endpoints. Do not fabricate scores for failed or timed-out attempts.
@@ -124,7 +126,7 @@ Everything a loop knows lives in its contract directory and branch, not in the c
 
 ## What is enforced, and by what
 
-autodev is a protocol plus one small judge. The Markdown tells the agent what to do; `autodev/scripts/autodev_verify.py` (Python 3, standard library, installed with the skill) makes the parts that can be checked mechanically actually checked, every round, with raw output kept.
+autodev is a protocol plus one small judge. The Markdown tells the agent what to do; `autodev/scripts/autodev_verify.py` (Python 3, standard library, installed with the skill) makes the parts that can be checked mechanically actually checked, every round, with raw output kept. Diagrams are plain JSON the agent edits; `autodev/scripts/autodev_render.py` renders them into self-contained HTML the human opens directly — the render is produced by the tool, so it cannot drift from the checked source.
 
 | Guarantee | Provided by |
 |---|---|

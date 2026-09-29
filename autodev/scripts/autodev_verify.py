@@ -16,10 +16,13 @@ import hashlib
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
 import time
+
+import autodev_render as render
 
 ACCEPTED, REJECTED, INVALID, PRECONDITION = 0, 1, 2, 3
 CONSTITUTION = ".autodev/constitution.json"
@@ -86,35 +89,27 @@ def in_editable(rel, editable):
     return False
 
 
+def load_spec(path):
+    try:
+        return render.load_diagram(path)
+    except (OSError, ValueError) as e:
+        die(str(e))
+
+
 def blueprint_elements(path):
-    ids = []
-    with open(path, encoding="utf-8") as f:
-        for line in f:
-            m = re.search(r"%%\s*autodev-elements:\s*(.+)", line)
-            if m:
-                ids += [t for t in re.split(r"[\s,]+", m.group(1))
-                        if re.fullmatch(r"[A-Za-z0-9_-]+", t)]
-    ids = list(dict.fromkeys(ids))
-    if not ids:
-        die("blueprint has no %% autodev-elements line")
-    return ids
+    return [n["id"] for n in load_spec(path)["nodes"]]
 
 
 def blueprint_depends(path, elements):
     deps = {}
-    with open(path, encoding="utf-8") as f:
-        for line in f:
-            m = re.search(r"%%\s*autodev-depends:\s*([A-Za-z0-9_-]+)\s*:\s*(.+)", line)
-            if not m:
-                continue
-            node, needs = m.group(1), [t for t in re.split(r"[\s,]+", m.group(2)) if t]
-            unknown = [e for e in [node, *needs] if e not in elements]
-            if unknown:
-                die(f"autodev-depends names IDs missing from autodev-elements: {unknown}")
-            if node in needs:
-                die(f"element {node} depends on itself")
-            deps.setdefault(node, [])
-            deps[node] += [n for n in needs if n not in deps[node]]
+    for node, needs in load_spec(path).get("depends", {}).items():
+        needs = list(dict.fromkeys(needs))
+        unknown = [e for e in [node, *needs] if e not in elements]
+        if unknown:
+            die(f'"depends" names IDs missing from nodes: {unknown}')
+        if node in needs:
+            die(f"element {node} depends on itself")
+        deps[node] = needs
     return deps
 
 
@@ -148,13 +143,8 @@ def element_progress(c, attempts):
             "pending": [e for e in open_ if e in pending], "realized_in": realized}
 
 
-def element_found(element, text):
-    return bool(re.search(r"(?<![A-Za-z0-9_-])" + re.escape(element) + r"(?![A-Za-z0-9_-])", text))
-
-
-def diagram_body(text):
-    lines = [" ".join(line.split()) for line in text.splitlines()]
-    return [line for line in lines if line and not line.startswith("%%") and not line.startswith("```")]
+def node_ids(spec):
+    return {n["id"] for n in spec["nodes"]}
 
 
 def load_constitution(repo, rel):
@@ -358,9 +348,8 @@ def cmd_init(a):
         contract["elements"] = blueprint_elements(docs["blueprint"][1])
         contract["depends"] = blueprint_depends(docs["blueprint"][1], contract["elements"])
         contract["batches"] = build_batches(contract["elements"], contract["depends"])
-        with open(docs["asis"][1], encoding="utf-8") as f:
-            asis_text = f.read()
-        contract["elements_new"] = [e for e in contract["elements"] if not element_found(e, asis_text)]
+        asis_ids = node_ids(load_spec(docs["asis"][1]))
+        contract["elements_new"] = [e for e in contract["elements"] if e not in asis_ids]
         if not contract["elements_new"]:
             die("every blueprint element already appears in the as-is diagrams, so the coverage check "
                 "cannot fail; give added or changed elements new IDs")
@@ -394,7 +383,12 @@ def cmd_init(a):
                 "broken cannot judge attempts (see raw/guard-baseline.log)")
     if a.scenario == "development":
         for name in ("blueprint", "asis"):
-            shutil.copyfile(docs[name][1], os.path.join(home.path, name + ".md"))
+            shutil.copyfile(docs[name][1], os.path.join(home.path, name + ".json"))
+            spec = load_spec(docs[name][1])
+            render.write_page(os.path.join(home.path, name + ".html"),
+                              f"{name} — {os.path.basename(repo)}",
+                              '<span class="badge">development · clarify</span>',
+                              render.graph_svg(spec))
         baseline = {"source": source, "asis": docs["asis"][0], "blueprint": docs["blueprint"][0]}
         if a.check_cmd:
             code, out, elapsed, timed_out = run_command(contract["test_cmd"], repo, home.raw_path("baseline.log"), None)
@@ -646,21 +640,26 @@ def cmd_status(a):
         out["all_tests_pass"] = passing
         out["decision"] = "handoff" if passing else "continue"
     else:
-        wt, text = c.get("worktree"), ""
-        asbuilt_exists = bool(wt) and os.path.isfile(os.path.join(wt, c["asbuilt"]))
+        wt = c.get("worktree")
+        asbuilt_path = os.path.join(wt, c["asbuilt"]) if wt else None
+        asbuilt_exists = bool(asbuilt_path) and os.path.isfile(asbuilt_path)
+        asbuilt = None
         if asbuilt_exists:
-            with open(os.path.join(wt, c["asbuilt"])) as f:
-                text = f.read()
+            try:
+                asbuilt = render.load_diagram(asbuilt_path)
+            except (OSError, ValueError) as e:
+                out["asbuilt_error"] = str(e)
         attempts = kept_attempts(home)
         if c.get("check_cmd"):
             out["check_green"] = bool(attempts) and attempts[-1]["verdict"] == "green"
         else:
             out["check_green"] = bool(attempts)
-        with open(os.path.join(home.path, "blueprint.md"), encoding="utf-8") as f:
-            blueprint = f.read()
+        blueprint = load_spec(os.path.join(home.path, "blueprint.json"))
         out["asbuilt_exists"] = asbuilt_exists
-        out["asbuilt_copies_blueprint"] = asbuilt_exists and diagram_body(text) == diagram_body(blueprint)
-        out["elements_missing"] = [e for e in c["elements"] if not element_found(e, text)]
+        out["asbuilt_copies_blueprint"] = (asbuilt is not None and
+                                         render.diagram_signature(asbuilt) == render.diagram_signature(blueprint))
+        out["elements_missing"] = [e for e in c["elements"]
+                                   if e not in (node_ids(asbuilt) if asbuilt else set())]
         progress = element_progress(c, attempts)
         out.update(elements_done=progress["done"], elements_ready=progress["ready"],
                    elements_blocked=progress["blocked"], elements_pending=progress["pending"])
@@ -745,142 +744,117 @@ def cmd_report(a):
     home = Home(a.home)
     c = home.load()
     rows = home.attempts()
-    if c["scenario"] == "bugfix":
-        report_table(home, c, rows, a.out)
-    elif c["scenario"] == "development":
-        report_blueprint(home, c, a.out)
-    else:
-        report_chart(home, c, rows, a.out)
+    builder = {"bugfix": report_bugfix, "development": report_development}.get(
+        c["scenario"], report_optimization)
+    title, subtitle, body, extra = builder(home, c, rows)
+    handoff = os.path.abspath(a.out or os.path.join(home.path, "handoff.html"))
+    render.write_page(handoff, title, subtitle, body)
+    artifacts = [{"kind": "handoff", "path": handoff}] + extra
+    cmd = render.open_command(handoff)
+    open_text = shlex.join(cmd) if cmd else f'start "" "{handoff}"'
+    manifest = {"handoff": handoff, "artifacts": artifacts, "open": open_text}
+    print(json.dumps(manifest, indent=2))
+    if a.open_ and not render.open_path(handoff):
+        print(f"autodev: no viewer opened; open manually: {handoff}", file=sys.stderr)
 
 
-def report_table(home, c, rows, out):
+def _raw_link(rec):
+    return f'<a href="{render.esc(rec["raw"])}">raw log</a>' if rec.get("raw") else "-"
+
+
+def report_bugfix(home, c, rows):
     attempts = [r for r in rows if r.get("kind") == "attempt"]
     final = attempts[-1] if attempts else None
     b = c["baseline"]
-    if final:
-        final_text = ("pass" if final.get("passed") else "fail") + (f" (exit {final['exit']})" if "exit" in final else "")
-    else:
-        final_text = "not run"
-    base_text = ("pass" if b.get("passed") else "fail") + f" (exit {b['exit']})"
-    lines = [
-        "| Test / expected behavior | Baseline result | Final result | Evidence |",
-        "|---|---|---|---|",
-        f"| `{c['test_cmd']}` | {base_text} | {final_text} | {b['raw']} → {final['raw'] if final else '-'} |",
-        "",
-        f"Baseline source `{b['source']}`; final source `{c.get('best')}`; checkpoints logged: {len(attempts)}.",
-        "Add one row per agreed case ID from the raw logs; totals must cover the whole agreed set.",
-    ]
-    text = "\n".join(lines) + "\n"
-    path = out or os.path.join(home.path, "comparison.md")
-    with open(path, "w") as f:
-        f.write(text)
-    print(path)
+    passed = bool(final and final.get("passed"))
+
+    def result(rec):
+        text = ("pass" if rec.get("passed") else "fail")
+        return text + (f' (exit {rec["exit"]})' if "exit" in rec else "")
+
+    run_rows = [["baseline", f'<span class="bad">{result(b)}</span>', _raw_link(b), "—"]]
+    for r in attempts:
+        cls = "ok" if r["verdict"] == "accepted" else "bad" if r["verdict"] == "invalid" else "warn"
+        run_rows.append([f'attempt {r["n"]}', f'<span class="{cls}">{r["verdict"]}</span> / {result(r)}',
+                         _raw_link(r), render.esc(r.get("note") or "")])
+    body = render.stats([
+        ("baseline", f'<span class="bad">{result(b)}</span>'),
+        ("final", f'<span class="{"ok" if passed else "bad"}">{result(final) if final else "not run"}</span>'),
+        ("attempts", len(attempts))])
+    body += render.section("Agreed test runs", render.table(
+        ["Run", "Result", "Evidence", "Note"], run_rows))
+    body += render.section("Reproduce",
+                           f'<p>Test command: <code>{render.esc(c["test_cmd"])}</code><br>'
+                           f'Baseline source <code>{b["source"][:10]}</code>; delivered '
+                           f'<code>{(c.get("best") or "-")[:10]}</code>. '
+                           'Raw logs live under <code>raw/</code> in this directory.</p>')
+    subtitle = (f'<span class="badge {"ok" if passed else "bad"}">'
+                f'{"all agreed tests pass" if passed else "incomplete"}</span> '
+                f'{len(attempts)} attempts logged')
+    return "autodev handoff — bug fix", subtitle, body, []
 
 
-def report_blueprint(home, c, out):
+def report_development(home, c, rows):
+    blueprint = load_spec(os.path.join(home.path, "blueprint.json"))
     wt = c.get("worktree") or c["repo"]
-    with open(os.path.join(home.path, "blueprint.md")) as f:
-        blueprint = f.read().rstrip()
-    asbuilt = None
+    asbuilt, asbuilt_err = None, None
     asbuilt_path = os.path.join(wt, c["asbuilt"])
     if os.path.isfile(asbuilt_path):
-        with open(asbuilt_path) as f:
-            asbuilt = f.read().rstrip()
-    def block(text):
-        return text if "```" in text else "```mermaid\n" + text + "\n```"
-
-    lines = ["## Agreed blueprint", "", block(blueprint), "",
-             "## As-built (delivered)", ""]
-    lines += [block(asbuilt)] if asbuilt is not None else [
-        f"as-built file is missing: `{c['asbuilt']}`"]
-    progress = element_progress(c, home.attempts())
+        try:
+            asbuilt = render.load_diagram(asbuilt_path)
+        except (OSError, ValueError) as e:
+            asbuilt_err = str(e)
+    progress = element_progress(c, rows)
     deps = c.get("depends", {})
-    lines += ["", "## Element coverage", "", "| Element | Depends on | Realized in | In as-built |",
-              "|---|---|---|---|"]
+    covered = node_ids(asbuilt) if asbuilt else set()
+    done = progress["done"]
+    body = render.section("Agreed blueprint", render.graph_svg(blueprint))
+    if asbuilt is not None:
+        body += render.section("As-built (delivered)", render.graph_svg(asbuilt))
+    else:
+        body += render.section("As-built (delivered)",
+                               f'<p class="bad">as-built file missing or invalid: '
+                               f'<code>{render.esc(c["asbuilt"])}</code> {render.esc(asbuilt_err or "")}</p>')
+    cov_rows = []
     for e in c["elements"]:
-        found = asbuilt is not None and element_found(e, asbuilt)
-        needs = ", ".join(f"`{d}`" for d in deps.get(e, [])) or "-"
+        needs = ", ".join(f"<code>{render.esc(d)}</code>" for d in deps.get(e, [])) or "-"
         commit = progress["realized_in"].get(e)
-        lines.append(f"| `{e}` | {needs} | {f'`{commit[:10]}`' if commit else 'not realized'} | "
-                     f"{'yes' if found else 'no'} |")
-    lines += ["", "## Build order", ""]
+        cov_rows.append([f"<code>{render.esc(e)}</code>", needs,
+                         f'<code>{commit[:10]}</code>' if commit else '<span class="bad">not realized</span>',
+                         '<span class="ok">yes</span>' if e in covered else '<span class="bad">no</span>'])
+    body += render.section("Element coverage",
+                           render.table(["Element", "Depends on", "Realized in", "In as-built"], cov_rows))
     batches = c.get("batches", [c["elements"]])
-    lines += [f"{i}. " + " ".join(f"`{e}`" for e in batch) for i, batch in enumerate(batches, 1)]
-    node = {e: f"e{i}" for i, e in enumerate(c["elements"])}
-    graph = ["graph LR"] + [f'  {node[e]}["{e}"]' for e in c["elements"]]
-    graph += [f"  {node[d]} --> {node[e]}" for e in c["elements"] for d in deps.get(e, [])]
-    graph += ["  classDef done fill:#0f5132,stroke:#75b798,color:#fff",
-              "  classDef pending fill:#664d03,stroke:#ffda6a,color:#fff"]
-    for state in ("done", "pending"):
-        if progress[state]:
-            graph.append(f"  class {','.join(node[e] for e in progress[state])} {state}")
-    lines += ["", "## Dependency graph", "", "Green: realized; amber: claimed while the check was failing.", "",
-              "```mermaid", *graph, "```"]
-    tail = f"Delivered commit `{c.get('best')}`."
+    body += render.section("Build order", '<ol class="batches">' + "".join(
+        "<li>" + " ".join(f"<code>{render.esc(e)}</code>" for e in batch) + "</li>"
+        for batch in batches) + "</ol>")
+    dep_spec = {"nodes": [{"id": e, "label": e} for e in c["elements"]],
+                "edges": [{"from": d, "to": e} for e in c["elements"] for d in deps.get(e, [])]}
+    pmap = {e: "done" for e in done}
+    pmap.update({e: "pending" for e in progress["pending"]})
+    body += render.section("Dependency graph",
+                           '<p class="mute">Green: realized; amber: claimed while the check was failing.</p>'
+                           + render.graph_svg(dep_spec, pmap))
+    evidence = f'<p>Delivered commit <code>{(c.get("best") or "-")[:10]}</code>.'
     if c.get("check_cmd"):
-        tail += f" Rerun with `{c['check_cmd']}`."
-    lines += ["", tail]
-    path = out or os.path.join(home.path, "blueprint-handoff.md")
-    with open(path, "w") as f:
-        f.write("\n".join(lines) + "\n")
-    print(path)
+        evidence += f' Rerun check: <code>{render.esc(c["check_cmd"])}</code>.'
+    evidence += ' Contract evidence: <a href="attempts.jsonl">attempts.jsonl</a>, <code>raw/</code>.</p>'
+    body += render.section("Evidence", evidence)
+    subtitle = (f'<span class="badge">feature development</span> '
+                f'{len(done)}/{len(c["elements"])} blueprint elements realized')
+    extra = [{"kind": "diagram", "path": os.path.abspath(os.path.join(home.path, n + ".html"))}
+             for n in ("blueprint", "asis")]
+    return "autodev handoff — feature development", subtitle, body, extra
 
 
-def report_chart(home, c, rows, out):
+def report_optimization(home, c, rows):
     pts = [r for r in rows if r.get("kind") in ("baseline", "attempt")]
-    scored = [r for r in pts if r.get("score") is not None]
     unit, direction = c["score"]["unit"], c["score"]["direction"]
     target, baseline = c["target"], c["baseline"]["score"]
-    ys = [r["score"] for r in scored] + [target, baseline]
-    lo, hi = min(ys), max(ys)
-    pad = (hi - lo) * 0.15 or abs(hi) * 0.1 or 1.0
-    lo, hi = lo - pad, hi + pad
-    W, H, L, R, T, B = 960, 480, 90, 30, 40, 70
-    n = max(len(pts) - 1, 1)
-
-    def X(i):
-        return L + (W - L - R) * i / n
-
-    def Y(v):
-        return T + (H - T - B) * (hi - v) / (hi - lo)
-
-    best = baseline
-    best_line = []
-    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" '
-           f'font-family="Helvetica, Arial, sans-serif" font-size="13">',
-           f'<rect width="{W}" height="{H}" fill="#0B1220"/>',
-           f'<line x1="{L}" y1="{T}" x2="{L}" y2="{H-B}" stroke="#6B7A99"/>',
-           f'<line x1="{L}" y1="{H-B}" x2="{W-R}" y2="{H-B}" stroke="#6B7A99"/>',
-           f'<line x1="{L}" y1="{Y(target):.1f}" x2="{W-R}" y2="{Y(target):.1f}" stroke="#78E6DD" stroke-dasharray="6 6"/>',
-           f'<text x="{W-R}" y="{Y(target)-6:.1f}" text-anchor="end" fill="#78E6DD">target {target} {unit}</text>']
-    for i, r in enumerate(pts):
-        s = r.get("score")
-        best_line.append((X(i), Y(best)))
-        if s is not None and (r["verdict"] in ("accepted", "baseline")):
-            best = s
-        best_line.append((X(i), Y(best)))
-    svg.append('<polyline fill="none" stroke="#3C8CFF" stroke-width="2" points="' +
-               " ".join(f"{x:.1f},{y:.1f}" for x, y in best_line) + '"/>')
-    for i, r in enumerate(pts):
-        x = X(i)
-        s = r.get("score")
-        v = r["verdict"]
-        if s is None:
-            svg.append(f'<text x="{x:.1f}" y="{H-B-8:.1f}" text-anchor="middle" fill="#FF7A7A">✕</text>')
-            svg.append(f'<text x="{x:.1f}" y="{H-B+18}" text-anchor="middle" fill="#9DB5E8">{i}</text>')
-            continue
-        color = {"baseline": "#FFFFFF", "accepted": "#00C8D2", "rejected": "#FF7A7A"}.get(v, "#9DB5E8")
-        svg.append(f'<circle cx="{x:.1f}" cy="{Y(s):.1f}" r="5" fill="{color}"/>')
-        svg.append(f'<text x="{x:.1f}" y="{H-B+18}" text-anchor="middle" fill="#9DB5E8">{i}</text>')
-    for v in (lo + pad, hi - pad):
-        svg.append(f'<text x="{L-8}" y="{Y(v)+4:.1f}" text-anchor="end" fill="#9DB5E8">{v:g}</text>')
-    svg.append(f'<text x="{L}" y="{T-14}" fill="#FFFFFF" font-size="15">score ({unit}, {direction} is better) '
-               f'— white baseline, cyan accepted, red rejected, ✕ invalid, blue line = retained best</text>')
-    svg.append(f'<text x="{W/2:.0f}" y="{H-14}" text-anchor="middle" fill="#9DB5E8">attempt</text>')
-    svg.append("</svg>")
-    path = out or os.path.join(home.path, "process.svg")
-    with open(path, "w") as f:
-        f.write("\n".join(svg) + "\n")
+    svg = render.chart_svg(pts, unit, direction, target, baseline)
+    svg_path = os.path.join(home.path, "process.svg")
+    with open(svg_path, "w") as f:
+        f.write(svg + "\n")
     final = c.get("best_score")
     imp = (baseline - final) if direction == "lower" else (final - baseline)
     pct = None if baseline == 0 else imp / abs(baseline) * 100
@@ -888,13 +862,36 @@ def report_chart(home, c, rows, out):
     for r in pts[1:]:
         tally = routes.setdefault(r.get("route") or "-", {"accepted": 0, "rejected": 0, "invalid": 0})
         tally[r["verdict"]] = tally.get(r["verdict"], 0) + 1
+    met = meets_target(c, final)
     caption = {"baseline": baseline, "final": final, "unit": unit, "direction": direction,
                "improvement": imp, "improvement_pct": pct, "target": target,
-               "target_met": meets_target(c, final), "attempts": len(pts) - 1, "routes": routes,
-               "delivered_commit": c.get("best"), "rerun": c["test_cmd"], "chart": path}
-    with open(os.path.join(home.path, "caption.json"), "w") as f:
+               "target_met": met, "attempts": len(pts) - 1, "routes": routes,
+               "delivered_commit": c.get("best"), "rerun": c["test_cmd"], "chart": svg_path}
+    caption_path = os.path.join(home.path, "caption.json")
+    with open(caption_path, "w") as f:
         json.dump(caption, f, indent=2)
-    print(json.dumps(caption, indent=2))
+    body = render.stats([
+        ("baseline", f"{baseline:g} {render.esc(unit)}"),
+        ("delivered", f"{final:g} {render.esc(unit)}"),
+        ("improvement", f'{imp:g} {render.esc(unit)}' + (f" ({pct:.1f}%)" if pct is not None else "")),
+        ("target", f'<span class="{"ok" if met else "bad"}">{target:g} {"met" if met else "missed"}</span>')])
+    body += render.section("Process", svg)
+    route_rows = [[render.esc(k), v.get("accepted", 0), v.get("rejected", 0), v.get("invalid", 0)]
+                  for k, v in routes.items()]
+    body += render.section("Routes — accepted / rejected / invalid",
+                           render.table(["Route", "Accepted", "Rejected", "Invalid"], route_rows))
+    body += render.section("Evidence",
+                           f'<p>Delivered commit <code>{(c.get("best") or "-")[:10]}</code>. '
+                           f'Rerun benchmark: <code>{render.esc(c["test_cmd"])}</code>. '
+                           '<a href="attempts.jsonl">attempts.jsonl</a> · '
+                           '<a href="caption.json">caption.json</a> · '
+                           '<a href="process.svg">process.svg</a>; raw logs under <code>raw/</code>.</p>')
+    subtitle = (f'<span class="badge {"ok" if met else "warn"}">'
+                f'{"target met" if met else "target not met"}</span> '
+                f'baseline {baseline:g} → delivered {final:g} {render.esc(unit)} · {len(pts) - 1} attempts')
+    extra = [{"kind": "chart", "path": os.path.abspath(svg_path)},
+             {"kind": "caption", "path": os.path.abspath(caption_path)}]
+    return "autodev handoff — optimization", subtitle, body, extra
 
 
 def main():
@@ -947,7 +944,9 @@ def main():
     sub.add_parser("verify").set_defaults(fn=cmd_verify)
 
     r = sub.add_parser("report")
-    r.add_argument("--out")
+    r.add_argument("--out", help="handoff.html output path; defaults to the contract directory")
+    r.add_argument("--open", dest="open_", action="store_true",
+                   help="open handoff.html in the system viewer after writing it")
     r.set_defaults(fn=cmd_report)
 
     a = p.parse_args()

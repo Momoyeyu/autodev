@@ -6,11 +6,11 @@ Improve alignment between agents and humans. Changes should reduce misunderstand
 
 Use **Clarify → Loop → Handoff** as the only top-level working stages. User input triggers the workflow. Each scenario agrees on a different **target**: a blueprint for feature development, a passing test set for a bug fix, a numeric threshold for performance optimization.
 
-- **Development Clarify:** draw as-is diagrams from the code (the baseline); draft the to-be blueprint in Mermaid with stable element IDs; propose the editable scope; then one human review of the whole pass.
+- **Development Clarify:** draw as-is diagrams from the code (the baseline); draft the to-be blueprint as diagram JSON with stable element IDs; propose the editable scope; then one human review of the whole pass.
 - **Bug-fix Clarify:** write the reproduction test that fails on the unchanged source; query, update/remove, add, and trial-run regression tests; record baseline; propose impact; then one human review of the whole pass.
 - **Optimization Clarify:** prepare one runnable numeric benchmark or fixed weighted score; record baseline; propose target, editable files, and wall-clock budget; then one human review of the whole pass.
 - **Loop:** in a dedicated git worktree, implement until the as-built state realizes every blueprint element and checks stay green, fix until all agreed tests pass, or optimize until target/time limit with post-checked (do-while) exits. Every round is judged by `autodev/scripts/autodev_verify.py`; keep its behavior identical to the prose in `loop.md`.
-- **Handoff:** as-built architecture/flow diagrams checked against the blueprint for development; the passing test set for a bug fix; one chart of the measured optimization process for optimization.
+- **Handoff:** `report` writes every scenario's deliverable into one self-contained `handoff.html` and prints its path plus an open command; presenting that page — opening it or printing path and command — closes the handoff.
 
 Do not split the single human review into per-step approvals, move target preparation outside the human review cycle, equate executable tests with already-passing tests, substitute the blueprint for as-built diagrams drawn from the delivered state, replace the optimization chart with a table, or add convergence/attempt-count exits. Changes to target meaning or permitted scope return to Clarify. An unsatisfying handoff starts a fresh autodev round, typically a bug fix — do not resume a closed loop.
 
@@ -43,7 +43,7 @@ The brand and overview are hand-authored SVG rendered with headless Chrome; the 
 | `docs/diagrams/autodev.bugfix(.zh).json` | `docs/assets/autodev-bugfix(.zh).png` | Bug-fix flow inside the workflow section |
 | `docs/diagrams/autodev.optimization(.zh).json` | `docs/assets/autodev-optimization(.zh).png` | Optimization flow inside the workflow section |
 | none — judge `report` output | `docs/assets/autodev-case-moe.svg` | Real-run chart; verbatim artifact, never regenerate |
-| Embedded `case-data` metadata: per-case raw latencies, fixed reference vector, and historical verdicts | `docs/assets/autodev-case-cann2026.svg` | Initial baseline plus 16 cumulative attempts; one continuous `report_chart` curve and one shared scale; dashed line is the final-round target |
+| Embedded `case-data` metadata: per-case raw latencies, fixed reference vector, and historical verdicts | `docs/assets/autodev-case-cann2026.svg` | Initial baseline plus 16 cumulative attempts; one continuous chart curve in the `autodev_render.chart_svg` style and one shared scale; dashed line is the final-round target |
 
 ### Brand and overview
 
@@ -98,7 +98,7 @@ Archify renders this repository's explanatory workflow. It is not a mandatory de
 
 ## Judge script
 
-`autodev/scripts/autodev_verify.py` is standard-library Python 3 with no dependencies, so it runs wherever the target project runs. It must not grow into a runner or a framework: it executes the agreed test command, checks the contract, decides, rolls back, and logs. Any rule it enforces must appear in the same words in `loop.md`, and any prose rule that can be checked mechanically belongs in the script.
+`autodev/scripts/autodev_verify.py` and `autodev/scripts/autodev_render.py` are standard-library Python 3 with no dependencies, so they run wherever the target project runs. The judge must not grow into a runner or a framework: it executes the agreed test command, checks the contract, decides, rolls back, and logs. The renderer must stay tiny: diagram JSON plus attempt records in, self-contained HTML with inline SVG out — no JS, no external assets, no runtime services. Any rule the judge enforces must appear in the same words in `loop.md`, and any prose rule that can be checked mechanically belongs in the script.
 
 Run its tests before committing changes to it or to the Loop rules:
 
