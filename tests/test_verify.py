@@ -41,7 +41,7 @@ class Harness(unittest.TestCase):
         self.root = self.tmp.name
         self.repo = os.path.join(self.root, "repo")
         self.wt = os.path.join(self.root, "wt")
-        self.home = os.path.join(self.repo, ".autodev", "run")
+        self.home = os.path.join(self.repo, ".autodev", "runs", "t")
         os.makedirs(self.repo)
         git(self.repo, "init", "-q")
         write(self.repo, ".gitignore", "__pycache__/\n")
@@ -316,7 +316,7 @@ class TestConstitution(Harness):
         self.assertEqual(r.returncode, 0, r.stderr)
         c = self.contract()
         self.assertIn("legacy/old.py", c["frozen"])
-        self.assertIn(".autodev/constitution.json", c["frozen"])
+        self.assertNotIn(".autodev/constitution.json", c["frozen"])
         self.assertEqual(c["guard_cmd"], "python3 guard.py")
         self.assertEqual(c["constitution"]["path"], ".autodev/constitution.json")
         self.assertEqual((c["budget_minutes"], c["reserve_minutes"]), (10, 1))
@@ -356,6 +356,34 @@ class TestConstitution(Harness):
         r = self.init()
         self.assertEqual(r.returncode, 3)
         self.assertIn("guard", r.stderr)
+
+    def test_untracked_constitution_still_enforced(self):
+        git(self.repo, "rm", "-q", "--cached", ".autodev/constitution.json")
+        git(self.repo, "commit", "-qm", "untrack constitution")
+        r = self.init()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertNotIn(".autodev", git(self.repo, "status", "--porcelain"))
+        self.start()
+        code, rec = self.attempt({"src/impl.py": "N=50\n"})
+        self.assertEqual((code, rec["verdict"]), (2, "invalid"))
+        self.assertIn("guard", rec["reason"])
+
+    def test_constitution_change_midloop_is_invalid(self):
+        self.ready()
+        write(self.repo, ".autodev/constitution.json",
+              json.dumps({**self.law, "frozen": ["legacy", "more"]}))
+        code, rec = self.attempt({"src/impl.py": "N=170\n"})
+        self.assertEqual((code, rec["verdict"]), (2, "invalid"))
+        self.assertIn("modified", rec["reason"])
+        self.assertEqual(self.read("src/impl.py"), "N=200\n")
+
+    def test_verify_refuses_constitution_drift(self):
+        self.ready()
+        write(self.repo, ".autodev/constitution.json",
+              json.dumps({**self.law, "frozen": ["legacy", "more"]}))
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("modified", r.stderr)
 
     def test_constitution_generated_inherited(self):
         write(self.repo, ".autodev/constitution.json",
@@ -889,18 +917,20 @@ class TestHygiene(Harness):
                   "--editable", "src", "--frozen", "bench",
                   "--test-cmd", "python3 bench/run.py", *self.budget, *self.init_extra)
 
-    def test_home_outside_autodev_dies(self):
+    def test_home_outside_runs_dies(self):
         for home in (os.path.join(self.repo, "contracts"),
                      os.path.join(self.root, "home"),
-                     os.path.join(self.repo, ".autodev")):
+                     os.path.join(self.repo, ".autodev"),
+                     os.path.join(self.repo, ".autodev", "contracts"),
+                     os.path.join(self.repo, ".autodev", "runs")):
             r = self.init_with_home(home)
             self.assertEqual(r.returncode, 3, home)
-            self.assertIn(".autodev", r.stderr)
+            self.assertIn("runs", r.stderr)
 
     def test_home_inside_worktree_dies_at_start(self):
         git(self.repo, "worktree", "add", "-q", "-b", "autodev/t", self.wt, "HEAD")
         self.assertEqual(self.init().returncode, 0)
-        home = os.path.join(self.wt, ".autodev", "run")
+        home = os.path.join(self.wt, ".autodev", "runs", "t")
         os.makedirs(home, exist_ok=True)
         shutil.copy(os.path.join(self.home, "contract.json"),
                     os.path.join(home, "contract.json"))
@@ -909,12 +939,42 @@ class TestHygiene(Harness):
         self.assertEqual(r.returncode, 3)
         self.assertIn("worktree", r.stderr)
 
-    def test_contract_files_are_self_ignored(self):
+    def test_autodev_dir_is_excluded_per_clone(self):
         r = self.init()
         self.assertEqual(r.returncode, 0, r.stderr)
+        git_dir = git(self.repo, "rev-parse", "--absolute-git-dir")
+        with open(os.path.join(git_dir, "info", "exclude")) as f:
+            self.assertIn("/.autodev/", f.read().splitlines())
         status = git(self.repo, "status", "--porcelain")
         self.assertNotIn(".autodev", status)
-        self.assertTrue(os.path.exists(os.path.join(self.home, ".gitignore")))
+        write(self.repo, "sub/.autodev/marker", "x\n")
+        self.assertIn("sub", git(self.repo, "status", "--porcelain"))
+
+    def test_worktree_autodev_is_refused(self):
+        self.ready()
+        write(self.wt, ".autodev/stash.txt", "x\n")
+        self.assertFalse(git(self.wt, "status", "--porcelain"))
+        self.commit({"src/impl.py": "N=150\n"})
+        r = self.run_v("attempt", "--route", "x")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn(".autodev", r.stderr)
+        st = json.loads(self.run_v("status").stdout)
+        self.assertFalse(st["worktree_clean"])
+        self.assertEqual(st["hidden_ignored"], [".autodev/"])
+        self.assertIn("delete", st["next"])
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn(".autodev/", r.stderr)
+
+    def test_init_in_linked_worktree_dies(self):
+        git(self.repo, "worktree", "add", "-q", "-b", "autodev/other", self.wt, "HEAD")
+        home = os.path.join(self.wt, ".autodev", "runs", "t")
+        r = sh(self.root, sys.executable, SCRIPT, "--home", home,
+               "init", "--repo", self.wt, "--scenario", "optimization",
+               "--editable", "src", "--frozen", "bench",
+               "--test-cmd", "python3 bench/run.py", *self.budget, *self.init_extra)
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("worktree", r.stderr)
 
     def bench_writes_artifacts(self):
         write(self.repo, "bench/run.py",

@@ -21,13 +21,13 @@ Loop runs in a **separate git worktree on a dedicated branch**, created when Loo
 4. Prepare the runtime in the worktree yourself (dependencies, `.env`, local data). Then bind the judge to the worktree: `python3 <skill>/scripts/autodev_verify.py --home <contract dir> start --worktree <path>`. It records `best = HEAD`, starts the time budget, and runs a smoke test that deliberately edits a frozen file and adds an out-of-scope file, requiring both to be rejected and the rollback to leave no residue. Do not begin attempts if the smoke test fails.
 5. Commit every attempt or checkpoint on the loop branch before evaluating it. Write logs and raw outputs to the agreed artifact location — the contract directory or a declared generated path — never into the commit. Files under a `--generated` path do not block an attempt while untracked and rollback sweeps them, but an attempt whose commit contains one is invalid: generated output is never a deliverable.
 
-Build products the agreed commands leave under a declared generated path are acceptable; the worktree is removed after Handoff. Prefer idempotent checks so a previous attempt's external side effects do not distort the next measurement.
+Build products the agreed commands leave under a declared generated path are acceptable; the worktree is removed after Handoff. Prefer idempotent checks so a previous attempt's external side effects do not distort the next measurement. Never write under `.autodev/` inside the worktree: it is invisible to `git status` there and survives `git clean -fd`, so it could carry state between attempts undetected — the judge refuses to start or evaluate a worktree that has one.
 
 ## Take over a running loop
 
 The contract directory and the loop branch hold the whole state, so a new session or another agent can continue without the previous conversation:
 
-1. Find the loop: `git worktree list` shows the `autodev/<task>` branch and its worktree. The contract directory is the `--home` recorded in the Clarify evidence, conventionally `<repo>/.autodev/run`.
+1. Find the loop: `git worktree list` shows the `autodev/<task>` branch and its worktree. The contract directory is the `--home` recorded in the Clarify evidence, conventionally `<repo>/.autodev/runs/<task>`.
 2. Run `autodev_verify.py --home <contract dir> status`. Besides the scenario's progress and `decision`, it reports `head`, `head_is_best`, `worktree_clean`, and `next`, one line naming the next action.
 3. Settle in-flight work before anything else. Uncommitted changes and a committed but unjudged HEAD belong to the previous session: commit them and run `attempt`, or discard them with `git reset --hard <best>`. Never leave them for the next verdict to absorb.
 4. Read what the log already rules out — `ruled_out` routes for optimization, `elements_done` and `elements_pending` for development — and the last raw outputs under `raw/`, then continue from `next`.

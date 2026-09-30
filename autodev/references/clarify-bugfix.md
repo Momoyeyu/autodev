@@ -34,10 +34,10 @@ Inspect the relevant code and make the proposed changes and preserved behavior e
 
 A bug report is not unrestricted permission to redesign the surrounding code.
 
-Write the proposal as a contract with the judge script, from the user's checkout, into a subdirectory of `.autodev/` (pass `--home` as an absolute path; every later command uses the same value). `init` writes a self-ignoring `.gitignore` there, so every contract file — the contract, the log, raw output — stays inside the project yet untracked. `--home` must be a strict subdirectory like `.autodev/run`, never `.autodev/` itself (its `.gitignore` would hide the constitution), and `start` refuses a contract directory inside the loop worktree:
+Write the proposal as a contract with the judge script, from the user's checkout, into a run directory under `.autodev/runs/` (pass `--home` as an absolute path; every later command uses the same value). `init` adds `.autodev/` to the clone's `.git/info/exclude`, so every autodev file — contract, log, raw output, the constitution itself — stays inside the project yet never appears in `git status` or shared history. `start` refuses a contract directory inside the loop worktree:
 
 ```bash
-python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/run" init \
+python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/runs/<task>" init \
   --scenario bugfix --editable src/ --frozen tests/ \
   --test-cmd "pytest -q tests/"
 ```

@@ -4,7 +4,7 @@ Read at task entry or when an agreement changes. Clarify turns natural-language 
 
 The target takes a different form per scenario: a blueprint for feature development, a test set for a bug fix, a numeric benchmark for performance optimization. Clarify includes inspecting code, drawing diagrams, maintaining or building tests, trial runs, baseline measurement, and a scope proposal. It is not a questions-only or read-only phase.
 
-If the repository has an `.autodev/` directory, read the [Constitution](constitution.md) first: its principles shape the artifact, and its frozen paths, guard, and budget limits constrain the scope you may propose.
+If the repository has an `.autodev/` directory, read the [Constitution](constitution.md) first: its frozen paths, guard, and budget limits constrain the scope you may propose.
 
 ## Choose the scenario
 

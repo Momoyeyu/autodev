@@ -98,6 +98,22 @@ def inside(child, parent):
         return False
 
 
+def exclude_autodev(repo):
+    git_dir = git(repo, "rev-parse", "--absolute-git-dir")
+    path = os.path.join(git_dir, "info", "exclude")
+    content = ""
+    if os.path.exists(path):
+        with open(path) as f:
+            content = f.read()
+    covered = [l.strip().lstrip("/") for l in content.splitlines()]
+    if ".autodev/" not in covered and ".autodev" not in covered:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a") as f:
+            if content and not content.endswith("\n"):
+                f.write("\n")
+            f.write("/.autodev/\n")
+
+
 def load_spec(path):
     try:
         return render.load_diagram(path)
@@ -183,10 +199,6 @@ class Home:
 
     def ensure(self):
         os.makedirs(self.raw, exist_ok=True)
-        ignore = os.path.join(self.path, ".gitignore")
-        if not os.path.exists(ignore):
-            with open(ignore, "w") as f:
-                f.write("*\n")
 
     def load(self):
         if not os.path.exists(self.contract_path):
@@ -263,6 +275,18 @@ def meets_target(contract, score):
     return score >= t if inc else score > t
 
 
+def check_constitution(contract):
+    law = contract.get("constitution")
+    if not law:
+        return None
+    path = os.path.join(contract["repo"], law["path"])
+    if not os.path.isfile(path):
+        return law["path"], "deleted"
+    if sha256_file(path) != law["sha256"]:
+        return law["path"], "modified"
+    return None
+
+
 def check_frozen(contract, root):
     current = hash_paths(root, contract["frozen_paths"])
     recorded = contract["frozen"]
@@ -275,7 +299,17 @@ def stray_files(root, generated):
             if not in_editable(line[3:], generated)]
 
 
+def hidden_autodev(root):
+    out = git(root, "status", "--porcelain", "--ignored", "--", ".autodev")
+    return [line[3:] for line in out.splitlines() if line.startswith("!!")]
+
+
 def check_scope(contract, wt, best):
+    hidden = hidden_autodev(wt)
+    if hidden:
+        return None, None, ("ignored files under the worktree's .autodev/ are invisible to git "
+                            "and survive rollback; remove them before attempting: "
+                            f"{hidden}")
     stray = stray_files(wt, contract.get("generated", []))
     if stray:
         return None, None, ("worktree is not clean; commit the attempt first, or declare "
@@ -297,11 +331,14 @@ def cmd_init(a):
     home = Home(a.home)
     repo = os.path.abspath(a.repo)
     git(repo, "rev-parse", "--is-inside-work-tree")
-    autodev_dir = os.path.join(repo, ".autodev")
-    if not inside(home.path, autodev_dir) or os.path.realpath(home.path) == os.path.realpath(autodev_dir):
-        die("--home must be a subdirectory of <repo>/.autodev, e.g. " +
-            os.path.join(repo, ".autodev", "run") +
-            " — autodev self-ignores it so its files stay inside the project, untracked")
+    if os.path.realpath(git(repo, "rev-parse", "--git-dir")) != \
+            os.path.realpath(git(repo, "rev-parse", "--git-common-dir")):
+        die("run init from the repository's main checkout, not a linked worktree")
+    runs_dir = os.path.join(repo, ".autodev", "runs")
+    if not inside(home.path, runs_dir) or os.path.realpath(home.path) == os.path.realpath(runs_dir):
+        die("--home must be a run directory under <repo>/.autodev/runs/, e.g. " +
+            os.path.join(runs_dir, "task"))
+    exclude_autodev(repo)
     if os.path.exists(home.contract_path) and not a.renew:
         die("contract exists; use --renew after a new Clarify pass")
     renewed_from = None
@@ -327,7 +364,7 @@ def cmd_init(a):
             die("--frozen is required")
     law, law_rel = load_constitution(repo, a.constitution)
     if law:
-        a.frozen = list(dict.fromkeys((a.frozen or []) + law.get("frozen", []) + [law_rel]))
+        a.frozen = list(dict.fromkeys((a.frozen or []) + law.get("frozen", [])))
         a.generated = list(dict.fromkeys((a.generated or []) + law.get("generated", [])))
         budget = law.get("budget", {})
         if a.scenario == "optimization":
@@ -479,10 +516,16 @@ def cmd_start(a):
     if inside(home.path, wt):
         die("the contract directory must live outside the loop worktree; "
             "rollback runs git clean there")
+    drift = check_constitution(c)
+    if drift:
+        die(f"the constitution was {drift[1]} since init; a changed agreement means a new Clarify pass")
     if os.path.realpath(git(wt, "rev-parse", "--show-toplevel")) == os.path.realpath(c["repo"]):
         die("worktree is the user's checkout; create a separate git worktree for Loop")
     if git(wt, "status", "--porcelain"):
         die("worktree must be clean at start; commit the baseline state first")
+    hidden = hidden_autodev(wt)
+    if hidden:
+        die(f"ignored files under .autodev/ in the worktree must be deleted, e.g. git clean -fdx: {hidden}")
     changed = check_frozen(c, wt)
     if changed:
         die(f"frozen files differ from Clarify in the worktree: {changed}")
@@ -628,6 +671,9 @@ def cmd_attempt(a):
                files=bundled)
     if outside:
         finish("invalid", INVALID, reason="out-of-scope changes", files=outside)
+    drift = check_constitution(c)
+    if drift:
+        finish("invalid", INVALID, reason=f"constitution {drift[1]} since init", files=[drift[0]])
     changed = check_frozen(c, wt)
     if changed:
         finish("invalid", INVALID, reason="frozen files changed", files=changed)
@@ -717,7 +763,10 @@ def cmd_status(a):
     if wt and os.path.isdir(wt):
         out["head"] = git(wt, "rev-parse", "HEAD")
         out["head_is_best"] = out["head"] == c.get("best")
-        out["worktree_clean"] = not stray_files(wt, c.get("generated", []))
+        hidden = hidden_autodev(wt)
+        out["worktree_clean"] = not stray_files(wt, c.get("generated", [])) and not hidden
+        if hidden:
+            out["hidden_ignored"] = hidden
     out["next"] = next_step(c, out)
     print(json.dumps(out, indent=2))
 
@@ -731,6 +780,9 @@ def next_step(c, s):
         return "create the loop worktree and run start"
     if "head" not in s:
         return f"worktree {c['worktree']} is missing; restore it at best {c.get('best')} or run a new Clarify"
+    if s.get("hidden_ignored"):
+        return ("ignored files under .autodev/ in the worktree are invisible to git and survive "
+                "rollback; delete them (git clean -fdx)")
     if not s["worktree_clean"]:
         return "uncommitted changes in the worktree: commit them and run attempt, or discard them"
     if not s["head_is_best"]:
@@ -761,6 +813,12 @@ def cmd_verify(a):
         die("no check command recorded for this contract")
     if stray_files(wt, c.get("generated", [])):
         die("worktree is dirty; commit or clean before verify")
+    hidden = hidden_autodev(wt)
+    if hidden:
+        die(f"ignored files under .autodev/ in the worktree must be deleted, e.g. git clean -fdx: {hidden}")
+    drift = check_constitution(c)
+    if drift:
+        die(f"the constitution was {drift[1]} since init; a changed agreement means a new Clarify pass")
     head = git(wt, "rev-parse", "HEAD")
     if head != best:
         die("HEAD differs from the retained best; git reset --hard to best before verify")
@@ -945,8 +1003,8 @@ def main():
     p = argparse.ArgumentParser(prog="autodev_verify.py", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--home", required=True,
-                   help="contract directory; must be a subdirectory of <repo>/.autodev "
-                        "(self-ignored, untracked) and outside the loop worktree")
+                   help="contract directory; a run dir under <repo>/.autodev/runs/ "
+                        "(local-only via .git/info/exclude) and outside the loop worktree")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     i = sub.add_parser("init")
