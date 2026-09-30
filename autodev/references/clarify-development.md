@@ -55,17 +55,18 @@ If the feature legitimately changes existing behavior, say so explicitly and mar
 | Existing tests | Frozen by default; list the test paths the blueprint is allowed to change, if any |
 | Regression check | An existing test/lint command that must stay green, if the project has one |
 | As-built path | Where Loop writes the delivered-state diagram JSON, inside the editable surface |
+| Generated paths | Run-artifact paths the check command or build writes (build output, caches); declared with `--generated` so they are never mistaken for deliverables |
 
-Write the proposal as a contract with the judge script, from the user's checkout, into a directory outside the repository (pass `--home` as an absolute path; every later command uses the same value):
+Write the proposal as a contract with the judge script, from the user's checkout, into a subdirectory of `.autodev/` (pass `--home` as an absolute path; every later command uses the same value). `init` writes a self-ignoring `.gitignore` there, so every contract file — the contract, the log, raw output, rendered previews — stays inside the project yet untracked. `--home` must be a strict subdirectory like `.autodev/run`, never `.autodev/` itself (its `.gitignore` would hide the constitution), and `start` refuses a contract directory inside the loop worktree:
 
 ```bash
-python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
+python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/run" init \
   --scenario development --editable src/ docs/ \
   --blueprint BLUEPRINT.json --asis BLUEPRINT-ASIS.json \
   --asbuilt docs/asbuilt.json --check-cmd "pytest -q"
 ```
 
-`init` copies the as-is and blueprint files into the contract directory, freezes their hashes, parses the element list and its dependencies into `depends` and `batches`, records which elements are new relative to the as-is diagrams (`elements_new`, refusing an empty list), renders `asis.html` and `blueprint.html` previews for the review pass, runs the regression check once as the recorded baseline, and prints the contract for the human to review in step 4. Both files must live outside the editable surface and be committed — either on the starting branch or inside the worktree's baseline commit — so the Loop worktree carries them.
+`init` copies the as-is and blueprint files into the contract directory, freezes their hashes, parses the element list and its dependencies into `depends` and `batches`, records which elements are new relative to the as-is diagrams (`elements_new`, refusing an empty list), renders `asis.html` and `blueprint.html` previews for the review pass, runs the regression check once as the recorded baseline, and prints the contract for the human to review in step 4. Both files must live outside the editable surface and be committed — either on the starting branch or inside the worktree's baseline commit — so the Loop worktree carries them. The baseline runs in the user's real checkout on purpose, so it measures the actual starting state; `init` records whatever the run left behind as `baseline.side_effects` and refuses outright if it touched a frozen path. Declare anything the check command writes with `--generated`: untracked files there never block an attempt and rollback sweeps them, but committing one is invalid — they are run artifacts, not deliverables.
 
 ## 4. Human review of the whole pass
 

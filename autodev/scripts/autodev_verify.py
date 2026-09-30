@@ -89,6 +89,15 @@ def in_editable(rel, editable):
     return False
 
 
+def inside(child, parent):
+    """True when child resolves to parent or a path inside it."""
+    child, parent = os.path.realpath(child), os.path.realpath(parent)
+    try:
+        return os.path.commonpath([child, parent]) == parent
+    except ValueError:
+        return False
+
+
 def load_spec(path):
     try:
         return render.load_diagram(path)
@@ -158,7 +167,7 @@ def load_constitution(repo, rel):
             law = json.load(f)
     except ValueError as e:
         die(f"constitution is not valid JSON: {e}")
-    unknown = set(law) - {"frozen", "guard_cmd", "budget"}
+    unknown = set(law) - {"frozen", "guard_cmd", "budget", "generated"}
     unknown |= {f"budget.{k}" for k in set(law.get("budget", {})) - {"default_minutes", "max_minutes", "reserve_minutes"}}
     if unknown:
         die(f"constitution has unknown keys: {sorted(unknown)}")
@@ -174,6 +183,10 @@ class Home:
 
     def ensure(self):
         os.makedirs(self.raw, exist_ok=True)
+        ignore = os.path.join(self.path, ".gitignore")
+        if not os.path.exists(ignore):
+            with open(ignore, "w") as f:
+                f.write("*\n")
 
     def load(self):
         if not os.path.exists(self.contract_path):
@@ -257,14 +270,20 @@ def check_frozen(contract, root):
     return changed
 
 
+def stray_files(root, generated):
+    return [line[3:] for line in git(root, "status", "--porcelain").splitlines()
+            if not in_editable(line[3:], generated)]
+
+
 def check_scope(contract, wt, best):
-    status = git(wt, "status", "--porcelain")
-    if status:
-        files = [line[3:] for line in status.splitlines()]
-        return None, f"worktree is not clean; commit the attempt first or git-ignore generated files: {files}"
+    stray = stray_files(wt, contract.get("generated", []))
+    if stray:
+        return None, None, ("worktree is not clean; commit the attempt first, or declare "
+                            f"run-artifact paths with init --generated: {stray}")
     changed = git(wt, "diff", "--name-only", best, "HEAD").splitlines()
     outside = [c for c in changed if not in_editable(c, contract["editable"])]
-    return outside, None
+    bundled = [c for c in changed if in_editable(c, contract.get("generated", []))]
+    return outside, bundled, None
 
 
 def rollback(wt, best):
@@ -276,6 +295,13 @@ def rollback(wt, best):
 
 def cmd_init(a):
     home = Home(a.home)
+    repo = os.path.abspath(a.repo)
+    git(repo, "rev-parse", "--is-inside-work-tree")
+    autodev_dir = os.path.join(repo, ".autodev")
+    if not inside(home.path, autodev_dir) or os.path.realpath(home.path) == os.path.realpath(autodev_dir):
+        die("--home must be a subdirectory of <repo>/.autodev, e.g. " +
+            os.path.join(repo, ".autodev", "run") +
+            " — autodev self-ignores it so its files stay inside the project, untracked")
     if os.path.exists(home.contract_path) and not a.renew:
         die("contract exists; use --renew after a new Clarify pass")
     renewed_from = None
@@ -288,8 +314,6 @@ def cmd_init(a):
         os.rename(home.contract_path, home.contract_path + f".{stamp}.bak")
         if os.path.exists(home.attempts_path):
             os.rename(home.attempts_path, home.attempts_path + f".{stamp}.bak")
-    repo = os.path.abspath(a.repo)
-    git(repo, "rev-parse", "--is-inside-work-tree")
     if a.scenario == "development":
         if a.test_cmd:
             die("use --check-cmd for development")
@@ -304,6 +328,7 @@ def cmd_init(a):
     law, law_rel = load_constitution(repo, a.constitution)
     if law:
         a.frozen = list(dict.fromkeys((a.frozen or []) + law.get("frozen", []) + [law_rel]))
+        a.generated = list(dict.fromkeys((a.generated or []) + law.get("generated", [])))
         budget = law.get("budget", {})
         if a.scenario == "optimization":
             if a.budget_minutes is None:
@@ -319,6 +344,7 @@ def cmd_init(a):
         "repo": repo,
         "branch_from": a.branch_from or git(repo, "rev-parse", "--abbrev-ref", "HEAD"),
         "editable": [norm(e) for e in a.editable],
+        "generated": [norm(g) for g in (a.generated or [])],
         "frozen_paths": [norm(f) for f in (a.frozen or [])],
         "frozen": hash_paths(repo, a.frozen or []),
         "test_cmd": a.test_cmd,
@@ -374,8 +400,13 @@ def cmd_init(a):
         for f in contract["frozen"]:
             if in_editable(f, [e]):
                 die(f"frozen file {f} lies inside editable path {e}")
+    for g in contract["generated"]:
+        for f in contract["frozen_paths"]:
+            if in_editable(f, [g]) or in_editable(g, [f]):
+                die(f"generated path {g} overlaps frozen path {f}")
     home.ensure()
     source = git(repo, "rev-parse", "HEAD")
+    status_before = git(repo, "status", "--porcelain").splitlines()
     if contract["guard_cmd"]:
         code, _, _, _ = run_command(contract["guard_cmd"], repo, home.raw_path("guard-baseline.log"), None)
         if code != 0:
@@ -426,6 +457,15 @@ def cmd_init(a):
                 die("the agreed tests already pass on the unchanged source; the reproduction test must fail "
                     "before the fix (see raw/baseline.log)")
             baseline["passed"] = False
+    drifted = check_frozen(contract, repo)
+    if drifted:
+        die(f"the agreed commands modified frozen files: {drifted}")
+    side = sorted(set(git(repo, "status", "--porcelain").splitlines()) - set(status_before))
+    if side:
+        baseline["side_effects"] = [line[3:] for line in side]
+        print("autodev: the agreed commands left changes in the user's checkout: "
+              f"{baseline['side_effects']}; clean or git-ignore them, and pass them as "
+              "--generated if the loop's commands also write there", file=sys.stderr)
     contract["baseline"] = baseline
     home.save(contract)
     print(json.dumps(contract, indent=2, ensure_ascii=False))
@@ -436,6 +476,9 @@ def cmd_start(a):
     c = home.load()
     wt = os.path.abspath(a.worktree)
     git(wt, "rev-parse", "--is-inside-work-tree")
+    if inside(home.path, wt):
+        die("the contract directory must live outside the loop worktree; "
+            "rollback runs git clean there")
     if os.path.realpath(git(wt, "rev-parse", "--show-toplevel")) == os.path.realpath(c["repo"]):
         die("worktree is the user's checkout; create a separate git worktree for Loop")
     if git(wt, "status", "--porcelain"):
@@ -475,7 +518,7 @@ def smoke(home, c):
         f.write("smoke\n")
     git(wt, "add", "-A")
     git(wt, "-c", "user.name=autodev", "-c", "user.email=autodev@local", "commit", "-q", "-m", "autodev smoke")
-    outside, err = check_scope(c, wt, best)
+    outside, _, err = check_scope(c, wt, best)
     rollback(wt, best)
     if err or not outside:
         die("smoke failed: out-of-scope file was not detected")
@@ -551,7 +594,7 @@ def cmd_attempt(a):
         unmet = sorted({d for e in claimed for d in c.get("depends", {}).get(e, [])} - done - set(claimed))
         if unmet:
             die(f"dependencies not yet realized: {unmet}; implement them first or claim them in this checkpoint")
-    outside, err = check_scope(c, wt, best)
+    outside, bundled, err = check_scope(c, wt, best)
     if err:
         die(err)
     record = {"n": n, "kind": "attempt", "commit": head, "note": a.note, "time": iso(utc_now()), "base": best}
@@ -579,6 +622,10 @@ def cmd_attempt(a):
         print(json.dumps(record, ensure_ascii=False))
         sys.exit(code)
 
+    if bundled:
+        finish("invalid", INVALID,
+               reason="files under generated paths are run artifacts, not deliverables",
+               files=bundled)
     if outside:
         finish("invalid", INVALID, reason="out-of-scope changes", files=outside)
     changed = check_frozen(c, wt)
@@ -670,7 +717,7 @@ def cmd_status(a):
     if wt and os.path.isdir(wt):
         out["head"] = git(wt, "rev-parse", "HEAD")
         out["head_is_best"] = out["head"] == c.get("best")
-        out["worktree_clean"] = not git(wt, "status", "--porcelain")
+        out["worktree_clean"] = not stray_files(wt, c.get("generated", []))
     out["next"] = next_step(c, out)
     print(json.dumps(out, indent=2))
 
@@ -712,7 +759,7 @@ def cmd_verify(a):
         die("run start first")
     if not c.get("test_cmd") and not c.get("guard_cmd"):
         die("no check command recorded for this contract")
-    if git(wt, "status", "--porcelain"):
+    if stray_files(wt, c.get("generated", [])):
         die("worktree is dirty; commit or clean before verify")
     head = git(wt, "rev-parse", "HEAD")
     if head != best:
@@ -897,7 +944,9 @@ def report_optimization(home, c, rows):
 def main():
     p = argparse.ArgumentParser(prog="autodev_verify.py", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--home", required=True, help="contract directory, outside the worktree")
+    p.add_argument("--home", required=True,
+                   help="contract directory; must be a subdirectory of <repo>/.autodev "
+                        "(self-ignored, untracked) and outside the loop worktree")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     i = sub.add_parser("init")
@@ -906,6 +955,9 @@ def main():
     i.add_argument("--branch-from")
     i.add_argument("--editable", nargs="+", required=True)
     i.add_argument("--frozen", nargs="+")
+    i.add_argument("--generated", nargs="+",
+                   help="run-artifact paths the agreed commands write; untracked files under them "
+                        "never block an attempt and are swept by rollback, but committing them is invalid")
     i.add_argument("--test-cmd")
     i.add_argument("--check-cmd")
     i.add_argument("--blueprint")

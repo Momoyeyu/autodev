@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -40,7 +41,7 @@ class Harness(unittest.TestCase):
         self.root = self.tmp.name
         self.repo = os.path.join(self.root, "repo")
         self.wt = os.path.join(self.root, "wt")
-        self.home = os.path.join(self.root, "home")
+        self.home = os.path.join(self.repo, ".autodev", "run")
         os.makedirs(self.repo)
         git(self.repo, "init", "-q")
         write(self.repo, ".gitignore", "__pycache__/\n")
@@ -355,6 +356,14 @@ class TestConstitution(Harness):
         r = self.init()
         self.assertEqual(r.returncode, 3)
         self.assertIn("guard", r.stderr)
+
+    def test_constitution_generated_inherited(self):
+        write(self.repo, ".autodev/constitution.json",
+              json.dumps({**self.law, "generated": ["artifacts"]}))
+        git(self.repo, "commit", "-qam", "generated paths")
+        r = self.init()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.contract()["generated"], ["artifacts"])
 
     def test_unknown_key_dies(self):
         write(self.repo, ".autodev/constitution.json", json.dumps({"forzen": ["legacy"]}))
@@ -871,6 +880,106 @@ class TestBlueprintOrder(Harness):
         self.assertIn("not realized", text)
         self.assertIn("Dependency graph", text)
         self.assertIn("<svg", text)
+
+
+class TestHygiene(Harness):
+    def init_with_home(self, home):
+        return sh(self.root, sys.executable, SCRIPT, "--home", home,
+                  "init", "--repo", self.repo, "--scenario", "optimization",
+                  "--editable", "src", "--frozen", "bench",
+                  "--test-cmd", "python3 bench/run.py", *self.budget, *self.init_extra)
+
+    def test_home_outside_autodev_dies(self):
+        for home in (os.path.join(self.repo, "contracts"),
+                     os.path.join(self.root, "home"),
+                     os.path.join(self.repo, ".autodev")):
+            r = self.init_with_home(home)
+            self.assertEqual(r.returncode, 3, home)
+            self.assertIn(".autodev", r.stderr)
+
+    def test_home_inside_worktree_dies_at_start(self):
+        git(self.repo, "worktree", "add", "-q", "-b", "autodev/t", self.wt, "HEAD")
+        self.assertEqual(self.init().returncode, 0)
+        home = os.path.join(self.wt, ".autodev", "run")
+        os.makedirs(home, exist_ok=True)
+        shutil.copy(os.path.join(self.home, "contract.json"),
+                    os.path.join(home, "contract.json"))
+        r = sh(self.root, sys.executable, SCRIPT, "--home", home,
+               "start", "--worktree", self.wt)
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("worktree", r.stderr)
+
+    def test_contract_files_are_self_ignored(self):
+        r = self.init()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        status = git(self.repo, "status", "--porcelain")
+        self.assertNotIn(".autodev", status)
+        self.assertTrue(os.path.exists(os.path.join(self.home, ".gitignore")))
+
+    def bench_writes_artifacts(self):
+        write(self.repo, "bench/run.py",
+              'import sys, os; sys.dont_write_bytecode = True\n'
+              'sys.path.insert(0, "src"); import impl\n'
+              'os.makedirs("artifacts", exist_ok=True)\n'
+              'open("artifacts/bench.log", "w").write("x")\n'
+              'print("p95=" + str(impl.N))\n')
+        git(self.repo, "commit", "-qam", "bench writes artifacts")
+
+    def test_baseline_side_effects_recorded(self):
+        self.bench_writes_artifacts()
+        r = self.init()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("artifacts/", self.contract()["baseline"]["side_effects"])
+        self.assertIn("left changes", r.stderr)
+
+    def test_baseline_mutating_frozen_dies(self):
+        write(self.repo, "bench/run.py",
+              'import sys; sys.path.insert(0, "src"); import impl\n'
+              'open("bench/run.py", "a").write("# touched\\n")\n'
+              'print("p95=" + str(impl.N))\n')
+        git(self.repo, "commit", "-qam", "self-mutating bench")
+        r = self.init()
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("frozen", r.stderr)
+
+    def test_generated_paths_are_not_dirty(self):
+        self.bench_writes_artifacts()
+        r = self.init("--generated", "artifacts")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.start()
+        code, rec = self.attempt({"src/impl.py": "N=170\n"})
+        self.assertEqual((code, rec["verdict"]), (0, "accepted"))
+        self.assertTrue(json.loads(self.run_v("status").stdout)["worktree_clean"])
+        write(self.wt, "src/impl.py", "N=150\n")
+        git(self.wt, "add", "src/impl.py")
+        git(self.wt, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x")
+        code, rec = self.attempt()
+        self.assertEqual((code, rec["verdict"]), (0, "accepted"))
+
+    def test_undeclared_artifacts_block_with_hint(self):
+        self.bench_writes_artifacts()
+        self.ready()
+        self.attempt({"src/impl.py": "N=170\n"})
+        write(self.wt, "src/impl.py", "N=160\n")
+        git(self.wt, "add", "src/impl.py")
+        git(self.wt, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x")
+        r = self.run_v("attempt", "--route", "x")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("--generated", r.stderr)
+
+    def test_committed_generated_files_are_invalid(self):
+        self.ready("--generated", "artifacts")
+        code, rec = self.attempt({"src/impl.py": "N=150\n", "artifacts/out.txt": "x\n"})
+        self.assertEqual((code, rec["verdict"]), (2, "invalid"))
+        self.assertIn("artifacts/out.txt", rec["files"])
+        self.assertIn("artifact", rec["reason"])
+        self.assertEqual(self.read("src/impl.py"), "N=200\n")
+        self.assertTrue(self.clean())
+
+    def test_generated_overlapping_frozen_dies(self):
+        r = self.init("--generated", "bench/out")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("overlap", r.stderr)
 
 
 if __name__ == "__main__":

@@ -29,19 +29,20 @@ Inspect the relevant code and make the proposed changes and preserved behavior e
 | Boundary | Propose for the human's confirmation |
 |---|---|
 | Editable files | Explicit paths the fix may change; the agreed test files stay outside them |
+| Generated paths | Run-artifact paths the test suite writes (reports, caches, regenerated fixtures); declared with `--generated` so they are never mistaken for the fix |
 | Existing workflows | Which flows are affected? May their outputs or side effects change? Which behavior must remain compatible? |
 
 A bug report is not unrestricted permission to redesign the surrounding code.
 
-Write the proposal as a contract with the judge script, from the user's checkout, into a directory outside the repository (pass `--home` as an absolute path; every later command uses the same value):
+Write the proposal as a contract with the judge script, from the user's checkout, into a subdirectory of `.autodev/` (pass `--home` as an absolute path; every later command uses the same value). `init` writes a self-ignoring `.gitignore` there, so every contract file — the contract, the log, raw output — stays inside the project yet untracked. `--home` must be a strict subdirectory like `.autodev/run`, never `.autodev/` itself (its `.gitignore` would hide the constitution), and `start` refuses a contract directory inside the loop worktree:
 
 ```bash
-python3 <skill>/scripts/autodev_verify.py --home ../<repo>.autodev init \
+python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/run" init \
   --scenario bugfix --editable src/ --frozen tests/ \
   --test-cmd "pytest -q tests/"
 ```
 
-`--editable` is the file-level form of the permitted impact; `--frozen` is the agreed test set, which Loop may not edit. `init` runs the tests once more to record the baseline and its raw output and prints the contract for the human to review in step 4. This run is also the negative control: `init` refuses a test set that passes on the unchanged source, because a target that cannot fail before the fix proves nothing after it.
+`--editable` is the file-level form of the permitted impact; `--frozen` is the agreed test set, which Loop may not edit. `init` runs the tests once more to record the baseline and its raw output and prints the contract for the human to review in step 4. This run is also the negative control: `init` refuses a test set that passes on the unchanged source, because a target that cannot fail before the fix proves nothing after it. The baseline runs in the user's real checkout on purpose, so it measures the actual starting state; `init` records whatever the run left behind as `baseline.side_effects` and refuses outright if it touched a frozen path. Declare anything the suite writes with `--generated`: untracked files there never block an attempt and rollback sweeps them, but committing one is invalid — they are run artifacts, not deliverables.
 
 ## 4. Human review of the whole pass
 

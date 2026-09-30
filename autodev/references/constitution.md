@@ -13,7 +13,8 @@ Read when the repository has an `.autodev/` directory, or when the human wants r
 {
   "frozen": ["migrations/", ".github/"],
   "guard_cmd": "pytest -q",
-  "budget": {"default_minutes": 30, "max_minutes": 120, "reserve_minutes": 5}
+  "budget": {"default_minutes": 30, "max_minutes": 120, "reserve_minutes": 5},
+  "generated": ["artifacts/", "build/"]
 }
 ```
 
@@ -23,6 +24,7 @@ Read when the repository has an `.autodev/` directory, or when the human wants r
 | `guard_cmd` | Must pass on the unchanged source, then runs before the agreed command in every `attempt` and again in `verify`. A failing guard makes the attempt invalid and rolls it back. |
 | `budget.default_minutes`, `budget.reserve_minutes` | Used for optimization rounds that do not pass `--budget-minutes` or `--reserve-minutes`. Feature and bug-fix rounds stay untimed. |
 | `budget.max_minutes` | Any round asking for a larger budget is refused. |
+| `generated` | Run-artifact paths the agreed commands write — build output, caches, generated reports. Untracked files under them never block an attempt and rollback sweeps them; committing one is invalid. Must not overlap `frozen`. |
 
 Unknown keys are refused, so a misspelled rule fails loudly instead of silently not applying. `init` records the constitution's path and hash in the contract and freezes the file itself for the whole round. Commit the constitution before Loop: the worktree is created from a commit, and `start` refuses a worktree whose frozen files, the constitution included, differ from what `init` recorded.
 
