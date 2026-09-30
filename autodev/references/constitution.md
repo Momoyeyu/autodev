@@ -6,8 +6,9 @@ Read when the repository has an `.autodev/` directory, or when the human wants r
 
 | File | Read by | Content |
 |---|---|---|
-| `.autodev/constitution.json` | the judge, at `init` | mechanical rules, below |
-| `.autodev/principles.md` | you, at the start of Clarify | optional prose: coding conventions, architectural boundaries, review expectations |
+| `.autodev/constitution.json` | the judge, at `init` and re-checked every attempt | mechanical rules, below |
+
+Everything under `.autodev/` is local to this clone: `init` writes the directory into `.git/info/exclude`, so `git status` stays clean and collaborators who do not use autodev see nothing. Prose conventions belong in the project's `AGENTS.md`, not here — `.autodev/` holds only machine-read config and run evidence.
 
 ```json
 {
@@ -26,20 +27,16 @@ Read when the repository has an `.autodev/` directory, or when the human wants r
 | `budget.max_minutes` | Any round asking for a larger budget is refused. |
 | `generated` | Run-artifact paths the agreed commands write — build output, caches, generated reports. Untracked files under them never block an attempt and rollback sweeps them; committing one is invalid. Must not overlap `frozen`. |
 
-Unknown keys are refused, so a misspelled rule fails loudly instead of silently not applying. `init` records the constitution's path and hash in the contract and freezes the file itself for the whole round. Commit the constitution before Loop: the worktree is created from a commit, and `start` refuses a worktree whose frozen files, the constitution included, differ from what `init` recorded.
+Unknown keys are refused, so a misspelled rule fails loudly instead of silently not applying. `init` records the constitution's repo-side path and SHA-256 in the contract; `start` and every `attempt` re-hash that same file — editing it mid-round invalidates the attempt and `verify` refuses, so the rules cannot be amended silently under a running loop. The file does not need to be committed: the judge reads it in the original checkout, never in the worktree. To share rules with a team, `git add -f` the file deliberately; that is an opt-in, not a requirement.
 
 ## Precedence
 
-The constitution is a floor. A round may tighten it — freeze more, grant a smaller budget — but never loosen it. Loosening means amending the constitution: the human edits and commits the file outside any Loop, and the next round runs `init` against the new version. Do not amend it to unblock the current round.
+The constitution is a floor. A round may tighten it — freeze more, grant a smaller budget — but never loosen it. Loosening means amending the constitution: the human edits the file outside any Loop, and the next round runs `init` against the new version. Do not amend it to unblock the current round.
 
 ## Choosing the guard
 
 The guard is what must hold at every commit whatever the scenario: the build, the linter, or the existing suite. It can only invalidate an attempt, never accept one, so it adds no second target: optimization still has one score, and the guard is a validity condition like a crash. Keep it fast, because it runs on every attempt inside the time budget.
 
-## Principles
-
-Read `principles.md` before drafting the Clarify artifact and apply what bears on the task. When the proposed blueprint, tests, or limits depend on a principle, name it in the Clarify review so the human sees why. The judge does not check principles; they are the part of the constitution that stays prose.
-
 ## Growing a constitution
 
-Do not create one unasked. At Handoff, if a constraint came up again that a previous round also had to agree — a path that must never change, a check that must never break, a budget ceiling — propose adding it to the constitution. The human decides and commits.
+Do not create one unasked. At Handoff, if a constraint came up again that a previous round also had to agree — a path that must never change, a check that must never break, a budget ceiling — propose adding it to the constitution. The human decides and saves.

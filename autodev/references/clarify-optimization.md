@@ -38,10 +38,10 @@ This is the original baseline for the handoff chart. Later improvements must not
 
 Reuse values already supplied by the human, but do not silently invent missing permissions or an unlimited budget. State the proposal relative to the measured starting point.
 
-Write the proposal as a contract with the judge script, from the user's checkout, into a subdirectory of `.autodev/` (pass `--home` as an absolute path; every later command uses the same value). `init` writes a self-ignoring `.gitignore` there, so every contract file — the contract, the log, raw output — stays inside the project yet untracked. `--home` must be a strict subdirectory like `.autodev/run`, never `.autodev/` itself (its `.gitignore` would hide the constitution), and `start` refuses a contract directory inside the loop worktree:
+Write the proposal as a contract with the judge script, from the user's checkout, into a run directory under `.autodev/runs/` (pass `--home` as an absolute path; every later command uses the same value). `init` adds `.autodev/` to the clone's `.git/info/exclude`, so every autodev file — contract, log, raw output, the constitution itself — stays inside the project yet never appears in `git status` or shared history. `start` refuses a contract directory inside the loop worktree:
 
 ```bash
-python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/run" init \
+python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/runs/<task>" init \
   --scenario optimization --editable src/api \
   --frozen bench/ --test-cmd "python bench/run.py" \
   --score-regex "p95=([0-9.]+)" --unit ms --direction lower \

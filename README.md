@@ -118,7 +118,7 @@ Some rules hold for every task in a project: paths that must never change, a che
 }
 ```
 
-The constitution is a floor. A round may freeze more or grant less time, but never loosen it; loosening means the human amends and commits the file. The guard runs before every attempt in every scenario; a failing guard invalidates the attempt, so an optimization cannot trade correctness for speed. An optional `.autodev/principles.md` carries prose conventions the agent reads during Clarify.
+The constitution is a floor. A round may freeze more or grant less time, but never loosen it; loosening means the human amends the file. The guard runs before every attempt in every scenario; a failing guard invalidates the attempt, so an optimization cannot trade correctness for speed. The file is local to the clone — `init` adds `.autodev/` to `.git/info/exclude`, and the judge re-hashes it every attempt rather than requiring it in the worktree. Sharing it with a team is an explicit `git add -f`, never a default. Prose conventions belong in the project's `AGENTS.md`.
 
 ## Taking over a running loop
 

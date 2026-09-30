@@ -98,6 +98,21 @@ def inside(child, parent):
         return False
 
 
+def exclude_autodev(repo):
+    git_dir = git(repo, "rev-parse", "--absolute-git-dir")
+    path = os.path.join(git_dir, "info", "exclude")
+    content = ""
+    if os.path.exists(path):
+        with open(path) as f:
+            content = f.read()
+    if ".autodev/" not in [l.strip() for l in content.splitlines()]:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a") as f:
+            if content and not content.endswith("\n"):
+                f.write("\n")
+            f.write(".autodev/\n")
+
+
 def load_spec(path):
     try:
         return render.load_diagram(path)
@@ -183,10 +198,6 @@ class Home:
 
     def ensure(self):
         os.makedirs(self.raw, exist_ok=True)
-        ignore = os.path.join(self.path, ".gitignore")
-        if not os.path.exists(ignore):
-            with open(ignore, "w") as f:
-                f.write("*\n")
 
     def load(self):
         if not os.path.exists(self.contract_path):
@@ -263,6 +274,16 @@ def meets_target(contract, score):
     return score >= t if inc else score > t
 
 
+def check_constitution(contract):
+    law = contract.get("constitution")
+    if not law:
+        return None
+    path = os.path.join(contract["repo"], law["path"])
+    if not os.path.isfile(path) or sha256_file(path) != law["sha256"]:
+        return law["path"]
+    return None
+
+
 def check_frozen(contract, root):
     current = hash_paths(root, contract["frozen_paths"])
     recorded = contract["frozen"]
@@ -297,11 +318,11 @@ def cmd_init(a):
     home = Home(a.home)
     repo = os.path.abspath(a.repo)
     git(repo, "rev-parse", "--is-inside-work-tree")
-    autodev_dir = os.path.join(repo, ".autodev")
-    if not inside(home.path, autodev_dir) or os.path.realpath(home.path) == os.path.realpath(autodev_dir):
-        die("--home must be a subdirectory of <repo>/.autodev, e.g. " +
-            os.path.join(repo, ".autodev", "run") +
-            " — autodev self-ignores it so its files stay inside the project, untracked")
+    runs_dir = os.path.join(repo, ".autodev", "runs")
+    if not inside(home.path, runs_dir) or os.path.realpath(home.path) == os.path.realpath(runs_dir):
+        die("--home must be a run directory under <repo>/.autodev/runs/, e.g. " +
+            os.path.join(runs_dir, "task"))
+    exclude_autodev(repo)
     if os.path.exists(home.contract_path) and not a.renew:
         die("contract exists; use --renew after a new Clarify pass")
     renewed_from = None
@@ -327,7 +348,7 @@ def cmd_init(a):
             die("--frozen is required")
     law, law_rel = load_constitution(repo, a.constitution)
     if law:
-        a.frozen = list(dict.fromkeys((a.frozen or []) + law.get("frozen", []) + [law_rel]))
+        a.frozen = list(dict.fromkeys((a.frozen or []) + law.get("frozen", [])))
         a.generated = list(dict.fromkeys((a.generated or []) + law.get("generated", [])))
         budget = law.get("budget", {})
         if a.scenario == "optimization":
@@ -479,6 +500,8 @@ def cmd_start(a):
     if inside(home.path, wt):
         die("the contract directory must live outside the loop worktree; "
             "rollback runs git clean there")
+    if check_constitution(c):
+        die("the constitution changed since init; a changed agreement means a new Clarify pass")
     if os.path.realpath(git(wt, "rev-parse", "--show-toplevel")) == os.path.realpath(c["repo"]):
         die("worktree is the user's checkout; create a separate git worktree for Loop")
     if git(wt, "status", "--porcelain"):
@@ -628,6 +651,9 @@ def cmd_attempt(a):
                files=bundled)
     if outside:
         finish("invalid", INVALID, reason="out-of-scope changes", files=outside)
+    drifted = check_constitution(c)
+    if drifted:
+        finish("invalid", INVALID, reason="constitution changed since init", files=[drifted])
     changed = check_frozen(c, wt)
     if changed:
         finish("invalid", INVALID, reason="frozen files changed", files=changed)
@@ -761,6 +787,8 @@ def cmd_verify(a):
         die("no check command recorded for this contract")
     if stray_files(wt, c.get("generated", [])):
         die("worktree is dirty; commit or clean before verify")
+    if check_constitution(c):
+        die("the constitution changed since init; a changed agreement means a new Clarify pass")
     head = git(wt, "rev-parse", "HEAD")
     if head != best:
         die("HEAD differs from the retained best; git reset --hard to best before verify")
@@ -945,8 +973,8 @@ def main():
     p = argparse.ArgumentParser(prog="autodev_verify.py", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--home", required=True,
-                   help="contract directory; must be a subdirectory of <repo>/.autodev "
-                        "(self-ignored, untracked) and outside the loop worktree")
+                   help="contract directory; a run dir under <repo>/.autodev/runs/ "
+                        "(local-only via .git/info/exclude) and outside the loop worktree")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     i = sub.add_parser("init")
