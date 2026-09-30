@@ -21,7 +21,7 @@ Loop runs in a **separate git worktree on a dedicated branch**, created when Loo
 4. Prepare the runtime in the worktree yourself (dependencies, `.env`, local data). Then bind the judge to the worktree: `python3 <skill>/scripts/autodev_verify.py --home <contract dir> start --worktree <path>`. It records `best = HEAD`, starts the time budget, and runs a smoke test that deliberately edits a frozen file and adds an out-of-scope file, requiring both to be rejected and the rollback to leave no residue. Do not begin attempts if the smoke test fails.
 5. Commit every attempt or checkpoint on the loop branch before evaluating it. Write logs and raw outputs to the agreed artifact location — the contract directory or a declared generated path — never into the commit. Files under a `--generated` path do not block an attempt while untracked and rollback sweeps them, but an attempt whose commit contains one is invalid: generated output is never a deliverable.
 
-Build products the agreed commands leave under a declared generated path are acceptable; the worktree is removed after Handoff. Prefer idempotent checks so a previous attempt's external side effects do not distort the next measurement.
+Build products the agreed commands leave under a declared generated path are acceptable; the worktree is removed after Handoff. Prefer idempotent checks so a previous attempt's external side effects do not distort the next measurement. Never write under `.autodev/` inside the worktree: it is invisible to `git status` there and survives `git clean -fd`, so it could carry state between attempts undetected — the judge refuses to start or evaluate a worktree that has one.
 
 ## Take over a running loop
 

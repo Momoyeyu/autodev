@@ -374,8 +374,16 @@ class TestConstitution(Harness):
               json.dumps({**self.law, "frozen": ["legacy", "more"]}))
         code, rec = self.attempt({"src/impl.py": "N=170\n"})
         self.assertEqual((code, rec["verdict"]), (2, "invalid"))
-        self.assertIn("constitution", rec["reason"])
+        self.assertIn("modified", rec["reason"])
         self.assertEqual(self.read("src/impl.py"), "N=200\n")
+
+    def test_verify_refuses_constitution_drift(self):
+        self.ready()
+        write(self.repo, ".autodev/constitution.json",
+              json.dumps({**self.law, "frozen": ["legacy", "more"]}))
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("modified", r.stderr)
 
     def test_constitution_generated_inherited(self):
         write(self.repo, ".autodev/constitution.json",
@@ -936,10 +944,30 @@ class TestHygiene(Harness):
         self.assertEqual(r.returncode, 0, r.stderr)
         git_dir = git(self.repo, "rev-parse", "--absolute-git-dir")
         with open(os.path.join(git_dir, "info", "exclude")) as f:
-            self.assertIn(".autodev/", f.read().splitlines())
+            self.assertIn("/.autodev/", f.read().splitlines())
         status = git(self.repo, "status", "--porcelain")
         self.assertNotIn(".autodev", status)
-        self.assertFalse(os.path.exists(os.path.join(self.home, ".gitignore")))
+        write(self.repo, "sub/.autodev/marker", "x\n")
+        self.assertIn("sub", git(self.repo, "status", "--porcelain"))
+
+    def test_worktree_autodev_is_refused(self):
+        self.ready()
+        write(self.wt, ".autodev/stash.txt", "x\n")
+        self.assertFalse(git(self.wt, "status", "--porcelain"))
+        self.commit({"src/impl.py": "N=150\n"})
+        r = self.run_v("attempt", "--route", "x")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn(".autodev", r.stderr)
+
+    def test_init_in_linked_worktree_dies(self):
+        git(self.repo, "worktree", "add", "-q", "-b", "autodev/other", self.wt, "HEAD")
+        home = os.path.join(self.wt, ".autodev", "runs", "t")
+        r = sh(self.root, sys.executable, SCRIPT, "--home", home,
+               "init", "--repo", self.wt, "--scenario", "optimization",
+               "--editable", "src", "--frozen", "bench",
+               "--test-cmd", "python3 bench/run.py", *self.budget, *self.init_extra)
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("worktree", r.stderr)
 
     def bench_writes_artifacts(self):
         write(self.repo, "bench/run.py",

@@ -105,12 +105,13 @@ def exclude_autodev(repo):
     if os.path.exists(path):
         with open(path) as f:
             content = f.read()
-    if ".autodev/" not in [l.strip() for l in content.splitlines()]:
+    covered = [l.strip().lstrip("/") for l in content.splitlines()]
+    if ".autodev/" not in covered and ".autodev" not in covered:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "a") as f:
             if content and not content.endswith("\n"):
                 f.write("\n")
-            f.write(".autodev/\n")
+            f.write("/.autodev/\n")
 
 
 def load_spec(path):
@@ -279,8 +280,10 @@ def check_constitution(contract):
     if not law:
         return None
     path = os.path.join(contract["repo"], law["path"])
-    if not os.path.isfile(path) or sha256_file(path) != law["sha256"]:
-        return law["path"]
+    if not os.path.isfile(path):
+        return law["path"], "deleted"
+    if sha256_file(path) != law["sha256"]:
+        return law["path"], "modified"
     return None
 
 
@@ -296,7 +299,17 @@ def stray_files(root, generated):
             if not in_editable(line[3:], generated)]
 
 
+def hidden_autodev(root):
+    out = git(root, "status", "--porcelain", "--ignored", "--", ".autodev")
+    return [line[3:] for line in out.splitlines() if line.startswith("!!")]
+
+
 def check_scope(contract, wt, best):
+    hidden = hidden_autodev(wt)
+    if hidden:
+        return None, None, ("ignored files under the worktree's .autodev/ are invisible to git "
+                            "and survive rollback; remove them before attempting: "
+                            f"{hidden}")
     stray = stray_files(wt, contract.get("generated", []))
     if stray:
         return None, None, ("worktree is not clean; commit the attempt first, or declare "
@@ -318,6 +331,9 @@ def cmd_init(a):
     home = Home(a.home)
     repo = os.path.abspath(a.repo)
     git(repo, "rev-parse", "--is-inside-work-tree")
+    if os.path.realpath(git(repo, "rev-parse", "--git-dir")) != \
+            os.path.realpath(git(repo, "rev-parse", "--git-common-dir")):
+        die("run init from the repository's main checkout, not a linked worktree")
     runs_dir = os.path.join(repo, ".autodev", "runs")
     if not inside(home.path, runs_dir) or os.path.realpath(home.path) == os.path.realpath(runs_dir):
         die("--home must be a run directory under <repo>/.autodev/runs/, e.g. " +
@@ -500,11 +516,12 @@ def cmd_start(a):
     if inside(home.path, wt):
         die("the contract directory must live outside the loop worktree; "
             "rollback runs git clean there")
-    if check_constitution(c):
-        die("the constitution changed since init; a changed agreement means a new Clarify pass")
+    drift = check_constitution(c)
+    if drift:
+        die(f"the constitution was {drift[1]} since init; a changed agreement means a new Clarify pass")
     if os.path.realpath(git(wt, "rev-parse", "--show-toplevel")) == os.path.realpath(c["repo"]):
         die("worktree is the user's checkout; create a separate git worktree for Loop")
-    if git(wt, "status", "--porcelain"):
+    if git(wt, "status", "--porcelain") or hidden_autodev(wt):
         die("worktree must be clean at start; commit the baseline state first")
     changed = check_frozen(c, wt)
     if changed:
@@ -651,9 +668,9 @@ def cmd_attempt(a):
                files=bundled)
     if outside:
         finish("invalid", INVALID, reason="out-of-scope changes", files=outside)
-    drifted = check_constitution(c)
-    if drifted:
-        finish("invalid", INVALID, reason="constitution changed since init", files=[drifted])
+    drift = check_constitution(c)
+    if drift:
+        finish("invalid", INVALID, reason=f"constitution {drift[1]} since init", files=[drift[0]])
     changed = check_frozen(c, wt)
     if changed:
         finish("invalid", INVALID, reason="frozen files changed", files=changed)
@@ -785,10 +802,11 @@ def cmd_verify(a):
         die("run start first")
     if not c.get("test_cmd") and not c.get("guard_cmd"):
         die("no check command recorded for this contract")
-    if stray_files(wt, c.get("generated", [])):
+    if stray_files(wt, c.get("generated", [])) or hidden_autodev(wt):
         die("worktree is dirty; commit or clean before verify")
-    if check_constitution(c):
-        die("the constitution changed since init; a changed agreement means a new Clarify pass")
+    drift = check_constitution(c)
+    if drift:
+        die(f"the constitution was {drift[1]} since init; a changed agreement means a new Clarify pass")
     head = git(wt, "rev-parse", "HEAD")
     if head != best:
         die("HEAD differs from the retained best; git reset --hard to best before verify")
