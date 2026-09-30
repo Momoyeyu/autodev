@@ -30,6 +30,22 @@ Approval of a description or a plan is not a substitute for confirming the prepa
 
 Keep test changes tied to the intended behavior. An obsolete expectation may be removed or revised; an inconvenient failure alone is not a reason to discard it. Preserve still-relevant coverage.
 
+## The contract
+
+Write the proposal as a contract with the judge script, run from the user's checkout (`--repo`, default `.`):
+
+```bash
+python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/runs/<task>" init --scenario <scenario> ...
+```
+
+`--home` must be a run directory under `<repo>/.autodev/runs/`, as an absolute path reused by every later command, and outside the loop worktree — `start` refuses one inside it. `init` adds `/.autodev/` to the clone's `.git/info/exclude`, so every autodev file — contract, logs, raw output, rendered previews, the constitution itself — stays inside the project yet never appears in `git status` or shared history. Run `init` from the repository's main checkout: in a linked worktree the exclude entry would land in the wrong git directory, so `init` refuses.
+
+The baseline runs in the user's real checkout on purpose, so it measures the actual starting state including uncommitted changes; `init` records whatever the run left behind as `baseline.side_effects` and refuses outright if it touched a frozen path.
+
+Run-artifact paths the agreed commands write are declared with `init --generated` (or the constitution's `generated` key): untracked files under them never block an attempt and rollback sweeps them, but committing one is invalid — run artifacts are never deliverables. A generated path must not overlap a frozen one.
+
+`init` prints the contract for the human's review, and its fields drive every Loop verdict — nothing agreed here depends on the agent remembering it. The contract also records the starting branch (`--branch-from` overrides) so Handoff can merge back. A changed agreement means `init --renew`, which archives the previous contract.
+
 ## Ready for Loop
 
 After approval, record:

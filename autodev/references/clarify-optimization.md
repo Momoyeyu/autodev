@@ -34,11 +34,11 @@ This is the original baseline for the handoff chart. Later improvements must not
 | Optimization target | Threshold on the one score and whether equality counts, taken from how the human phrased it; reaching it permits early exit |
 | Editable files | Explicit implementation paths the agent may change; benchmark, inputs, weights, and scoring logic remain outside this surface |
 | Time budget | A mandatory wall-clock limit (`--budget-minutes`); `--reserve-minutes` marks its tail, during which `attempt` refuses new runs so `verify` and Handoff fit inside the budget |
-| Generated paths | Run-artifact paths the benchmark or build writes (build output, caches, reports); declared with `--generated` so they are never mistaken for deliverables |
+| Generated paths | Run-artifact paths the benchmark or build writes (build output, caches, reports); declare with `--generated` |
 
 Reuse values already supplied by the human, but do not silently invent missing permissions or an unlimited budget. State the proposal relative to the measured starting point.
 
-Write the proposal as a contract with the judge script, from the user's checkout, into a run directory under `.autodev/runs/` (pass `--home` as an absolute path; every later command uses the same value). `init` adds `.autodev/` to the clone's `.git/info/exclude`, so every autodev file — contract, log, raw output, the constitution itself — stays inside the project yet never appears in `git status` or shared history. `start` refuses a contract directory inside the loop worktree:
+Write the proposal as a contract with `init`, under the shared [contract rules](clarify.md#the-contract):
 
 ```bash
 python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/runs/<task>" init \
@@ -48,7 +48,7 @@ python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/runs/<task>" ini
   --delta-pct 5 --target 200 --exclusive --budget-minutes 20 --reserve-minutes 3
 ```
 
-`init` runs the benchmark once more to record the baseline and its raw output, converts `δ`, hashes the frozen paths, and prints the contract. It then reruns the benchmark on the same unchanged source as a negative control and records the gap as `noise`: an unchanged candidate must never look like an improvement, so `init` refuses a `δ` that is not larger than that gap. Raise `δ` or stabilise the benchmark, and show the noise in the review. The baseline runs in the user's real checkout on purpose, so it measures the actual starting state; `init` records whatever the run left behind as `baseline.side_effects` and refuses outright if it touched a frozen path. Declare anything the benchmark or build writes with `--generated`: untracked files there never block an attempt and rollback sweeps them, but committing one is invalid — they are run artifacts, not deliverables. That printed contract is what the human reviews in step 4; the same fields drive every Loop verdict, so nothing agreed here depends on the agent remembering it.
+`init` runs the benchmark once more to record the baseline and its raw output, converts `δ`, and hashes the frozen paths. It then reruns the benchmark on the same unchanged source as a negative control and records the gap as `noise`: an unchanged candidate must never look like an improvement, so `init` refuses a `δ` that is not larger than that gap. Raise `δ` or stabilise the benchmark, and show the noise in the review.
 
 Bind both Loop comparisons to the approved `direction`. `best` is the retained best verified score and starts at baseline; `δ` is the improvement margin:
 
