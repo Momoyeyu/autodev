@@ -521,8 +521,11 @@ def cmd_start(a):
         die(f"the constitution was {drift[1]} since init; a changed agreement means a new Clarify pass")
     if os.path.realpath(git(wt, "rev-parse", "--show-toplevel")) == os.path.realpath(c["repo"]):
         die("worktree is the user's checkout; create a separate git worktree for Loop")
-    if git(wt, "status", "--porcelain") or hidden_autodev(wt):
+    if git(wt, "status", "--porcelain"):
         die("worktree must be clean at start; commit the baseline state first")
+    hidden = hidden_autodev(wt)
+    if hidden:
+        die(f"ignored files under .autodev/ in the worktree must be deleted, e.g. git clean -fdx: {hidden}")
     changed = check_frozen(c, wt)
     if changed:
         die(f"frozen files differ from Clarify in the worktree: {changed}")
@@ -760,7 +763,10 @@ def cmd_status(a):
     if wt and os.path.isdir(wt):
         out["head"] = git(wt, "rev-parse", "HEAD")
         out["head_is_best"] = out["head"] == c.get("best")
-        out["worktree_clean"] = not stray_files(wt, c.get("generated", []))
+        hidden = hidden_autodev(wt)
+        out["worktree_clean"] = not stray_files(wt, c.get("generated", [])) and not hidden
+        if hidden:
+            out["hidden_ignored"] = hidden
     out["next"] = next_step(c, out)
     print(json.dumps(out, indent=2))
 
@@ -774,6 +780,9 @@ def next_step(c, s):
         return "create the loop worktree and run start"
     if "head" not in s:
         return f"worktree {c['worktree']} is missing; restore it at best {c.get('best')} or run a new Clarify"
+    if s.get("hidden_ignored"):
+        return ("ignored files under .autodev/ in the worktree are invisible to git and survive "
+                "rollback; delete them (git clean -fdx)")
     if not s["worktree_clean"]:
         return "uncommitted changes in the worktree: commit them and run attempt, or discard them"
     if not s["head_is_best"]:
@@ -802,8 +811,11 @@ def cmd_verify(a):
         die("run start first")
     if not c.get("test_cmd") and not c.get("guard_cmd"):
         die("no check command recorded for this contract")
-    if stray_files(wt, c.get("generated", [])) or hidden_autodev(wt):
+    if stray_files(wt, c.get("generated", [])):
         die("worktree is dirty; commit or clean before verify")
+    hidden = hidden_autodev(wt)
+    if hidden:
+        die(f"ignored files under .autodev/ in the worktree must be deleted, e.g. git clean -fdx: {hidden}")
     drift = check_constitution(c)
     if drift:
         die(f"the constitution was {drift[1]} since init; a changed agreement means a new Clarify pass")

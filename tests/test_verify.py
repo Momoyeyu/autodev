@@ -958,6 +958,13 @@ class TestHygiene(Harness):
         r = self.run_v("attempt", "--route", "x")
         self.assertEqual(r.returncode, 3)
         self.assertIn(".autodev", r.stderr)
+        st = json.loads(self.run_v("status").stdout)
+        self.assertFalse(st["worktree_clean"])
+        self.assertEqual(st["hidden_ignored"], [".autodev/"])
+        self.assertIn("delete", st["next"])
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn(".autodev/", r.stderr)
 
     def test_init_in_linked_worktree_dies(self):
         git(self.repo, "worktree", "add", "-q", "-b", "autodev/other", self.wt, "HEAD")
