@@ -18,7 +18,7 @@ npx skills add Momoyeyu/autodev -g
 
 ## 实战案例
 
-两个用本 skill 跑出的真实优化记录，基于实测数据、使用 skill 的 `report_chart` 绘图函数绘制。
+两个用本 skill 跑出的真实优化记录，基于实测数据、使用 skill 的 `autodev_render.py` 绘图函数绘制。
 
 **MoE Transformer —— 英译法翻译模型（PyTorch，单卡 RTX 4090D）。** 目标：BLEU ≥ 28.87（dense 参照值），baseline 24.97，只允许修改 `src/train.py`，每次运行固定墙钟预算。benchmark 在未改动的源码上复跑，同一份代码两次成绩相差 0.62，改进余量因此定为 0.8。31 次尝试、30 个思路标签、4 次被保留——`top1-n4`、`batch-up`、`dropout-down`、`cosine-sched`——达到 31.25；verify 复测 30.91。其余思路（torch.compile、EMA、fused AdamW、容量与层数变体等）测量全部低于余量，逐一回滚。
 

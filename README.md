@@ -18,7 +18,7 @@ For **feature development**, **bug fixes**, and **performance optimization**. It
 
 ## In practice
 
-Two real optimization histories, drawn from recorded measurements using the skill's `report_chart` renderer.
+Two real optimization histories, drawn from recorded measurements using the skill's `autodev_render.py` chart renderer.
 
 **MoE Transformer — English→French translation (PyTorch, single RTX 4090D).** Target: BLEU ≥ 28.87 (the dense reference), baseline 24.97, only `src/train.py` editable, a fixed wall-clock budget per run. Re-running the benchmark on the unchanged source moved the score by 0.62, so the improvement margin was set at 0.8. Thirty-one attempts, thirty named routes, four retained — `top1-n4`, `batch-up`, `dropout-down`, `cosine-sched` — reached 31.25; the verify re-run scored 30.91. The other routes (torch.compile, EMA, fused AdamW, capacity and depth variants…) all measured under the margin and were rolled back.
 
