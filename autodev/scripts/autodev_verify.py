@@ -221,6 +221,7 @@ class Home:
 
     def save(self, contract):
         self.ensure()
+        contract["agreement_sha"] = agreement_sha(contract)
         with open(self.contract_path, "w") as f:
             json.dump(contract, f, indent=2, ensure_ascii=False)
             f.write("\n")
@@ -525,7 +526,6 @@ def cmd_init(a):
               f"{baseline['side_effects']}; clean or git-ignore them, and pass them as "
               "--generated if the loop's commands also write there", file=sys.stderr)
     contract["baseline"] = baseline
-    contract["agreement_sha"] = agreement_sha(contract)
     home.save(contract)
     print(json.dumps(contract, indent=2, ensure_ascii=False))
 
@@ -557,7 +557,6 @@ def cmd_start(a):
     started = utc_now()
     c["started"] = iso(started)
     c["deadline"] = iso(started + dt.timedelta(minutes=c["budget_minutes"])) if c.get("budget_minutes") else None
-    c["agreement_sha"] = agreement_sha(c)
     home.save(c)
     home.log({"n": 0, "kind": "baseline", "commit": c["best"], "score": c["best_score"],
               "verdict": "baseline", "raw": c["baseline"].get("raw"), "time": c["started"]})
@@ -724,7 +723,6 @@ def cmd_attempt(a):
             if "score" in extra:
                 c["best_score"] = extra["score"]
             c.pop("approved", None)
-            c["agreement_sha"] = agreement_sha(c)
             home.save(c)
         elif verdict in ("rejected", "invalid"):
             rollback(wt, best)
@@ -732,7 +730,6 @@ def cmd_attempt(a):
         elif verdict in ("failing", "green", "checkpoint"):
             c["best"] = head
             c.pop("approved", None)
-            c["agreement_sha"] = agreement_sha(c)
             home.save(c)
         home.log(record)
         print(json.dumps(record, ensure_ascii=False))

@@ -1058,6 +1058,8 @@ class TestHygiene(Harness):
         self.home = home2
         c = self.contract()
         self.assertEqual((c["repo"], c["worktree"]), (repo2, wt2))
+        r = self.run_v("status")
+        self.assertEqual(r.returncode, 0, r.stderr)
 
     def test_relocate_worktree_must_not_be_the_clone(self):
         self.ready()
