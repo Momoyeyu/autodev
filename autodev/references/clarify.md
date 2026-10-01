@@ -48,7 +48,7 @@ Run-artifact paths the agreed commands write are declared with `init --generated
 
 `init` prints the contract for the human's review, and its fields drive every Loop verdict — nothing agreed here depends on the agent remembering it. The contract also records the starting branch (`--branch-from` overrides) so Handoff can merge back. A changed agreement means `init --renew`, which archives the previous contract.
 
-If a run directory lands in the wrong clone, move the whole `.autodev/` tree into the working clone and run `autodev_verify.py --home <new run dir> relocate --repo <working clone>`: it re-binds the contract, excludes `.autodev/` in the new clone, and refuses unless a recorded constitution exists there unchanged — relocation is not a way to amend rules mid-loop. When the contract already holds a `best` commit, fetch the loop branch into the new clone first; pass `--worktree` if the loop worktree moved too.
+If a run directory lands in the wrong clone, move the whole `.autodev/` tree into the working clone and run `autodev_verify.py --home <new run dir> relocate --repo <working clone>`: it re-binds the contract, excludes `.autodev/` in the new clone, and refuses unless a recorded constitution exists there unchanged — relocation is not a way to amend rules mid-loop. When the contract already holds a `best` commit, fetch the loop branch into the new clone first. A loop worktree is re-bound with `--worktree` and must be created from the new clone (`git worktree add`, at a commit containing `best`) — a worktree still owned by the old clone commits into the old clone's object store, which defeats the move.
 
 ## Ready for Loop
 

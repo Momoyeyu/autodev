@@ -329,8 +329,8 @@ def rollback(wt, best):
 # ---------------------------------------------------------------- commands
 
 def linked_worktree(repo):
-    return os.path.realpath(git(repo, "rev-parse", "--git-dir")) != \
-        os.path.realpath(git(repo, "rev-parse", "--git-common-dir"))
+    return git(repo, "rev-parse", "--path-format=absolute", "--git-dir") != \
+        git(repo, "rev-parse", "--path-format=absolute", "--git-common-dir")
 
 
 def require_run_dir(home, repo):
@@ -574,10 +574,25 @@ def cmd_relocate(a):
     if a.worktree:
         wt = os.path.abspath(a.worktree)
         git(wt, "rev-parse", "--is-inside-work-tree")
+        if os.path.realpath(git(wt, "rev-parse", "--show-toplevel")) == os.path.realpath(repo):
+            die("--worktree is the working clone itself; the loop needs a separate worktree")
+        if git(wt, "rev-parse", "--path-format=absolute", "--git-common-dir") != \
+                git(repo, "rev-parse", "--path-format=absolute", "--git-common-dir"):
+            die("--worktree belongs to a different clone; create it from the working clone")
+        if c.get("best") and subprocess.run(
+                ["git", "merge-base", "--is-ancestor", c["best"], "HEAD"],
+                cwd=wt).returncode != 0:
+            die(f"--worktree HEAD does not contain best commit {c['best'][:10]}; "
+                "check out the loop branch there")
         c["worktree"] = wt
     elif c.get("worktree") and not os.path.isdir(c["worktree"]):
         print(f"autodev: recorded worktree {c['worktree']} is gone; "
               "pass --worktree to re-point it", file=sys.stderr)
+    bf = c.get("branch_from")
+    if bf and not git(repo, "rev-parse", "--verify", "--quiet",
+                      f"refs/heads/{bf}", check=False):
+        print(f"autodev: branch_from {bf} does not exist in the new clone; "
+              "Handoff merges back into it", file=sys.stderr)
     c["repo"] = repo
     exclude_autodev(repo)
     home.save(c)

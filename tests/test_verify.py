@@ -1049,10 +1049,47 @@ class TestHygiene(Harness):
         self.assertIn("best commit", r.stderr)
         git(repo2, "fetch", "-q", self.repo, "autodev/t")
         r = self.relocate(home2, repo2, "--worktree", self.wt)
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("different clone", r.stderr)
+        wt2 = os.path.join(self.root, "wt2")
+        git(repo2, "worktree", "add", "-q", wt2, "FETCH_HEAD")
+        r = self.relocate(home2, repo2, "--worktree", wt2)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.home = home2
         c = self.contract()
-        self.assertEqual((c["repo"], c["worktree"]), (repo2, self.wt))
+        self.assertEqual((c["repo"], c["worktree"]), (repo2, wt2))
+
+    def test_relocate_worktree_must_not_be_the_clone(self):
+        self.ready()
+        repo2 = self.clone_repo()
+        home2 = self.move_home(repo2)
+        r = self.relocate(home2, repo2, "--worktree", repo2)
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("working clone", r.stderr)
+
+    def test_relocate_worktree_must_contain_best(self):
+        self.ready()
+        repo2 = self.clone_repo()
+        code, _ = self.attempt({"src/impl.py": "N=150\n"})
+        self.assertEqual(code, 0)
+        home2 = self.move_home(repo2)
+        git(repo2, "fetch", "-q", self.repo, "autodev/t")
+        wt2 = os.path.join(self.root, "wt2")
+        git(repo2, "worktree", "add", "-q", wt2, "HEAD")
+        r = self.relocate(home2, repo2, "--worktree", wt2)
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("does not contain", r.stderr)
+
+    def test_relocate_warns_when_branch_from_missing(self):
+        self.assertEqual(self.init().returncode, 0)
+        bf = self.contract()["branch_from"]
+        repo2 = self.clone_repo()
+        home2 = self.move_home(repo2)
+        git(repo2, "branch", "-m", bf, "renamed")
+        r = self.relocate(home2, repo2)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn(bf, r.stderr)
+        self.assertIn("does not exist", r.stderr)
 
     def bench_writes_artifacts(self):
         write(self.repo, "bench/run.py",
