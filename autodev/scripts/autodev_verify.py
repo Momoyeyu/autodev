@@ -9,6 +9,7 @@ Commands follow the flow one to one:
   status   Exit decision: agreed rule met (bugfix test, dev blueprint, opt target), or budget out
   verify   Rerun the agreed command on the retained best commit before Handoff
   report   Handoff artifact: comparison table (bugfix), blueprint handoff (development), chart (optimization)
+  relocate Re-point a contract at a different clone after the run directory moved
 """
 import argparse
 import datetime as dt
@@ -275,11 +276,11 @@ def meets_target(contract, score):
     return score >= t if inc else score > t
 
 
-def check_constitution(contract):
+def check_constitution(contract, root=None):
     law = contract.get("constitution")
     if not law:
         return None
-    path = os.path.join(contract["repo"], law["path"])
+    path = os.path.join(root or contract["repo"], law["path"])
     if not os.path.isfile(path):
         return law["path"], "deleted"
     if sha256_file(path) != law["sha256"]:
@@ -327,17 +328,25 @@ def rollback(wt, best):
 
 # ---------------------------------------------------------------- commands
 
-def cmd_init(a):
-    home = Home(a.home)
-    repo = os.path.abspath(a.repo)
-    git(repo, "rev-parse", "--is-inside-work-tree")
-    if os.path.realpath(git(repo, "rev-parse", "--git-dir")) != \
-            os.path.realpath(git(repo, "rev-parse", "--git-common-dir")):
-        die("run init from the repository's main checkout, not a linked worktree")
+def linked_worktree(repo):
+    return os.path.realpath(git(repo, "rev-parse", "--git-dir")) != \
+        os.path.realpath(git(repo, "rev-parse", "--git-common-dir"))
+
+
+def require_run_dir(home, repo):
     runs_dir = os.path.join(repo, ".autodev", "runs")
     if not inside(home.path, runs_dir) or os.path.realpath(home.path) == os.path.realpath(runs_dir):
         die("--home must be a run directory under <repo>/.autodev/runs/, e.g. " +
             os.path.join(runs_dir, "task"))
+
+
+def cmd_init(a):
+    home = Home(a.home)
+    repo = os.path.abspath(a.repo)
+    git(repo, "rev-parse", "--is-inside-work-tree")
+    if linked_worktree(repo):
+        die("run init in the working clone, not a linked worktree")
+    require_run_dir(home, repo)
     exclude_autodev(repo)
     if os.path.exists(home.contract_path) and not a.renew:
         die("contract exists; use --renew after a new Clarify pass")
@@ -500,7 +509,7 @@ def cmd_init(a):
     side = sorted(set(git(repo, "status", "--porcelain").splitlines()) - set(status_before))
     if side:
         baseline["side_effects"] = [line[3:] for line in side]
-        print("autodev: the agreed commands left changes in the user's checkout: "
+        print("autodev: the agreed commands left changes in the working clone: "
               f"{baseline['side_effects']}; clean or git-ignore them, and pass them as "
               "--generated if the loop's commands also write there", file=sys.stderr)
     contract["baseline"] = baseline
@@ -520,7 +529,7 @@ def cmd_start(a):
     if drift:
         die(f"the constitution was {drift[1]} since init; a changed agreement means a new Clarify pass")
     if os.path.realpath(git(wt, "rev-parse", "--show-toplevel")) == os.path.realpath(c["repo"]):
-        die("worktree is the user's checkout; create a separate git worktree for Loop")
+        die("--worktree is the working clone itself; create a separate git worktree for Loop")
     if git(wt, "status", "--porcelain"):
         die("worktree must be clean at start; commit the baseline state first")
     hidden = hidden_autodev(wt)
@@ -542,6 +551,37 @@ def cmd_start(a):
         smoke(home, c)
     print(json.dumps({"worktree": wt, "best": c["best"], "best_score": c["best_score"],
                       "deadline": c["deadline"]}, indent=2))
+
+
+def cmd_relocate(a):
+    home = Home(a.home)
+    c = home.load()
+    repo = os.path.abspath(a.repo)
+    git(repo, "rev-parse", "--is-inside-work-tree")
+    if linked_worktree(repo):
+        die("relocate to the working clone, not a linked worktree")
+    require_run_dir(home, repo)
+    if os.path.realpath(repo) == os.path.realpath(c["repo"]):
+        die("the contract already points at this clone")
+    if c.get("best") and subprocess.run(
+            ["git", "cat-file", "-e", c["best"]], cwd=repo).returncode != 0:
+        die(f"the new clone does not contain the loop's best commit {c['best'][:10]}; "
+            "fetch the loop branch there first")
+    drift = check_constitution(c, repo)
+    if drift:
+        die(f"the constitution must exist unchanged at {drift[0]} in the new clone "
+            f"(it is {drift[1]} there); copy it before relocating")
+    if a.worktree:
+        wt = os.path.abspath(a.worktree)
+        git(wt, "rev-parse", "--is-inside-work-tree")
+        c["worktree"] = wt
+    elif c.get("worktree") and not os.path.isdir(c["worktree"]):
+        print(f"autodev: recorded worktree {c['worktree']} is gone; "
+              "pass --worktree to re-point it", file=sys.stderr)
+    c["repo"] = repo
+    exclude_autodev(repo)
+    home.save(c)
+    print(json.dumps({"repo": repo, "worktree": c.get("worktree")}, indent=2))
 
 
 def smoke(home, c):
@@ -1058,6 +1098,13 @@ def main():
     r.add_argument("--open", dest="open_", action="store_true",
                    help="open handoff.html in the system viewer after writing it")
     r.set_defaults(fn=cmd_report)
+
+    m = sub.add_parser("relocate",
+                       help="re-point a moved contract at a different clone")
+    m.add_argument("--repo", required=True,
+                   help="the working clone the run directory was moved into")
+    m.add_argument("--worktree", help="new loop worktree path, if it also moved")
+    m.set_defaults(fn=cmd_relocate)
 
     a = p.parse_args()
     a.fn(a)

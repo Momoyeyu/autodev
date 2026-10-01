@@ -974,7 +974,85 @@ class TestHygiene(Harness):
                "--editable", "src", "--frozen", "bench",
                "--test-cmd", "python3 bench/run.py", *self.budget, *self.init_extra)
         self.assertEqual(r.returncode, 3)
-        self.assertIn("worktree", r.stderr)
+        self.assertIn("working clone", r.stderr)
+        self.assertIn("linked worktree", r.stderr)
+
+    def clone_repo(self, name="repo2"):
+        dst = os.path.join(self.root, name)
+        git(self.root, "clone", "-q", self.repo, dst)
+        return dst
+
+    def move_home(self, repo2):
+        shutil.move(os.path.join(self.repo, ".autodev"), repo2)
+        return os.path.join(repo2, ".autodev", "runs", "t")
+
+    def relocate(self, home, repo, *extra):
+        return sh(self.root, sys.executable, SCRIPT, "--home", home,
+                  "relocate", "--repo", repo, *extra)
+
+    def test_relocate_repoints_clone(self):
+        self.assertEqual(self.init().returncode, 0)
+        repo2 = self.clone_repo()
+        home2 = self.move_home(repo2)
+        self.assertIn(".autodev", git(repo2, "status", "--porcelain"))
+        r = self.relocate(home2, repo2)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.home = home2
+        self.assertEqual(self.contract()["repo"], repo2)
+        git_dir = git(repo2, "rev-parse", "--absolute-git-dir")
+        with open(os.path.join(git_dir, "info", "exclude")) as f:
+            self.assertIn("/.autodev/", f.read().splitlines())
+        self.assertNotIn(".autodev", git(repo2, "status", "--porcelain"))
+
+    def test_relocate_requires_run_dir_in_new_clone(self):
+        self.assertEqual(self.init().returncode, 0)
+        r = self.relocate(self.home, self.clone_repo())
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("runs", r.stderr)
+
+    def test_relocate_same_clone_dies(self):
+        self.assertEqual(self.init().returncode, 0)
+        r = self.relocate(self.home, self.repo)
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("already", r.stderr)
+
+    def test_relocate_to_linked_worktree_dies(self):
+        self.assertEqual(self.init().returncode, 0)
+        repo2 = self.clone_repo()
+        wt2 = os.path.join(self.root, "wt2")
+        git(repo2, "worktree", "add", "-q", "-b", "x", wt2, "HEAD")
+        r = self.relocate(self.home, wt2)
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("linked worktree", r.stderr)
+
+    def test_relocate_constitution_must_match(self):
+        write(self.repo, ".autodev/constitution.json", json.dumps({"frozen": ["bench"]}))
+        self.assertEqual(self.init().returncode, 0)
+        repo2 = self.clone_repo()
+        home2 = self.move_home(repo2)
+        write(repo2, ".autodev/constitution.json", json.dumps({"frozen": ["src"]}))
+        r = self.relocate(home2, repo2)
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("constitution", r.stderr)
+        write(repo2, ".autodev/constitution.json", json.dumps({"frozen": ["bench"]}))
+        r = self.relocate(home2, repo2)
+        self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_relocate_requires_best_commit_and_repoints_worktree(self):
+        self.ready()
+        repo2 = self.clone_repo()
+        code, _ = self.attempt({"src/impl.py": "N=150\n"})
+        self.assertEqual(code, 0)
+        home2 = self.move_home(repo2)
+        r = self.relocate(home2, repo2)
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("best commit", r.stderr)
+        git(repo2, "fetch", "-q", self.repo, "autodev/t")
+        r = self.relocate(home2, repo2, "--worktree", self.wt)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.home = home2
+        c = self.contract()
+        self.assertEqual((c["repo"], c["worktree"]), (repo2, self.wt))
 
     def bench_writes_artifacts(self):
         write(self.repo, "bench/run.py",
