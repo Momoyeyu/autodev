@@ -1058,6 +1058,8 @@ class TestHygiene(Harness):
         self.home = home2
         c = self.contract()
         self.assertEqual((c["repo"], c["worktree"]), (repo2, wt2))
+        r = self.run_v("status")
+        self.assertEqual(r.returncode, 0, r.stderr)
 
     def test_relocate_worktree_must_not_be_the_clone(self):
         self.ready()
@@ -1155,6 +1157,80 @@ class TestHygiene(Harness):
         r = self.init("--generated", "bench/out")
         self.assertEqual(r.returncode, 3)
         self.assertIn("overlap", r.stderr)
+
+
+class TestApprovalGate(Harness):
+    def test_approve_before_start_dies(self):
+        self.assertEqual(self.init().returncode, 0)
+        r = self.run_v("approve")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("not started", r.stderr)
+
+    def test_handoff_waits_for_approval(self):
+        self.ready()
+        code, _ = self.attempt({"src/impl.py": "N=150\n"})
+        self.assertEqual(code, 0)
+        s = self.status()
+        self.assertEqual(s["decision"], "handoff")
+        self.assertIsNone(s["approved"])
+        self.assertIn("approve", s["next"])
+        self.assertNotIn("merge the loop branch", s["next"])
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        r = self.run_v("approve", "--note", "looks right")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        rec = json.loads(r.stdout)
+        self.assertEqual(rec["note"], "looks right")
+        self.assertIn("at", rec)
+        s = self.status()
+        self.assertEqual(s["approved"]["note"], "looks right")
+        self.assertIn("merge the loop branch", s["next"])
+
+    def test_new_attempt_stales_approval(self):
+        self.ready()
+        code, _ = self.attempt({"src/impl.py": "N=150\n"})
+        self.assertEqual(code, 0)
+        self.assertEqual(self.run_v("approve").returncode, 0)
+        code, _ = self.attempt({"src/impl.py": "N=130\n"})
+        self.assertEqual(code, 0)
+        self.assertIsNone(self.contract().get("approved"))
+        self.assertIsNone(self.status()["approved"])
+
+
+class TestContractIntegrity(Harness):
+    def rewrite(self, **fields):
+        c = self.contract()
+        c.update(fields)
+        with open(os.path.join(self.home, "contract.json"), "w") as f:
+            json.dump(c, f)
+
+    def test_tampered_agreement_is_refused(self):
+        self.ready()
+        path = os.path.join(self.home, "contract.json")
+        with open(path) as f:
+            original = f.read()
+        for field, value in (("target", 0), ("editable", ["src", "x"]), ("test_cmd", "true")):
+            self.rewrite(**{field: value})
+            for cmd in (("status",), ("attempt", "--route", "x"), ("verify",)):
+                r = self.run_v(*cmd)
+                self.assertEqual(r.returncode, 3, (field, cmd))
+                self.assertIn("init --renew", r.stderr)
+            with open(path, "w") as f:
+                f.write(original)
+        self.assertEqual(self.run_v("status").returncode, 0)
+
+    def test_tampered_sealed_state_is_refused(self):
+        self.ready()
+        self.rewrite(deadline="2999-01-01T00:00:00+00:00")
+        r = self.run_v("status")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("init --renew", r.stderr)
+
+    def test_renew_reseals(self):
+        self.ready()
+        r = self.init("--renew")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.run_v("status").returncode, 0)
 
 
 if __name__ == "__main__":

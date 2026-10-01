@@ -98,7 +98,7 @@ Reuse decisions already supplied by the human. Do not impose a fixed question co
 | **What it shows** | The approved target design next to what was actually built, per element | Outcomes of the same approved tests, including totals and unresolved failures | The one score over attempt order or time, target, retained result, and stopping outcome |
 | **What makes it verifiable** | Blueprint and as-built diagrams, element coverage, the commit behind each element, and the rerun command | Test/source identities, raw results, and the rerun command | Benchmark/source identities, actual history, the ideas tried and their outcomes, measurement conditions, and the rerun command |
 
-`report` writes every scenario's deliverable into one self-contained `handoff.html` in the contract directory and prints the absolute path plus an `open` command; the handoff ends by opening that page or printing the path and command, not by a text claim. The file needs no tooling beyond a browser.
+`report` writes every scenario's deliverable into one self-contained `handoff.html` in the contract directory and prints the absolute path plus an `open` command; the packet is opened for review — not claimed in prose — and the merge waits for the human's recorded approval. The file needs no tooling beyond a browser.
 
 Add concise notes about relevant changes, limitations, and where to continue. The human should be able to understand the result and take over without reconstructing the agent's decisions.
 

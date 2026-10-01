@@ -8,6 +8,7 @@ Commands follow the flow one to one:
   attempt  One Loop round: scope check, frozen check, run the check, judge, keep or roll back
   status   Exit decision: agreed rule met (bugfix test, dev blueprint, opt target), or budget out
   verify   Rerun the agreed command on the retained best commit before Handoff
+  approve  Record the human's approval of the result; Handoff's merge waits for it
   report   Handoff artifact: comparison table (bugfix), blueprint handoff (development), chart (optimization)
   relocate Re-point a contract at a different clone after the run directory moved
 """
@@ -191,6 +192,14 @@ def load_constitution(repo, rel):
     return law, norm(os.path.relpath(path, repo))
 
 
+UNSEALED = {"agreement_sha", "approved"}
+
+
+def agreement_sha(contract):
+    agreed = {k: v for k, v in contract.items() if k not in UNSEALED}
+    return hashlib.sha256(json.dumps(agreed, sort_keys=True).encode()).hexdigest()
+
+
 class Home:
     def __init__(self, path):
         self.path = os.path.abspath(path)
@@ -205,10 +214,14 @@ class Home:
         if not os.path.exists(self.contract_path):
             die(f"no contract at {self.contract_path}; run init first")
         with open(self.contract_path) as f:
-            return json.load(f)
+            c = json.load(f)
+        if c.get("agreement_sha") and c["agreement_sha"] != agreement_sha(c):
+            die("contract.json was modified since init; a changed agreement means init --renew")
+        return c
 
     def save(self, contract):
         self.ensure()
+        contract["agreement_sha"] = agreement_sha(contract)
         with open(self.contract_path, "w") as f:
             json.dump(contract, f, indent=2, ensure_ascii=False)
             f.write("\n")
@@ -709,12 +722,14 @@ def cmd_attempt(a):
             c["best"] = head
             if "score" in extra:
                 c["best_score"] = extra["score"]
+            c.pop("approved", None)
             home.save(c)
         elif verdict in ("rejected", "invalid"):
             rollback(wt, best)
             record["rolled_back_to"] = best
         elif verdict in ("failing", "green", "checkpoint"):
             c["best"] = head
+            c.pop("approved", None)
             home.save(c)
         home.log(record)
         print(json.dumps(record, ensure_ascii=False))
@@ -822,8 +837,21 @@ def cmd_status(a):
         out["worktree_clean"] = not stray_files(wt, c.get("generated", [])) and not hidden
         if hidden:
             out["hidden_ignored"] = hidden
+    out["approved"] = c.get("approved")
     out["next"] = next_step(c, out)
     print(json.dumps(out, indent=2))
+
+
+def cmd_approve(a):
+    home = Home(a.home)
+    c = home.load()
+    if not c.get("worktree"):
+        die("the loop has not started; there is no result to approve")
+    c["approved"] = {"at": iso(utc_now()), "best": c.get("best")}
+    if a.note:
+        c["approved"]["note"] = a.note
+    home.save(c)
+    print(json.dumps(c["approved"], indent=2))
 
 
 def kept_attempts(home):
@@ -843,7 +871,13 @@ def next_step(c, s):
     if not s["head_is_best"]:
         return "HEAD is a commit not yet judged: run attempt on it, or reset to best"
     if s["decision"] == "handoff":
-        return "run verify, then report, and enter Handoff"
+        if c.get("approved"):
+            return f"merge the loop branch into {c.get('branch_from')} and remove the worktree"
+        if c["scenario"] == "optimization" and not s["target_met"]:
+            return ("the budget is spent — run verify and report, present the results, and let the "
+                    "human decide: approve and deliver what exists, or start a new round")
+        return ("run verify and report to assemble the review packet, present it, and wait for human "
+                "approval (autodev_verify.py --home <run> approve); do not merge or remove the worktree")
     if c["scenario"] == "optimization":
         dead = ", ".join(s["ruled_out"]) or "none"
         return f"commit the next attempt under a new --route (refuted against best: {dead})"
@@ -1120,6 +1154,11 @@ def main():
                    help="the working clone the run directory was moved into")
     m.add_argument("--worktree", help="new loop worktree path, if it also moved")
     m.set_defaults(fn=cmd_relocate)
+
+    ap = sub.add_parser("approve",
+                        help="record the human's approval; status stops gating Handoff after it")
+    ap.add_argument("--note", default="", help="what was approved, in the reviewer's words")
+    ap.set_defaults(fn=cmd_approve)
 
     a = p.parse_args()
     a.fn(a)
