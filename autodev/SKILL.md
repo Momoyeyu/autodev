@@ -63,6 +63,6 @@ Do not weaken tests, shrink workloads, alter benchmark weights, change the measu
 
 The primary deliverable is mandatory: **as-built diagrams for a feature, the passing test set for a bug fix, a progress chart for an optimization**. A final number, prose summary, or table alone does not replace them.
 
-`report` writes one self-contained `handoff.html` holding the scenario's deliverable, and prints the absolute path plus an `open` command. End the handoff by opening that page for the human (platform preview, `open`, `report --open`) or by printing the path and command verbatim — a text claim without the visible artifact is not a handoff.
+`report` writes one self-contained `handoff.html` holding the scenario's deliverable, and prints the absolute path plus an `open` command. Open that page for the human (platform preview, `open`, `report --open`) or print the path and command verbatim — a text claim without the visible artifact is not a handoff. The page is evidence for review, not delivery: the handoff stays gated until `autodev_verify.py --home <contract dir> approve` records the human's approval, and only then does the loop branch merge back.
 
 Use actual recorded results, the original baseline, and the delivered source state. Merge the loop branch back into the branch the user started from, then remove the worktree. Include concise reproduction details and relevant changes so the human can verify and take over. Report missed targets, blocked checks, and missing evidence honestly; do not label an incomplete handoff complete.

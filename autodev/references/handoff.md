@@ -6,12 +6,14 @@ Each artifact is checked against the approved target — blueprint, test set, or
 
 ## Present the artifact
 
-Handoff ends by putting the artifact in front of the human, not by announcing it in prose. Run `autodev_verify.py --home <contract dir> report`, which writes a self-contained `handoff.html` — every scenario's deliverable rendered inside one page — and prints a manifest with its absolute path and an `open` command. Then:
+The review packet is `report`'s output: run `autodev_verify.py --home <contract dir> report`, which writes a self-contained `handoff.html` — every scenario's deliverable rendered inside one page — and prints a manifest with its absolute path and an `open` command. Put it in front of the human, not in prose:
 
 - if the platform has a preview mechanism, open `handoff.html` with it (or pass `report --open` to let the judge try `open`/`xdg-open`);
 - otherwise print the absolute path and the manifest's `open` command verbatim in the final message.
 
 A summary without the opened page or the path-plus-command is an incomplete handoff. The same rule applies to blocked or partial results — the page shows real state either way.
+
+A generated `handoff.html` is evidence awaiting review, not a delivery. Handoff is gated by recorded human approval: once the human has seen the packet and agrees, record it with `autodev_verify.py --home <contract dir> approve` — a timestamped contract entry, a protocol marker like the Clarify review, not a cryptographic proof. `status` keeps `next` at "await approval" until then, and merge-back, worktree removal, and any push happen only after it. A kept attempt after approval stales it — the human reviews the new state.
 
 ## Feature development: as-built diagrams
 
@@ -56,7 +58,7 @@ For a weighted score, include the fixed formula and retain component readings wi
 
 ## Merge back and remove the worktree
 
-The delivered state is the loop branch's final commit: the completed blueprint state for a feature, the passing checkpoint for a bug fix, `best` for an optimization. Verify it there, then merge the loop branch into the branch the user was on when Loop started, with a regular merge so the attempt history stays visible. If the merge conflicts with work the user did meanwhile, stop and report; do not resolve it by force or rewrite the user's branch. After a clean merge, remove the worktree and the loop branch. Ignored build products disappear with the worktree.
+Only after `approve` is recorded. The delivered state is the loop branch's final commit: the completed blueprint state for a feature, the passing checkpoint for a bug fix, `best` for an optimization. Verify it there, then merge the loop branch into the branch the user was on when Loop started, with a regular merge so the attempt history stays visible. If the merge conflicts with work the user did meanwhile, stop and report; do not resolve it by force or rewrite the user's branch. After a clean merge, remove the worktree and the loop branch. Ignored build products disappear with the worktree.
 
 If the human is not satisfied with a handoff, the follow-up is a new autodev round — typically a bug fix against the concrete problem — not a resume of the closed loop.
 
