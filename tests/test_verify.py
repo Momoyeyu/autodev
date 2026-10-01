@@ -1160,6 +1160,12 @@ class TestHygiene(Harness):
 
 
 class TestApprovalGate(Harness):
+    def test_approve_before_start_dies(self):
+        self.assertEqual(self.init().returncode, 0)
+        r = self.run_v("approve")
+        self.assertEqual(r.returncode, 3)
+        self.assertIn("not started", r.stderr)
+
     def test_handoff_waits_for_approval(self):
         self.ready()
         code, _ = self.attempt({"src/impl.py": "N=150\n"})

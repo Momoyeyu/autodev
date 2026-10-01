@@ -845,6 +845,8 @@ def cmd_status(a):
 def cmd_approve(a):
     home = Home(a.home)
     c = home.load()
+    if not c.get("worktree"):
+        die("the loop has not started; there is no result to approve")
     c["approved"] = {"at": iso(utc_now()), "best": c.get("best")}
     if a.note:
         c["approved"]["note"] = a.note
