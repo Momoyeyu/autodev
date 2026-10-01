@@ -12,11 +12,15 @@ SKILL_DOCS += sorted(
     os.path.join(ROOT, "autodev", "references", f)
     for f in os.listdir(os.path.join(ROOT, "autodev", "references"))
     if f.endswith(".md"))
-ALL_DOCS = SKILL_DOCS + [os.path.join(ROOT, "CONTRIBUTING.md")]
+ALL_DOCS = SKILL_DOCS + [os.path.join(ROOT, "CONTRIBUTING.md"),
+                         SCRIPT,
+                         os.path.join(ROOT, "autodev", "scripts",
+                                      "autodev_render.py")]
 
 FORBIDDEN = [re.compile(p, re.I) for p in
              (r"mermaid", r"report_chart", r"\.autodev/run(?!s)",
-              r"BLUEPRINT\.md", r"principles\.md", r"commits the file")]
+              r"BLUEPRINT\.md", r"principles\.md", r"commits the file",
+              r"main checkout")]
 
 GIT_FLAGS = {"--porcelain", "--ignored", "--git-dir", "--git-common-dir",
              "--absolute-git-dir", "--is-inside-work-tree", "--show-toplevel",

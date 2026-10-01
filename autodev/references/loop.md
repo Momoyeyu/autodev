@@ -17,7 +17,7 @@ Loop runs in a **separate git worktree on a dedicated branch**, created when Loo
 
 1. If the project is not a git repository, `git init` and commit the current state first.
 2. Note the user's current branch; Handoff merges back into it. Create the loop branch and worktree outside the repository, for example `git worktree add -b autodev/<task> ../<repo>-autodev-<task> HEAD`.
-3. If the user has uncommitted changes that belong to the starting point, apply them in the worktree and commit them there as the baseline commit. The user's checkout and branch stay untouched.
+3. If the user has uncommitted changes that belong to the starting point, apply them in the worktree and commit them there as the baseline commit. The working clone's own checkout and branch stay untouched.
 4. Prepare the runtime in the worktree yourself (dependencies, `.env`, local data). Then bind the judge to the worktree: `python3 <skill>/scripts/autodev_verify.py --home <contract dir> start --worktree <path>`. It records `best = HEAD`, starts the time budget, and runs a smoke test that deliberately edits a frozen file and adds an out-of-scope file, requiring both to be rejected and the rollback to leave no residue. Do not begin attempts if the smoke test fails.
 5. Commit every attempt or checkpoint on the loop branch before evaluating it. Write logs and raw outputs to the agreed artifact location — the contract directory or a declared generated path — never into the commit: an attempt whose commit contains a generated-path file is invalid ([contract rules](clarify.md#the-contract)).
 
@@ -33,6 +33,8 @@ The contract directory and the loop branch hold the whole state, so a new sessio
 4. Read what the log already rules out — `ruled_out` routes for optimization, `elements_done` and `elements_pending` for development — and the last raw outputs under `raw/`, then continue from `next`.
 
 Taking over does not reopen the agreement. The contract, budget, and deadline stay as they were; a changed target still means a new Clarify pass.
+
+If the contract directory was created in the wrong clone — a mirror or an upstream clone instead of the working clone — move the whole `.autodev/` tree into the working clone and re-point it with `autodev_verify.py --home <new run dir> relocate --repo <clone>`; see [the contract rules](clarify.md#the-contract).
 
 ## Feature development
 

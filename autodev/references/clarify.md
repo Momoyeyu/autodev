@@ -32,19 +32,23 @@ Keep test changes tied to the intended behavior. An obsolete expectation may be 
 
 ## The contract
 
-Write the proposal as a contract with the judge script, run from the user's checkout (`--repo`, default `.`):
+Write the proposal as a contract with the judge script, run in the working clone (`--repo`, default `.`):
 
 ```bash
 python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/runs/<task>" init --scenario <scenario> ...
 ```
 
-`--home` must be a run directory under `<repo>/.autodev/runs/`, as an absolute path reused by every later command, and outside the loop worktree — `start` refuses one inside it. `init` adds `/.autodev/` to the clone's `.git/info/exclude`, so every autodev file — contract, logs, raw output, rendered previews, the constitution itself — stays inside the project yet never appears in `git status` or shared history. Run `init` from the repository's main checkout: in a linked worktree the exclude entry would land in the wrong git directory, so `init` refuses.
+`.autodev/` belongs to the **working clone** — the long-lived clone the human edits, commits, and pushes from (their fork in a fork workflow), whatever branch it has checked out. When several clones of the project exist, `init` still runs in the working clone; mirrors and upstream clones stay pristine and accumulate no autodev state. Within that clone, run `init` in the clone's own worktree, not a linked worktree — the exclude entry would otherwise land in the wrong git directory, so `init` refuses.
 
-The baseline runs in the user's real checkout on purpose, so it measures the actual starting state including uncommitted changes; `init` records whatever the run left behind as `baseline.side_effects` and refuses outright if it touched a frozen path.
+`--home` must be a run directory under `<repo>/.autodev/runs/`, as an absolute path reused by every later command, and outside the loop worktree — `start` refuses one inside it. `init` adds `/.autodev/` to the clone's `.git/info/exclude`, so every autodev file — contract, logs, raw output, rendered previews, the constitution itself — stays inside the project yet never appears in `git status` or shared history.
+
+The baseline runs in the working clone's checkout on purpose, so it measures the actual starting state including uncommitted changes; `init` records whatever the run left behind as `baseline.side_effects` and refuses outright if it touched a frozen path.
 
 Run-artifact paths the agreed commands write are declared with `init --generated` (or the constitution's `generated` key): untracked files under them never block an attempt and rollback sweeps them, but committing one is invalid — run artifacts are never deliverables. A generated path must not overlap a frozen one.
 
 `init` prints the contract for the human's review, and its fields drive every Loop verdict — nothing agreed here depends on the agent remembering it. The contract also records the starting branch (`--branch-from` overrides) so Handoff can merge back. A changed agreement means `init --renew`, which archives the previous contract.
+
+If a run directory lands in the wrong clone, move the whole `.autodev/` tree into the working clone and run `autodev_verify.py --home <new run dir> relocate --repo <working clone>`: it re-binds the contract, excludes `.autodev/` in the new clone, and refuses unless a recorded constitution exists there unchanged — relocation is not a way to amend rules mid-loop. When the contract already holds a `best` commit, fetch the loop branch into the new clone first. A loop worktree is re-bound with `--worktree` and must be created from the new clone (`git worktree add`, at a commit containing `best`) — a worktree still owned by the old clone commits into the old clone's object store, which defeats the move.
 
 ## Ready for Loop
 
