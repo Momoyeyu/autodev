@@ -1,0 +1,2438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>autodev — Open the black box of vibe coding</title>
+  <meta name="description" content="A clarify-first Agent Skill for feature development, bug fixes, and performance optimization. Agree on one target, iterate in an isolated judged loop, and hand back evidence you can re-run yourself.">
+  <meta name="color-scheme" content="dark">
+  <meta property="og:title" content="autodev — Open the black box of vibe coding">
+  <meta property="og:description" content="A clarify-first Agent Skill: agree on one target, iterate in an isolated judged loop, hand back evidence you can re-run.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>document.documentElement.classList.add('js');</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0f10;
+      --bg-raised: #161719;
+      --bg-surface: #1c1d1f;
+      --bg-hover: #222325;
+      --text: #ecece6;
+      --text-secondary: #9b9b93;
+      --text-tertiary: #6b6b65;
+      --accent: #3C8CFF;
+      --accent-dim: #4D82D6;
+      --accent-glow: rgba(60, 140, 255, 0.12);
+      --brand-blue: #3C8CFF;
+      --brand-cyan: #00C8D2;
+      --border: #2a2b2d;
+      --border-light: #333436;
+      --serif: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+      --sans: 'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+      --radius: 8px;
+      --radius-lg: 12px;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-expo: cubic-bezier(0.19, 1, 0.22, 1);
+      --nav-h: 65px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    section { scroll-margin-top: var(--nav-h); }
+
+    body {
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    a { color: var(--accent); text-decoration: none; transition: color 0.15s; }
+    a:hover { color: var(--brand-cyan); }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Navigation ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(14, 15, 16, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-brand {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+
+    .nav-brand span {
+      background: linear-gradient(135deg, var(--brand-blue), var(--brand-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-links a:not(.nav-cta) { position: relative; }
+
+    .nav-links a:not(.nav-cta)::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -6px;
+      height: 1px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform 0.5s var(--ease-out);
+    }
+
+    .nav-links a.active { color: var(--text); }
+    .nav-links a.active::after { transform: scaleX(1); transform-origin: left; }
+
+    .scroll-progress {
+      position: absolute;
+      left: 0;
+      bottom: -1px;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--brand-blue), var(--brand-cyan));
+      transform: scaleX(0);
+      transform-origin: left;
+      pointer-events: none;
+    }
+
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--accent);
+      color: var(--bg) !important;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+
+    .nav-cta:hover { background: var(--brand-cyan); color: var(--bg) !important; }
+
+    .lang-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .lang-toggle button {
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      font-family: var(--sans);
+    }
+
+    .lang-toggle button.active {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .mobile-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 80px 0 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero > .container { position: relative; z-index: 1; }
+
+    .hero-glow {
+      position: absolute;
+      top: -280px;
+      right: -200px;
+      width: 820px;
+      height: 820px;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, rgba(60, 140, 255, 0.13) 0%, rgba(0, 200, 210, 0.06) 32%, transparent 64%);
+      transform: translate3d(calc(var(--gx, 0) * 1px), calc(var(--gy, 0) * 1px), 0);
+      animation: glowBreath 9s ease-in-out infinite alternate;
+    }
+
+    @keyframes glowBreath {
+      from { opacity: 0.7; scale: 0.94; }
+      to { opacity: 1; scale: 1.06; }
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(rgba(236, 236, 230, 0.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+      -webkit-mask-image: radial-gradient(ellipse 60% 70% at 72% 40%, #000 0%, transparent 70%);
+      mask-image: radial-gradient(ellipse 60% 70% at 72% 40%, #000 0%, transparent 70%);
+      transform: translate3d(0, calc(var(--hero-out, 0) * 60px), 0);
+    }
+
+    .hero-copy {
+      transform: translate3d(0, calc(var(--hero-out, 0) * -70px), 0);
+      opacity: calc(1 - var(--hero-out, 0) * 0.6);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+
+    .hero-tagline {
+      font-family: var(--serif);
+      font-size: clamp(36px, 4.5vw, 56px);
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .hero-tagline em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-desc {
+      font-size: 17px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      max-width: 480px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: var(--accent);
+      color: var(--bg);
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+      text-decoration: none;
+    }
+
+    .btn-primary:hover { background: var(--brand-cyan); color: var(--bg); transform: translateY(-1px); }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 500;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.15s;
+      text-decoration: none;
+    }
+
+    .btn-secondary:hover { border-color: var(--text-secondary); background: var(--bg-raised); color: var(--text); transform: translateY(-1px); }
+
+    /* ── Interactive Pipeline Widget ── */
+    .pipeline-widget {
+      position: relative;
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: border-color 0.3s;
+      --extra-t: border-color 0.3s;
+      transform: translate3d(0, calc(var(--hero-out, 0) * -36px), 0) perspective(1400px) rotateX(calc(var(--ty, 0) * 1deg)) rotateY(calc(var(--tx, 0) * 1deg));
+      box-shadow: 0 30px 80px -40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.015);
+    }
+
+    .pipeline-widget::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: radial-gradient(520px circle at var(--px, 50%) var(--py, 0%), rgba(255, 255, 255, 0.05), transparent 45%);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .pipeline-widget:hover { border-color: var(--border-light); }
+    .pipeline-widget:hover::after { opacity: 1; }
+
+    .pw-titlebar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pw-timer {
+      position: absolute;
+      left: 0;
+      bottom: -1px;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, var(--brand-blue), var(--brand-cyan));
+      transform: scaleX(0);
+      transform-origin: left;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .pw-timer.run {
+      opacity: 1;
+      animation: pwTimer var(--pw-dur, 4.6s) linear forwards;
+    }
+
+    .pipeline-widget.paused .pw-timer.run { animation-play-state: paused; }
+
+    @keyframes pwTimer {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
+    }
+
+    .pw-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border-light);
+    }
+
+    .pw-dot:nth-child(1) { background: #e5484d; }
+    .pw-dot:nth-child(2) { background: #e5a000; }
+    .pw-dot:nth-child(3) { background: #30a46c; }
+
+    .pw-title {
+      margin-left: 8px;
+      font-size: 12px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
+
+    .pw-body {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      min-height: 320px;
+    }
+
+    .pw-sidebar {
+      position: relative;
+      border-right: 1px solid var(--border);
+      padding: 12px 0;
+    }
+
+    .pw-indicator {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: var(--ih, 40px);
+      transform: translate3d(0, var(--iy, 12px), 0);
+      background: var(--accent-glow);
+      border-right: 2px solid var(--accent);
+      pointer-events: none;
+      transition: transform 0.55s var(--ease-out), height 0.55s var(--ease-out), width 0.55s var(--ease-out);
+    }
+
+    .pw-stage {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      transition: color 0.15s, background 0.15s;
+      font-family: var(--sans);
+    }
+
+    .pw-stage:hover { color: var(--text-secondary); background: var(--bg-hover); }
+
+    .pw-stage.active { color: var(--accent); }
+    .pw-stage.active:hover { background: transparent; }
+
+    .pw-stage-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .pw-stage-num { transition: background 0.35s, color 0.35s, border-color 0.35s, scale 0.45s var(--ease-out); }
+
+    .pw-stage.active .pw-stage-num {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      scale: 1.08;
+    }
+
+    .pw-stage.gate::after {
+      content: attr(data-gate-label);
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent-dim);
+      margin-left: auto;
+      background: rgba(60, 140, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .pw-content {
+      padding: 20px;
+    }
+
+    .pw-content-title {
+      font-family: var(--serif);
+      font-size: 18px;
+      color: var(--text);
+      margin-bottom: 8px;
+      animation: panelIn 0.6s var(--ease-out) both;
+    }
+
+    .pw-content-desc {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      animation: panelIn 0.6s var(--ease-out) 0.06s both;
+    }
+
+    @keyframes panelIn {
+      from { opacity: 0; translate: 0 8px; filter: blur(4px); }
+      to { opacity: 1; translate: none; filter: none; }
+    }
+
+    .pw-steps {
+      list-style: none;
+    }
+
+    .pw-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 12px;
+      color: var(--text-secondary);
+      animation: stepIn 0.5s var(--ease-out) both;
+      animation-delay: calc(0.14s + var(--si, 0) * 0.09s);
+    }
+
+    @keyframes stepIn {
+      from { opacity: 0; translate: -10px 0; }
+      to { opacity: 1; translate: none; }
+    }
+
+    .pw-step-icon {
+      position: relative;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-size: 9px;
+    }
+
+    .pw-step-icon.done {
+      background: #30a46c;
+      color: #fff;
+      animation: iconPop 0.5s var(--ease-out) both;
+      animation-delay: calc(0.26s + var(--si, 0) * 0.09s);
+    }
+
+    @keyframes iconPop {
+      from { scale: 0.3; opacity: 0; }
+      60% { scale: 1.15; opacity: 1; }
+      to { scale: 1; }
+    }
+
+    .pw-step-icon.current { background: var(--accent); color: var(--bg); }
+
+    .pw-step-icon.current::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 1px solid var(--accent);
+      animation: ring 1.8s var(--ease-out) infinite;
+    }
+
+    @keyframes ring {
+      from { opacity: 0.9; scale: 0.75; }
+      to { opacity: 0; scale: 1.7; }
+    }
+
+    .pw-step-icon.pending { background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-tertiary); }
+
+    /* ── Section shared ── */
+    section { padding: 80px 0; }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(28px, 3.5vw, 40px);
+      line-height: 1.2;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .section-desc {
+      font-size: 17px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin-bottom: 48px;
+    }
+
+    /* ── Pipeline Section ── */
+    .pipeline-section { border-top: 1px solid var(--border); }
+
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .pipeline-card {
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      transition: border-color 0.25s, transform 0.35s var(--ease-out);
+      --extra-t: transform 0.35s var(--ease-out), border-color 0.25s;
+    }
+
+    .pipeline-card:hover { border-color: var(--border-light); transform: translateY(-3px); }
+
+    /* Pointer-following spotlight shared by every card */
+    .spot { position: relative; isolation: isolate; }
+
+    .spot::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      pointer-events: none;
+      background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(60, 140, 255, 0.09), transparent 42%);
+      opacity: 0;
+      transition: opacity 0.35s;
+    }
+
+    .spot:hover::before { opacity: 1; }
+
+    .pipeline-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .pipeline-card-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid rgba(60, 140, 255, 0.2);
+      flex-shrink: 0;
+    }
+
+    .pipeline-card-title {
+      font-family: var(--serif);
+      font-size: 20px;
+      color: var(--text);
+    }
+
+    .pipeline-card-desc {
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+    }
+
+    .pipeline-card-badge {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      background: var(--accent-glow);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .chapter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .chapter-chips code {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 11.5px;
+      color: var(--brand-cyan);
+      background: rgba(0, 200, 210, 0.08);
+      border: 1px solid rgba(0, 200, 210, 0.18);
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .chapter-on .chapter-chips { margin-top: 16px; }
+
+    .chapter-on .chapter-chips code { font-size: 12.5px; }
+
+    /* ── Differentiators ── */
+    .diff-section { border-top: 1px solid var(--border); }
+
+    .diff-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .diff-card {
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      transition: border-color 0.25s, transform 0.35s var(--ease-out);
+      --extra-t: transform 0.35s var(--ease-out), border-color 0.25s;
+    }
+
+    .diff-card:hover { border-color: var(--border-light); transform: translateY(-3px); }
+
+    .js .diff-card-icon svg > * {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      transition: stroke-dashoffset 1.3s var(--ease-out);
+      transition-delay: calc(0.35s + var(--i, 0) * 0.09s);
+    }
+
+    .js .diff-card.in-view .diff-card-icon svg > * { stroke-dashoffset: 0; }
+
+    .diff-card-icon { transition: scale 0.45s var(--ease-out), background 0.3s; }
+    .diff-card:hover .diff-card-icon { scale: 1.08; background: rgba(60, 140, 255, 0.18); }
+
+    .diff-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      background: var(--accent-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 18px;
+    }
+
+    .diff-card-title {
+      font-family: var(--serif);
+      font-size: 18px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .diff-card-desc {
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+    }
+
+    /* ── Scenarios ── */
+    .scenarios-section { border-top: 1px solid var(--border); }
+
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .scenario-card {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      transition: border-color 0.25s, transform 0.35s var(--ease-out);
+      --extra-t: transform 0.35s var(--ease-out), border-color 0.25s;
+    }
+
+    .scenario-card:hover { border-color: var(--border-light); transform: translateY(-3px); }
+
+    .scenario-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .scenario-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(60, 140, 255, 0.2);
+      flex-shrink: 0;
+    }
+
+    .scenario-title {
+      font-family: var(--serif);
+      font-size: 20px;
+      color: var(--text);
+    }
+
+    .scenario-target {
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--text-secondary);
+      border-left: 2px solid var(--accent);
+      padding-left: 12px;
+      margin-bottom: 12px;
+    }
+
+    .scenario-desc {
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+    }
+
+    .scenario-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .scenario-artifact {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--brand-cyan);
+      background: rgba(0, 200, 210, 0.08);
+      border: 1px solid rgba(0, 200, 210, 0.16);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .scenario-open {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      padding: 5px 10px;
+      border: 1px solid rgba(60, 140, 255, 0.28);
+      border-radius: 4px;
+      background: var(--accent-glow);
+      white-space: nowrap;
+      transition: color 0.25s, border-color 0.25s, background 0.25s;
+    }
+
+    .scenario-open:hover {
+      color: var(--text);
+      border-color: var(--accent);
+      background: rgba(60, 140, 255, 0.18);
+    }
+
+    .scenario-open svg {
+      flex-shrink: 0;
+      opacity: 0.9;
+    }
+
+    /* ── Case Studies ── */
+    .cases-section { border-top: 1px solid var(--border); }
+
+    .case-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .case-item {
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      transition: border-color 0.25s, transform 0.35s var(--ease-out);
+      --extra-t: transform 0.35s var(--ease-out), border-color 0.25s;
+    }
+
+    .case-item:hover { border-color: var(--border-light); transform: translateX(4px); }
+
+    .case-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .case-repo {
+      font-family: var(--serif);
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .case-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .case-meta {
+      font-size: 12.5px;
+      color: var(--text-tertiary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .case-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #30a46c;
+      background: rgba(48, 164, 108, 0.1);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .case-status::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #30a46c;
+    }
+
+    .case-item.in-view .case-status::before { animation: mergedPulse 2.6s var(--ease-out) 0.8s infinite; }
+
+    @keyframes mergedPulse {
+      0% { box-shadow: 0 0 0 0 rgba(48, 164, 108, 0.55); }
+      70%, 100% { box-shadow: 0 0 0 7px rgba(48, 164, 108, 0); }
+    }
+
+    .case-status.alt {
+      color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    .case-status.alt::before { background: var(--accent); }
+
+    .case-item.in-view .case-status.alt::before { animation: altPulse 2.6s var(--ease-out) 0.8s infinite; }
+
+    @keyframes altPulse {
+      0% { box-shadow: 0 0 0 0 rgba(60, 140, 255, 0.5); }
+      70%, 100% { box-shadow: 0 0 0 7px rgba(60, 140, 255, 0); }
+    }
+
+    .case-summary {
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+    }
+
+    .case-chart {
+      margin: 20px 0 4px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #0B1220;
+    }
+
+    .case-chart img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .case-detail {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      margin-top: 12px;
+    }
+
+    /* ── Get started ── */
+    .start-section { border-top: 1px solid var(--border); }
+
+    .prompt-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .prompt-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 26px 24px;
+      transition: border-color 0.25s, transform 0.35s var(--ease-out);
+      --extra-t: transform 0.35s var(--ease-out), border-color 0.25s;
+    }
+
+    .prompt-card:hover { border-color: var(--border-light); transform: translateY(-3px); }
+
+    .prompt-text {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .prompt-text::before {
+      content: '> ';
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .prompt-note {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--text-tertiary);
+    }
+
+    /* ── Install Section ── */
+    .install-section { margin: 28px 0 24px; scroll-margin-top: calc(var(--nav-h) + 24px); }
+    .install-section .install-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+
+    .install-box {
+      position: relative;
+      isolation: isolate;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      max-width: 100%;
+    }
+
+    @property --ang {
+      syntax: '<angle>';
+      inherits: false;
+      initial-value: 0deg;
+    }
+
+    .install-box::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      padding: 1px;
+      pointer-events: none;
+      background: conic-gradient(from var(--ang), transparent 0 62%, rgba(0, 200, 210, 0.9) 82%, transparent 94%);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0;
+      transition: opacity 1s;
+      animation: borderSpin 5s linear infinite;
+    }
+
+    .install-box.in-view::before { opacity: 1; }
+
+    @keyframes borderSpin { to { --ang: 360deg; } }
+
+    .install-copy.copied { animation: iconPop 0.45s var(--ease-out); }
+
+    .install-code {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 15px;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .install-copy {
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 16px;
+      transition: color 0.15s;
+    }
+
+    .install-copy:hover { color: var(--text); }
+
+    .install-hint {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 10px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-left {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    .footer-links a:hover { color: var(--text-secondary); }
+
+    /* ── Reveal: one-shot, settles fully visible ──
+       Gated on .js so content never hides without the script. Uses the
+       individual `translate`/`scale` properties so hover `transform`s compose
+       instead of fighting the entrance. */
+    .js [data-reveal] {
+      --d: calc(var(--i, 0) * 90ms);
+      opacity: 0;
+      translate: 0 28px;
+      transition:
+        opacity 0.9s var(--ease-out) var(--d),
+        translate 1.1s var(--ease-out) var(--d),
+        scale 1.1s var(--ease-out) var(--d),
+        var(--extra-t, border-color 0.25s);
+    }
+
+    .js [data-reveal].in-view { opacity: 1; translate: none; scale: none; }
+
+    /* :where keeps these start states below .in-view's specificity */
+    .js :where(.pipeline-widget)[data-reveal] { translate: 0 36px; scale: 0.96; }
+    .js :where(.case-item)[data-reveal] { translate: -24px 0; }
+
+    /* Word-by-word mask rise for headlines */
+    .w {
+      display: inline-block;
+      overflow: hidden;
+      vertical-align: top;
+      padding: 0 0.08em 0.14em;
+      margin: 0 -0.08em -0.14em;
+    }
+
+    .w > span { display: inline-block; }
+
+    .js [data-split] .w > span {
+      translate: 0 112%;
+      transition: translate 1s var(--ease-out) calc(var(--wi, 0) * 42ms + var(--i, 0) * 90ms);
+    }
+
+    .js [data-split].in-view .w > span { translate: none; }
+    .js [data-reveal][data-split] { opacity: 1; translate: none; }
+
+    /* ── Pipeline chapter: sticky scroll story (desktop) ── */
+    .chapter-rail { display: none; }
+
+    .pipeline-section.chapter-on { padding: 0; }
+
+    .chapter-on .chapter-stage {
+      position: sticky;
+      top: var(--nav-h);
+      height: calc(100vh - var(--nav-h));
+      display: grid;
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: 72px;
+      align-items: center;
+    }
+
+    .chapter-on .section-desc { margin-bottom: 36px; }
+
+    .chapter-on .chapter-rail {
+      display: block;
+      position: relative;
+      list-style: none;
+      padding-left: 30px;
+      --rp: 0;
+    }
+
+    .chapter-rail::before,
+    .chapter-rail::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 14px;
+      bottom: 14px;
+      width: 1px;
+      background: var(--border-light);
+    }
+
+    .chapter-rail::after {
+      left: 4.5px;
+      width: 2px;
+      background: linear-gradient(var(--brand-cyan), var(--brand-blue));
+      transform: scaleY(var(--rp));
+      transform-origin: top;
+    }
+
+    .rail-item button {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 7px 0;
+      background: none;
+      border: 0;
+      color: var(--text-tertiary);
+      font: 500 14px/1.4 var(--sans);
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.35s, translate 0.45s var(--ease-out);
+    }
+
+    .rail-item button::before {
+      content: '';
+      position: absolute;
+      left: -30px;
+      top: 50%;
+      width: 11px;
+      height: 11px;
+      margin-top: -5.5px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 1px solid var(--border-light);
+      transition: background 0.35s, border-color 0.35s, box-shadow 0.35s, scale 0.45s var(--ease-out);
+    }
+
+    .rail-item button:hover { color: var(--text-secondary); }
+    .rail-item.done button::before { background: var(--accent-dim); border-color: var(--accent-dim); }
+    .rail-item.active button { color: var(--text); translate: 4px 0; }
+
+    .rail-item.active button::before {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 5px rgba(60, 140, 255, 0.15);
+      scale: 1.15;
+    }
+
+    .rail-num { width: 20px; font-size: 12px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+
+    .rail-gate {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent-dim);
+      background: rgba(60, 140, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    /* The grid becomes one fixed card frame; stage cards are transparent
+       content layers that hand off inside it without overlapping. */
+    .chapter-on .pipeline-grid {
+      display: block;
+      position: relative;
+      height: min(420px, 60vh);
+      background: var(--bg-raised);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 40px 100px -50px rgba(0, 0, 0, 0.9);
+    }
+
+    .js .chapter-on .pipeline-grid .pipeline-card[data-reveal] {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 48px;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      opacity: var(--co, 0);
+      translate: none;
+      scale: none;
+      transform: translate3d(0, var(--cy, 0px), 0) scale(var(--cs, 1));
+      transition: none;
+      will-change: opacity, transform;
+    }
+
+    .chapter-on .pipeline-card:not(.is-active) { pointer-events: none; }
+    .chapter-on .pipeline-card-header { gap: 16px; margin-bottom: 20px; }
+    .chapter-on .pipeline-card-num { width: 44px; height: 44px; font-size: 17px; }
+    .chapter-on .pipeline-card-title { font-size: 36px; }
+    .chapter-on .pipeline-card-desc { font-size: 18px; line-height: 1.7; max-width: 44ch; }
+    .chapter-on .pipeline-card-badge { align-self: flex-start; margin-top: 24px; font-size: 12px; }
+
+    .chapter-on .pipeline-card::after {
+      content: attr(data-step);
+      position: absolute;
+      right: 28px;
+      bottom: -48px;
+      z-index: -1;
+      font-family: var(--serif);
+      font-size: 240px;
+      line-height: 1;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(60, 140, 255, 0.16);
+      pointer-events: none;
+      translate: 0 calc(var(--cy, 0px) * -0.8);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .pipeline-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .scenario-grid,
+      .prompt-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pw-body {
+        grid-template-columns: 1fr;
+      }
+
+      .pw-sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        overflow-x: auto;
+        padding: 0;
+      }
+
+      .pw-stage {
+        white-space: nowrap;
+        padding: 12px 14px;
+      }
+
+      .pw-indicator {
+        top: auto;
+        bottom: 0;
+        width: var(--iw, 80px);
+        height: 2px;
+        transform: translate3d(var(--ix, 0), 0, 0);
+        background: var(--accent);
+        border-right: 0;
+      }
+
+      .pw-stage.gate::after { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .hero { padding: 48px 0 40px; }
+      section { padding: 56px 0; }
+
+      .nav-links { display: none; }
+      .nav-links.open {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: var(--bg-raised);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+        gap: 16px;
+      }
+
+      .nav-links .lang-toggle { align-self: flex-start; }
+
+      .mobile-toggle { display: block; }
+
+      .pipeline-grid,
+      .diff-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-actions { flex-direction: column; }
+      .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+
+      .install-box { flex-direction: column; text-align: center; }
+      .install-code { font-size: 13px; word-break: break-all; white-space: normal; }
+
+      .case-header { flex-direction: column; align-items: flex-start; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+
+      .js [data-reveal],
+      .js [data-split] .w > span,
+      .js .diff-card-icon svg > * {
+        opacity: 1 !important;
+        translate: none !important;
+        scale: none !important;
+        stroke-dashoffset: 0 !important;
+        transition: none !important;
+      }
+
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0s !important;
+        animation-iteration-count: 1 !important;
+      }
+
+      .hero-glow, .install-box::before { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="container nav-inner">
+      <a href="#" class="nav-brand">auto<span>dev</span></a>
+      <button class="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false" id="navToggle">&#9776;</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#contract" data-i18n="nav_protocol">Protocol</a></li>
+        <li><a href="#guarantees" data-i18n="nav_guarantees">Guarantees</a></li>
+        <li><a href="#results" data-i18n="nav_results">In practice</a></li>
+        <li><a href="#install" class="nav-cta" data-i18n="nav_cta">Get started</a></li>
+        <li>
+          <div class="lang-toggle" role="group" aria-label="Language">
+            <button class="active" data-lang="en">EN</button>
+            <button data-lang="zh">中</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="scroll-progress" aria-hidden="true"></div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="top">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <h1 class="hero-tagline" data-reveal="0" data-split data-i18n="hero_tagline">Rework rarely starts in the code — <em>it starts before the target is agreed</em>.</h1>
+          <p class="hero-desc" data-reveal="5" data-i18n="hero_desc">autodev is a clarify-first Agent Skill for feature development, bug fixes, and performance optimization. Agree on one target, iterate in an isolated judged loop, and hand back evidence you can re-run yourself.</p>
+          <!-- Install -->
+          <div class="install-section" id="install">
+            <h2 class="install-title" data-reveal="6" data-i18n="install_title">Install the skill</h2>
+            <div class="install-box" data-reveal="6">
+              <code class="install-code" id="installCode">npx skills add Momoyeyu/autodev -g</code>
+              <button class="install-copy" aria-label="Copy install command" id="copyBtn" title="Copy to clipboard">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+            <p class="install-hint" data-reveal="7" data-i18n="install_hint">Works with any agent that loads <code>SKILL.md</code> — the judge only runs the project's own checks.</p>
+          </div>
+          <div class="hero-actions" data-reveal="8">
+            <a href="#contract" class="btn-primary" data-i18n="hero_cta_primary">See how it works</a>
+            <a href="https://github.com/Momoyeyu/autodev" class="btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+              <span data-i18n="hero_cta_github">View on GitHub</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Interactive Pipeline Widget -->
+        <div class="pipeline-widget" data-reveal="4" role="region" aria-label="Protocol demonstration">
+          <div class="pw-titlebar">
+            <div class="pw-dot"></div>
+            <div class="pw-dot"></div>
+            <div class="pw-dot"></div>
+            <span class="pw-title">autodev workspace</span>
+            <span class="pw-timer" aria-hidden="true"></span>
+          </div>
+          <div class="pw-body">
+            <div class="pw-sidebar" role="tablist" aria-label="Protocol stages">
+              <span class="pw-indicator" aria-hidden="true"></span>
+              <button class="pw-stage gate active" role="tab" aria-selected="true" data-stage="0" data-gate-key="pw_gate_review" data-gate-label="">
+                <span class="pw-stage-num">1</span> <span data-i18n="pw_s1">Clarify</span>
+              </button>
+              <button class="pw-stage" role="tab" aria-selected="false" data-stage="1" data-gate-key="" data-gate-label="">
+                <span class="pw-stage-num">2</span> <span data-i18n="pw_s2">Loop</span>
+              </button>
+              <button class="pw-stage gate" role="tab" aria-selected="false" data-stage="2" data-gate-key="pw_gate_accept" data-gate-label="">
+                <span class="pw-stage-num">3</span> <span data-i18n="pw_s3">Handoff</span>
+              </button>
+            </div>
+            <div class="pw-content" role="tabpanel" id="pwPanel">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Protocol Section -->
+  <section class="pipeline-section" id="contract">
+    <div class="pipeline-chapter">
+    <div class="container chapter-stage">
+      <div class="chapter-copy">
+      <p class="section-label" data-reveal data-i18n="pipe_label">The protocol</p>
+      <h2 class="section-title" data-reveal data-split data-i18n="pipe_title">Three stages, one review</h2>
+      <p class="section-desc" data-reveal data-i18n="pipe_desc">Clarify ends with one review of the whole pass — target, baseline, boundaries in one look. Loop implements exactly that agreement. Handoff hands back evidence you can check.</p>
+      <ol class="chapter-rail" data-reveal aria-label="Protocol stages">
+        <li class="rail-item"><button type="button" data-rail="0"><span class="rail-num">01</span><span data-i18n="pw_s1">Clarify</span><span class="rail-gate" data-i18n="pw_gate_review">review</span></button></li>
+        <li class="rail-item"><button type="button" data-rail="1"><span class="rail-num">02</span><span data-i18n="pw_s2">Loop</span></button></li>
+        <li class="rail-item"><button type="button" data-rail="2"><span class="rail-num">03</span><span data-i18n="pw_s3">Handoff</span><span class="rail-gate" data-i18n="pw_gate_accept">accept</span></button></li>
+      </ol>
+      </div>
+
+      <div class="pipeline-grid">
+        <div class="pipeline-card spot" data-step="01" data-reveal>
+          <div class="pipeline-card-header">
+            <span class="pipeline-card-num">1</span>
+            <h3 class="pipeline-card-title" data-i18n="pw_s1">Clarify</h3>
+          </div>
+          <p class="pipeline-card-desc" data-i18n="pipe_c1_desc">One pass: inspect the real code, prepare the target, record the baseline, propose the boundaries. A negative control proves the target can fail — then you review all of it, once.</p>
+          <div class="chapter-chips"><code>init</code><code>negative control</code><code>baseline</code></div>
+          <span class="pipeline-card-badge" data-i18n="pipe_c1_badge">One review of the whole pass</span>
+        </div>
+
+        <div class="pipeline-card spot" data-step="02" data-reveal>
+          <div class="pipeline-card-header">
+            <span class="pipeline-card-num">2</span>
+            <h3 class="pipeline-card-title" data-i18n="pw_s2">Loop</h3>
+          </div>
+          <p class="pipeline-card-desc" data-i18n="pipe_c2_desc">Implement the agreement in a dedicated git worktree. Every attempt is a commit; the judge runs the project's own checks and keeps the raw output; a rejected attempt is reset away with no residue.</p>
+          <div class="chapter-chips"><code>start</code><code>attempt</code><code>status</code><code>worktree</code></div>
+        </div>
+
+        <div class="pipeline-card spot" data-step="03" data-reveal>
+          <div class="pipeline-card-header">
+            <span class="pipeline-card-num">3</span>
+            <h3 class="pipeline-card-title" data-i18n="pw_s3">Handoff</h3>
+          </div>
+          <p class="pipeline-card-desc" data-i18n="pipe_c3_desc">Open handoff.html and check the work yourself: the artifact against the agreement, every result tied to the command that produced it. Then merge.</p>
+          <div class="chapter-chips"><code>verify</code><code>report</code><code>handoff.html</code></div>
+          <span class="pipeline-card-badge" data-i18n="pipe_c3_badge">You accept the result</span>
+        </div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- Scenarios -->
+  <section class="scenarios-section">
+    <div class="container">
+      <p class="section-label" data-reveal data-i18n="sc_label">Three scenarios</p>
+      <h2 class="section-title" data-reveal data-split data-i18n="sc_title">One protocol, three targets</h2>
+      <p class="section-desc" data-reveal data-i18n="sc_desc">The target changes with the task. The discipline — agree, iterate, prove — does not.</p>
+
+      <div class="scenario-grid">
+        <div class="scenario-card spot" data-reveal>
+          <div class="scenario-header">
+            <div class="scenario-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>
+            </div>
+            <h3 class="scenario-title" data-i18n="sc_c1_title">Feature development</h3>
+          </div>
+          <p class="scenario-target" data-i18n="sc_c1_target">Target — a blueprint: architecture and flow, stable element IDs, build order</p>
+          <p class="scenario-desc" data-i18n="sc_c1_desc">Clarify draws the as-is state from the real code and drafts the to-be blueprint. Loop builds it element by element in dependency order. Handoff sets the as-built diagrams next to the blueprint, with the commit behind each element.</p>
+          <div class="scenario-foot">
+            <span class="scenario-artifact" data-i18n="sc_c1_badge">You receive: as-built diagrams</span>
+            <a class="scenario-open" href="diagrams/autodev-development.html?theme=dark" target="_blank" rel="noopener" data-diagram="development"><span data-i18n="sc_open">Open interactive diagram</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+          </div>
+        </div>
+
+        <div class="scenario-card spot" data-reveal>
+          <div class="scenario-header">
+            <div class="scenario-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+            </div>
+            <h3 class="scenario-title" data-i18n="sc_c2_title">Bug fix</h3>
+          </div>
+          <p class="scenario-target" data-i18n="sc_c2_target">Target — a passing test set: reproduction plus regressions, frozen by hash</p>
+          <p class="scenario-desc" data-i18n="sc_c2_desc">Clarify writes the reproduction test that must fail on the unchanged source. Loop fixes until every agreed test passes — the test files stay frozen. Handoff delivers each case green with its raw output.</p>
+          <div class="scenario-foot">
+            <span class="scenario-artifact" data-i18n="sc_c2_badge">You receive: the passing test set</span>
+            <a class="scenario-open" href="diagrams/autodev-bugfix.html?theme=dark" target="_blank" rel="noopener" data-diagram="bugfix"><span data-i18n="sc_open">Open interactive diagram</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+          </div>
+        </div>
+
+        <div class="scenario-card spot" data-reveal>
+          <div class="scenario-header">
+            <div class="scenario-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            </div>
+            <h3 class="scenario-title" data-i18n="sc_c3_title">Performance optimization</h3>
+          </div>
+          <p class="scenario-target" data-i18n="sc_c3_target">Target — one numeric score: one direction, a margin bigger than noise</p>
+          <p class="scenario-desc" data-i18n="sc_c3_desc">Clarify fixes one benchmark, measures the baseline, and proposes the threshold, editable files, and time budget. Loop optimizes and keeps the best verified state; the ruler never changes mid-loop. Handoff renders one chart of what actually happened.</p>
+          <div class="scenario-foot">
+            <span class="scenario-artifact" data-i18n="sc_c3_badge">You receive: the progress chart</span>
+            <a class="scenario-open" href="diagrams/autodev-optimization.html?theme=dark" target="_blank" rel="noopener" data-diagram="optimization"><span data-i18n="sc_open">Open interactive diagram</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Guarantees -->
+  <section class="diff-section" id="guarantees">
+    <div class="container">
+      <p class="section-label" data-reveal data-i18n="diff_label">Guarantees</p>
+      <h2 class="section-title" data-reveal data-split data-i18n="diff_title">Rules that actually run</h2>
+      <p class="section-desc" data-reveal data-i18n="diff_desc">autodev is a protocol plus one small judge — the parts that can be checked mechanically are checked every round, with raw output kept.</p>
+
+      <div class="diff-grid">
+        <div class="diff-card spot" data-reveal>
+          <div class="diff-card-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <h3 class="diff-card-title" data-i18n="diff_c1_title">The judge actually runs</h3>
+          <p class="diff-card-desc" data-i18n="diff_c1_desc">autodev_verify.py calls only the project's own commands. Frozen files are hash-checked every round, changes must stay inside the approved scope, the guard runs before every attempt, the time budget is enforced, and scores are compared with the agreed margin.</p>
+        </div>
+
+        <div class="diff-card spot" data-reveal>
+          <div class="diff-card-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+          <h3 class="diff-card-title" data-i18n="diff_c2_title">Targets must be able to fail</h3>
+          <p class="diff-card-desc" data-i18n="diff_c2_desc">A negative control runs before your review: reproduction tests must fail on the unchanged source, benchmark noise must stay under the margin, and the blueprint must add elements the as-is picture lacks. A target that cannot fail proves nothing.</p>
+        </div>
+
+        <div class="diff-card spot" data-reveal>
+          <div class="diff-card-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          </div>
+          <h3 class="diff-card-title" data-i18n="diff_c3_title">No silent progress</h3>
+          <p class="diff-card-desc" data-i18n="diff_c3_desc">The benchmark is re-run on the unchanged source; noise alone never counts as improvement. A refuted route cannot be retried without stating what is new, and a timeout or failed attempt is recorded as exactly that.</p>
+        </div>
+
+        <div class="diff-card spot" data-reveal>
+          <div class="diff-card-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3 class="diff-card-title" data-i18n="diff_c4_title">The constitution is a floor</h3>
+          <p class="diff-card-desc" data-i18n="diff_c4_desc">Standing rules — frozen paths, a guard command, budget limits — live in .autodev/constitution.json. Every round inherits them, a round may tighten but never loosen them, and the file stays local to the clone.</p>
+        </div>
+
+        <div class="diff-card spot" data-reveal>
+          <div class="diff-card-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+          </div>
+          <h3 class="diff-card-title" data-i18n="diff_c5_title">Isolation, with rollback</h3>
+          <p class="diff-card-desc" data-i18n="diff_c5_desc">Loop runs in a dedicated git worktree and branch, so your checkout is never touched. Every attempt is a commit; a rejected attempt is reset away with no residue, and Handoff merges the branch back into yours.</p>
+        </div>
+
+        <div class="diff-card spot" data-reveal>
+          <div class="diff-card-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
+          </div>
+          <h3 class="diff-card-title" data-i18n="diff_c6_title">Takeover, not transcript</h3>
+          <p class="diff-card-desc" data-i18n="diff_c6_desc">Everything a loop knows lives in its contract directory and branch, not in the conversation. A new session runs status and gets the position, what the log already rules out, and the next action in one line.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recorded runs -->
+  <section class="cases-section" id="results">
+    <div class="container">
+      <p class="section-label" data-reveal data-i18n="case_label">In practice</p>
+      <h2 class="section-title" data-reveal data-split data-i18n="case_title">Two recorded runs</h2>
+      <p class="section-desc" data-reveal data-i18n="case_desc">Both charts are rendered from measured data by the skill's own chart renderer — rejections, rollbacks, and an outage included.</p>
+
+      <div class="case-list">
+        <article class="case-item spot" data-reveal>
+          <div class="case-header">
+            <div class="case-heading">
+              <h3 class="case-repo">MoE Transformer · EN→FR translation</h3>
+              <p class="case-meta" data-i18n="case_c1_meta">PyTorch · single RTX 4090D · 31 attempts · 4 retained</p>
+            </div>
+            <span class="case-status" data-i18n="case_c1_badge">Target exceeded</span>
+          </div>
+          <p class="case-summary" data-i18n="case_c1_summary">Target BLEU ≥ 28.87 — the dense reference — over a baseline of 24.97. One editable file, a fixed wall-clock budget per run. The benchmark on the unchanged source moved by 0.62, so the keep margin was set at 0.8. Thirty-one attempts under thirty named routes; four retained — top1-n4, batch-up, dropout-down, cosine-sched — reached 31.25, and the verify re-run scored 30.91. Everything else measured under the margin and was rolled back.</p>
+          <figure class="case-chart">
+            <img src="./assets/autodev-case-moe.svg" alt="Score trajectory of the MoE optimization loop: 31 attempts, 4 retained improvements, target exceeded" width="960" height="480" loading="lazy" decoding="async">
+          </figure>
+          <p class="case-detail" data-i18n="case_c1_foot">All 31 attempts stay on record; the 27 that measured under the margin were rolled back.</p>
+        </article>
+
+        <article class="case-item spot" data-reveal>
+          <div class="case-header">
+            <div class="case-heading">
+              <h3 class="case-repo">cann2026 · RoPE kernel</h3>
+              <p class="case-meta" data-i18n="case_c2_meta">AscendC · CANN 9.0 · six rounds · one editable kernel file</p>
+            </div>
+            <span class="case-status alt" data-i18n="case_c2_badge">Fully recorded</span>
+          </div>
+          <p class="case-summary" data-i18n="case_c2_summary">Six rounds on one editable kernel file, drawn as one continuous history: the initial baseline, then 16 cumulative attempts, all recomputed from the 15 per-case raw latencies on one fixed reference scale — 19.7026 at the start, 0.7168 retained in the end. Four rounds met their own targets; rounds 2 and 6 did not. In round 6 three ideas measured under the keep margin, one attempt failed to compile and was rolled back invalid, and the retained contiguous-token change scored 0.7168 against a 0.680 target. The final verify hit a judge-service outage — recorded as an outage, not a number.</p>
+          <figure class="case-chart">
+            <img src="./assets/autodev-case-cann2026.svg" alt="Continuous cann2026 optimization history: baseline followed by 16 cumulative attempts on one fixed-reference scale" width="960" height="480" loading="lazy" decoding="async">
+          </figure>
+          <p class="case-detail" data-i18n="case_c2_foot">Four of six rounds met their targets; the misses and the outage stay on the record.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Get started -->
+  <section class="start-section">
+    <div class="container">
+      <p class="section-label" data-reveal data-i18n="start_label">Get started</p>
+      <h2 class="section-title" data-reveal data-split data-i18n="start_title">Say it in one line</h2>
+      <p class="section-desc" data-reveal data-i18n="start_desc">Install the skill, then describe the task the way you normally would. Limits you already gave are reused, not asked for again.</p>
+
+      <div class="prompt-grid">
+        <div class="prompt-card spot" data-reveal>
+          <p class="prompt-text" data-i18n="prompt1">Add CSV export to the filtered transaction list.</p>
+          <p class="prompt-note" data-i18n="prompt1_note">Opens with as-is diagrams and a blueprint</p>
+        </div>
+
+        <div class="prompt-card spot" data-reveal>
+          <p class="prompt-text" data-i18n="prompt2">CSV export drops rows when a customer name contains a comma.</p>
+          <p class="prompt-note" data-i18n="prompt2_note">Opens with a reproduction test that must fail first</p>
+        </div>
+
+        <div class="prompt-card spot" data-reveal>
+          <p class="prompt-text" data-i18n="prompt3">Bring API p95 under 200 ms — src/api/ only, 20-minute budget.</p>
+          <p class="prompt-note" data-i18n="prompt3_note">Opens with benchmark agreement; your limits are reused</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-inner">
+      <p class="footer-left" data-i18n="footer_left">autodev &middot; MIT License &middot; by Momoyeyu</p>
+      <ul class="footer-links">
+        <li><a href="https://github.com/Momoyeyu/autodev">GitHub</a></li>
+        <li><a href="https://github.com/Momoyeyu/autodev/blob/master/autodev/SKILL.md" data-i18n="footer_docs">Skill Docs</a></li>
+        <li><a href="https://github.com/Momoyeyu/autodev/blob/master/LICENSE" data-i18n="footer_license">License</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>
+    /* ── i18n ── */
+    var i18n = {
+      en: {
+        nav_protocol: 'Protocol',
+        nav_guarantees: 'Guarantees',
+        nav_results: 'In practice',
+        nav_cta: 'Get started',
+
+        hero_tagline: 'Rework rarely starts in the code — <em>it starts before the target is agreed</em>.',
+        hero_desc: 'autodev is a clarify-first Agent Skill for feature development, bug fixes, and performance optimization. Agree on one target, iterate in an isolated judged loop, and hand back evidence you can re-run yourself.',
+        hero_cta_primary: 'See how it works',
+        hero_cta_github: 'View on GitHub',
+
+        pw_s1: 'Clarify', pw_s2: 'Loop', pw_s3: 'Handoff',
+        pw_gate_review: 'review',
+        pw_gate_accept: 'accept',
+        pw_workspace: 'autodev workspace',
+
+        pipe_label: 'The protocol',
+        pipe_title: 'Three stages, one review',
+        pipe_desc: 'Clarify ends with one review of the whole pass — target, baseline, boundaries in one look. Loop implements exactly that agreement. Handoff hands back evidence you can check.',
+        pipe_c1_desc: 'One pass: inspect the real code, prepare the target, record the baseline, propose the boundaries. A negative control proves the target can fail — then you review all of it, once.',
+        pipe_c1_badge: 'One review of the whole pass',
+        pipe_c2_desc: "Implement the agreement in a dedicated git worktree. Every attempt is a commit; the judge runs the project's own checks and keeps the raw output; a rejected attempt is reset away with no residue.",
+        pipe_c3_desc: 'Open handoff.html and check the work yourself: the artifact against the agreement, every result tied to the command that produced it. Then merge.',
+        pipe_c3_badge: 'You accept the result',
+
+        sc_label: 'Three scenarios',
+        sc_title: 'One protocol, three targets',
+        sc_desc: 'The target changes with the task. The discipline — agree, iterate, prove — does not.',
+        sc_c1_title: 'Feature development',
+        sc_c1_target: 'Target — a blueprint: architecture and flow, stable element IDs, build order',
+        sc_c1_desc: 'Clarify draws the as-is state from the real code and drafts the to-be blueprint. Loop builds it element by element in dependency order. Handoff sets the as-built diagrams next to the blueprint, with the commit behind each element.',
+        sc_c1_badge: 'You receive: as-built diagrams',
+        sc_c2_title: 'Bug fix',
+        sc_c2_target: 'Target — a passing test set: reproduction plus regressions, frozen by hash',
+        sc_c2_desc: 'Clarify writes the reproduction test that must fail on the unchanged source. Loop fixes until every agreed test passes — the test files stay frozen. Handoff delivers each case green with its raw output.',
+        sc_c2_badge: 'You receive: the passing test set',
+        sc_c3_title: 'Performance optimization',
+        sc_c3_target: 'Target — one numeric score: one direction, a margin bigger than noise',
+        sc_c3_desc: 'Clarify fixes one benchmark, measures the baseline, and proposes the threshold, editable files, and time budget. Loop optimizes and keeps the best verified state; the ruler never changes mid-loop. Handoff renders one chart of what actually happened.',
+        sc_c3_badge: 'You receive: the progress chart',
+        sc_open: 'Open interactive diagram',
+
+        diff_label: 'Guarantees',
+        diff_title: 'Rules that actually run',
+        diff_desc: 'autodev is a protocol plus one small judge — the parts that can be checked mechanically are checked every round, with raw output kept.',
+        diff_c1_title: 'The judge actually runs',
+        diff_c1_desc: "autodev_verify.py calls only the project's own commands. Frozen files are hash-checked every round, changes must stay inside the approved scope, the guard runs before every attempt, the time budget is enforced, and scores are compared with the agreed margin.",
+        diff_c2_title: 'Targets must be able to fail',
+        diff_c2_desc: 'A negative control runs before your review: reproduction tests must fail on the unchanged source, benchmark noise must stay under the margin, and the blueprint must add elements the as-is picture lacks. A target that cannot fail proves nothing.',
+        diff_c3_title: 'No silent progress',
+        diff_c3_desc: 'The benchmark is re-run on the unchanged source; noise alone never counts as improvement. A refuted route cannot be retried without stating what is new, and a timeout or failed attempt is recorded as exactly that.',
+        diff_c4_title: 'The constitution is a floor',
+        diff_c4_desc: 'Standing rules — frozen paths, a guard command, budget limits — live in .autodev/constitution.json. Every round inherits them, a round may tighten but never loosen them, and the file stays local to the clone.',
+        diff_c5_title: 'Isolation, with rollback',
+        diff_c5_desc: 'Loop runs in a dedicated git worktree and branch, so your checkout is never touched. Every attempt is a commit; a rejected attempt is reset away with no residue, and Handoff merges the branch back into yours.',
+        diff_c6_title: 'Takeover, not transcript',
+        diff_c6_desc: 'Everything a loop knows lives in its contract directory and branch, not in the conversation. A new session runs status and gets the position, what the log already rules out, and the next action in one line.',
+
+        case_label: 'In practice',
+        case_title: 'Two recorded runs',
+        case_desc: "Both charts are rendered from measured data by the skill's own chart renderer — rejections, rollbacks, and an outage included.",
+        case_c1_meta: 'PyTorch · single RTX 4090D · 31 attempts · 4 retained',
+        case_c1_badge: 'Target exceeded',
+        case_c1_summary: 'Target BLEU ≥ 28.87 — the dense reference — over a baseline of 24.97. One editable file, a fixed wall-clock budget per run. The benchmark on the unchanged source moved by 0.62, so the keep margin was set at 0.8. Thirty-one attempts under thirty named routes; four retained — top1-n4, batch-up, dropout-down, cosine-sched — reached 31.25, and the verify re-run scored 30.91. Everything else measured under the margin and was rolled back.',
+        case_c1_foot: 'All 31 attempts stay on record; the 27 that measured under the margin were rolled back.',
+        case_c2_meta: 'AscendC · CANN 9.0 · six rounds · one editable kernel file',
+        case_c2_badge: 'Fully recorded',
+        case_c2_summary: 'Six rounds on one editable kernel file, drawn as one continuous history: the initial baseline, then 16 cumulative attempts, all recomputed from the 15 per-case raw latencies on one fixed reference scale — 19.7026 at the start, 0.7168 retained in the end. Four rounds met their own targets; rounds 2 and 6 did not. In round 6 three ideas measured under the keep margin, one attempt failed to compile and was rolled back invalid, and the retained contiguous-token change scored 0.7168 against a 0.680 target. The final verify hit a judge-service outage — recorded as an outage, not a number.',
+        case_c2_foot: 'Four of six rounds met their targets; the misses and the outage stay on the record.',
+
+        start_label: 'Get started',
+        start_title: 'Say it in one line',
+        start_desc: 'Install the skill, then describe the task the way you normally would. Limits you already gave are reused, not asked for again.',
+        prompt1: 'Add CSV export to the filtered transaction list.',
+        prompt1_note: 'Opens with as-is diagrams and a blueprint',
+        prompt2: 'CSV export drops rows when a customer name contains a comma.',
+        prompt2_note: 'Opens with a reproduction test that must fail first',
+        prompt3: 'Bring API p95 under 200 ms — src/api/ only, 20-minute budget.',
+        prompt3_note: 'Opens with benchmark agreement; your limits are reused',
+
+        install_title: 'Install the skill',
+        install_hint: 'Works with any agent that loads <code>SKILL.md</code> — the judge only runs the project\'s own checks.',
+
+        footer_left: 'autodev &middot; MIT License &middot; by Momoyeyu',
+        footer_docs: 'Skill Docs',
+        footer_license: 'License',
+
+        stages: [
+          {
+            title: 'Clarify',
+            desc: 'One pass: prepare the target, measure the baseline, propose the boundaries.',
+            steps: [
+              { text: 'Task parsed: p95 < 200 ms · src/api/ only · 20-minute budget', state: 'done' },
+              { text: 'Benchmark fixed: 15 runs, weighted p95 latency, lower is better', state: 'done' },
+              { text: 'Baseline on unchanged source: 342 ms', state: 'done' },
+              { text: 'Noise check: re-run moved 9 ms, keep margin set at 20 ms', state: 'done' },
+              { text: 'Awaiting your review of the whole pass', state: 'current' }
+            ]
+          },
+          {
+            title: 'Loop',
+            desc: 'Optimize and keep the best verified state — the ruler never changes mid-loop.',
+            steps: [
+              { text: 'Attempt 1: route cache → 298 ms, kept', state: 'done' },
+              { text: 'Attempt 2: connection pooling → 351 ms, rolled back', state: 'done' },
+              { text: 'Attempt 3: batched small queries → 254 ms, kept', state: 'done' },
+              { text: 'Attempt 4: trimmed per-request logging → 187 ms, kept', state: 'done' },
+              { text: 'Target met — 187 ms ≤ 200 ms, loop exits', state: 'done' }
+            ]
+          },
+          {
+            title: 'Handoff',
+            desc: 'Verify the retained state and open the record of what actually happened.',
+            steps: [
+              { text: 'verify: frozen files untouched, changes inside src/api/', state: 'done' },
+              { text: 'Best state re-measured: 187 ms — target met', state: 'done' },
+              { text: 'report: 4 attempts, 3 kept, 1 rolled back, 0 invalid', state: 'done' },
+              { text: 'handoff.html written — open it, then merge', state: 'current' }
+            ]
+          }
+        ]
+      },
+
+      zh: {
+        nav_protocol: '协议',
+        nav_guarantees: '保障',
+        nav_results: '实战',
+        nav_cta: '开始使用',
+
+        hero_tagline: '返工大多不是代码的问题，<em>而是开工前没对齐</em>。',
+        hero_desc: 'autodev 是一个以 clarify 为核心的 Agent Skill，面向功能开发、问题修复与性能优化。先把意图谈成一个你确认过的 target，在隔离且逐轮裁决的循环里执行，最后交付你能亲自复跑的证据。',
+        hero_cta_primary: '看看怎么运作',
+        hero_cta_github: '前往 GitHub',
+
+        pw_s1: 'Clarify', pw_s2: 'Loop', pw_s3: 'Handoff',
+        pw_gate_review: '审阅',
+        pw_gate_accept: '验收',
+        pw_workspace: 'autodev 工作区',
+
+        pipe_label: '协议',
+        pipe_title: '三个阶段，一次审阅',
+        pipe_desc: 'Clarify 以一次整轮审阅收尾——target、baseline、边界一次看全。Loop 严格执行你确认的那份约定。Handoff 交回你能亲自核对的证据。',
+        pipe_c1_desc: '一轮：读真实代码、准备 target、记录 baseline、提出边界。负对照先证明 target 能不合格，然后你一次审阅全部结果。',
+        pipe_c1_badge: '一次审阅整轮结果',
+        pipe_c2_desc: '在独立的 git worktree 里执行约定。每次尝试都是一个 commit；裁决脚本只跑项目自己的检查并保留原始输出；被拒绝的尝试直接 reset 回最佳状态，不留痕迹。',
+        pipe_c3_desc: '打开 handoff.html 自己核对：产物与约定逐项对照，每个结果都对应到产生它的命令。然后合并。',
+        pipe_c3_badge: '由你验收结果',
+
+        sc_label: '三种场景',
+        sc_title: '同一套协议，三种 target',
+        sc_desc: 'target 随任务而变；先对齐、再迭代、用证据说话，这套纪律不变。',
+        sc_c1_title: '功能开发',
+        sc_c1_target: 'target —— 一张 blueprint：架构与流程、稳定的元素 ID、构建顺序',
+        sc_c1_desc: 'Clarify 从真实代码画出 as-is 状态，起草 to-be 的 blueprint。Loop 按依赖顺序逐元素实现。Handoff 把竣工图与 blueprint 并排展示，每个元素都能看到对应的 commit。',
+        sc_c1_badge: '交付：竣工架构图与流程图',
+        sc_c2_title: '问题修复',
+        sc_c2_target: 'target —— 一组通过的 test：复现加回归，按哈希冻结',
+        sc_c2_desc: 'Clarify 先写在未改动源码上必须失败的复现测试。Loop 修复直到约定 test 全部通过，测试文件全程冻结。Handoff 让每个用例带着原始输出显示为绿。',
+        sc_c2_badge: '交付：全绿的测试用例组',
+        sc_c3_title: '性能优化',
+        sc_c3_target: 'target —— 唯一一个分数：方向明确、余量大于噪声',
+        sc_c3_desc: 'Clarify 固定唯一的 benchmark，测出 baseline，提出目标、可编辑文件和时间预算。Loop 持续优化并保留已验证的最佳结果，中途不换尺子。Handoff 画出一张真实过程图。',
+        sc_c3_badge: '交付：一张优化过程图',
+        sc_open: '打开交互图',
+
+        diff_label: '保障',
+        diff_title: '写下的规矩，真的会跑',
+        diff_desc: 'autodev 是一套协议加一个小型裁决脚本——能机械检查的部分每轮真跑，原始输出全部保留。',
+        diff_c1_title: '裁决脚本真的在跑',
+        diff_c1_desc: 'autodev_verify.py 只调用项目自己的命令。冻结文件每轮校验哈希，改动必须落在批准范围内，guard 在每次尝试前运行，时间预算强制生效，分数按约定的方向和余量比较。',
+        diff_c2_title: 'target 必须能不合格',
+        diff_c2_desc: '在你的审阅之前先跑负对照：复现测试必须在未改动源码上失败，benchmark 噪声必须小于余量，blueprint 必须包含 as-is 图里没有的元素。不会失败的 target 什么也证明不了。',
+        diff_c3_title: '不许悄悄进步',
+        diff_c3_desc: 'benchmark 会在未改动源码上复跑，单纯噪声永远不算提升。被否定的思路不说明新在哪里就不能重试，超时和失败的尝试都如实记录。',
+        diff_c4_title: '项目宪法是底线',
+        diff_c4_desc: '长期规矩——冻结路径、guard 命令、时间上限——写在 .autodev/constitution.json 里。每一轮自动继承，单轮只能收紧不能放松，文件只属于本机 clone。',
+        diff_c5_title: '隔离执行，可回滚',
+        diff_c5_desc: 'Loop 在独立的 git worktree 和分支里跑，不碰你的工作区。每次尝试都是一个 commit，被拒绝的尝试直接 reset 掉不留痕迹，Handoff 时把分支合并回你手上。',
+        diff_c6_title: '能接管，而不是给一份过程稿',
+        diff_c6_desc: 'loop 知道的一切都在它的契约目录和分支里，而不在对话里。新的 session 运行一次 status，就能拿到当前进度、日志已排除的选项和一句话的下一步。',
+
+        case_label: '实战',
+        case_title: '两次跑完的真实优化',
+        case_desc: '两张图都由 skill 自带的绘图函数从实测数据渲染——包括被拒绝的尝试、回滚和一次评测服务宕机。',
+        case_c1_meta: 'PyTorch · 单卡 RTX 4090D · 31 次尝试 · 保留 4 次',
+        case_c1_badge: '超过目标',
+        case_c1_summary: '目标 BLEU ≥ 28.87（dense 参照值），baseline 24.97。只允许修改一个文件，每次运行固定墙钟预算。benchmark 在未改动源码上复跑相差 0.62，改进余量因此定为 0.8。31 次尝试、30 个思路标签，保留 4 个——top1-n4、batch-up、dropout-down、cosine-sched——达到 31.25，verify 复测 30.91。其余测量全部低于余量，逐一回滚。',
+        case_c1_foot: '31 次尝试全部留档，27 次低于余量的尝试已回滚。',
+        case_c2_meta: 'AscendC · CANN 9.0 · 六轮 · 单个可编辑 kernel 文件',
+        case_c2_badge: '完整留档',
+        case_c2_summary: '对同一个 kernel 文件跑了六轮，画成一条连续轨迹：初始 baseline 之后接 16 次累计尝试，全部按第 3–6 轮共用的固定参考尺度从 15 个用例的原始耗时重新计算——起点 19.7026，最终保留 0.7168。四轮达到各自目标，第 2、6 轮未达标。第 6 轮里 3 个思路测量低于保留阈值，1 次尝试编译失败被判无效回滚，保留的连续 token 分块优化拿到 0.7168（target ≤ 0.680）。最后 verify 撞上评测服务宕机——记录的是宕机，不是一个编出来的分数。',
+        case_c2_foot: '六轮中四轮达成目标；未达标的轮次和宕机都留在记录里。',
+
+        start_label: '快速开始',
+        start_title: '一句话就能开工',
+        start_desc: '装好 skill，然后像平常一样描述任务。你已经给出的限制会直接复用，不再重复询问。',
+        prompt1: '为筛选后的交易列表增加 CSV 导出。',
+        prompt1_note: '从 as-is 图和 blueprint 对齐开始',
+        prompt2: '客户姓名里带逗号时，CSV 导出会丢行。',
+        prompt2_note: '从一条必须失败的复现测试开始',
+        prompt3: '把 API 的 p95 延迟降到 200 ms 以下。实现修改仅限 src/api/，优化时间预算 20 分钟。',
+        prompt3_note: '从确认 benchmark 开始；你给的限制直接复用',
+
+        install_title: '安装 Skill',
+        install_hint: '适用于能够加载 <code>SKILL.md</code> 的 Agent——裁决脚本只调用项目自己的检查。',
+
+        footer_left: 'autodev &middot; MIT License &middot; by Momoyeyu',
+        footer_docs: 'Skill 文档',
+        footer_license: '许可证',
+
+        stages: [
+          {
+            title: 'Clarify',
+            desc: '一轮：准备 target、测出 baseline、提出边界。',
+            steps: [
+              { text: '任务解析：p95 < 200 ms · 仅限 src/api/ · 预算 20 分钟', state: 'done' },
+              { text: 'benchmark 固定：15 次运行、加权 p95 延迟、越低越好', state: 'done' },
+              { text: '未改动源码上的 baseline：342 ms', state: 'done' },
+              { text: '噪声检查：复跑相差 9 ms，保留余量定为 20 ms', state: 'done' },
+              { text: '等你审阅整轮结果', state: 'current' }
+            ]
+          },
+          {
+            title: 'Loop',
+            desc: '持续优化，保留已验证的最佳结果——中途不换尺子。',
+            steps: [
+              { text: '尝试 1：路由缓存 → 298 ms，保留', state: 'done' },
+              { text: '尝试 2：连接池激进复用 → 351 ms，回滚', state: 'done' },
+              { text: '尝试 3：小查询批量合并 → 254 ms，保留', state: 'done' },
+              { text: '尝试 4：精简每请求日志 → 187 ms，保留', state: 'done' },
+              { text: '达标——187 ms ≤ 200 ms，循环退出', state: 'done' }
+            ]
+          },
+          {
+            title: 'Handoff',
+            desc: '核对保留状态，打开真实过程的完整记录。',
+            steps: [
+              { text: 'verify：冻结文件未动，改动都在 src/api/ 内', state: 'done' },
+              { text: '复测最佳状态：187 ms——达标', state: 'done' },
+              { text: 'report：4 次尝试，保留 3 次，回滚 1 次，无效 0 次', state: 'done' },
+              { text: 'handoff.html 已生成——打开查看，然后合并', state: 'current' }
+            ]
+          }
+        ]
+      }
+    };
+
+    var currentLang = localStorage.getItem('autodev-lang') || 'en';
+
+    function applyLang(lang) {
+      currentLang = lang;
+      localStorage.setItem('autodev-lang', lang);
+      document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+
+      var t = i18n[lang];
+      document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) {
+          if (key === 'hero_tagline' || key === 'install_hint' || key === 'footer_left') {
+            el.innerHTML = t[key];
+          } else {
+            el.textContent = t[key];
+          }
+        }
+      });
+
+      document.querySelectorAll('.pw-stage').forEach(function(btn) {
+        var k = btn.getAttribute('data-gate-key');
+        btn.setAttribute('data-gate-label', k && t[k] ? t[k] : '');
+      });
+
+      document.querySelectorAll('[data-diagram]').forEach(function(el) {
+        el.setAttribute('href', 'diagrams/autodev-' + el.getAttribute('data-diagram') + (lang === 'zh' ? '.zh' : '') + '.html?theme=dark');
+      });
+
+      var pwTitle = document.querySelector('.pw-title');
+      if (pwTitle) pwTitle.textContent = t.pw_workspace;
+
+      document.querySelectorAll('.lang-toggle button').forEach(function(btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+      });
+
+      var activeStage = document.querySelector('.pw-stage.active');
+      if (activeStage) {
+        renderStage(parseInt(activeStage.dataset.stage));
+      }
+
+      afterLang();
+    }
+
+    document.querySelectorAll('.lang-toggle button').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        applyLang(btn.getAttribute('data-lang'));
+      });
+    });
+
+    /* ── Pipeline Widget ── */
+    var stepIcons = { done: '&#10003;', current: '&#9679;', pending: '&#9675;' };
+
+    function renderStage(idx) {
+      var s = i18n[currentLang].stages[idx];
+      var panel = document.getElementById('pwPanel');
+      panel.innerHTML =
+        '<h3 class="pw-content-title">' + s.title + '</h3>' +
+        '<p class="pw-content-desc">' + s.desc + '</p>' +
+        '<ul class="pw-steps">' +
+        s.steps.map(function(st, i) {
+          return '<li class="pw-step" style="--si:' + i + '">' +
+            '<span class="pw-step-icon ' + st.state + '">' + stepIcons[st.state] + '</span>' +
+            '<span>' + st.text + '</span>' +
+            '</li>';
+        }).join('') +
+        '</ul>';
+    }
+
+    /* Widget: sliding indicator, autoplay driven by the timer bar's own
+       animation (so CSS pause = timer pause), stops for good on user input. */
+    var widget = document.querySelector('.pipeline-widget');
+    var pwSidebar = document.querySelector('.pw-sidebar');
+    var pwIndicator = document.querySelector('.pw-indicator');
+    var pwTimer = document.querySelector('.pw-timer');
+    var stageBtns = Array.prototype.slice.call(document.querySelectorAll('.pw-stage'));
+    var currentStage = 0;
+    var autoplay = true;
+    var widgetHover = false, widgetFocus = false, widgetVisible = false;
+
+    function moveIndicator() {
+      var b = stageBtns[currentStage];
+      pwIndicator.style.setProperty('--ix', b.offsetLeft + 'px');
+      pwIndicator.style.setProperty('--iy', b.offsetTop + 'px');
+      pwIndicator.style.setProperty('--iw', b.offsetWidth + 'px');
+      pwIndicator.style.setProperty('--ih', b.offsetHeight + 'px');
+    }
+
+    function restartTimer() {
+      pwTimer.classList.remove('run');
+      if (!autoplay) return;
+      void pwTimer.offsetWidth;
+      pwTimer.classList.add('run');
+    }
+
+    function syncWidgetPause() {
+      widget.classList.toggle('paused', widgetHover || widgetFocus || !widgetVisible || document.hidden);
+    }
+
+    function setStage(idx, fromUser) {
+      currentStage = idx;
+      stageBtns.forEach(function(b, i) {
+        b.classList.toggle('active', i === idx);
+        b.setAttribute('aria-selected', String(i === idx));
+      });
+      renderStage(idx);
+      moveIndicator();
+      if (pwSidebar.scrollWidth > pwSidebar.clientWidth + 1) {
+        var b = stageBtns[idx];
+        pwSidebar.scrollTo({ left: b.offsetLeft - (pwSidebar.clientWidth - b.offsetWidth) / 2, behavior: reduceMQ.matches ? 'auto' : 'smooth' });
+      }
+      if (fromUser) autoplay = false;
+      restartTimer();
+    }
+
+    stageBtns.forEach(function(btn, i) {
+      btn.addEventListener('click', function() { setStage(i, true); });
+    });
+
+    pwTimer.addEventListener('animationend', function() {
+      if (autoplay) setStage((currentStage + 1) % stageBtns.length, false);
+    });
+
+    widget.addEventListener('pointerenter', function() { widgetHover = true; syncWidgetPause(); });
+    widget.addEventListener('pointerleave', function() { widgetHover = false; syncWidgetPause(); });
+    widget.addEventListener('focusin', function() { widgetFocus = true; syncWidgetPause(); });
+    widget.addEventListener('focusout', function() { widgetFocus = false; syncWidgetPause(); });
+
+    /* ── Copy install command ── */
+    var copyIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    document.getElementById('copyBtn').addEventListener('click', function() {
+      var code = document.getElementById('installCode').textContent;
+      navigator.clipboard.writeText(code).then(function() {
+        var btn = document.getElementById('copyBtn');
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#30a46c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        btn.classList.remove('copied');
+        void btn.offsetWidth;
+        btn.classList.add('copied');
+        setTimeout(function() { btn.innerHTML = copyIcon; btn.classList.remove('copied'); }, 2000);
+      });
+    });
+
+    /* ── Mobile nav toggle ── */
+    document.getElementById('navToggle').addEventListener('click', function() {
+      var links = document.getElementById('navLinks');
+      var expanded = links.classList.toggle('open');
+      this.setAttribute('aria-expanded', String(expanded));
+    });
+
+    document.querySelectorAll('.nav-links a').forEach(function(a) {
+      a.addEventListener('click', function() {
+        document.getElementById('navLinks').classList.remove('open');
+        document.getElementById('navToggle').setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    /* ── Motion ── */
+    var reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
+    var fineMQ = matchMedia('(hover: hover) and (pointer: fine)');
+    var chapterMQ = matchMedia('(min-width: 1000px) and (min-height: 620px)');
+    var hasIO = 'IntersectionObserver' in window;
+
+    function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+    function smoothstep(t) { return t * t * (3 - 2 * t); }
+    // Frame-rate independent exponential approach toward a target.
+    function damp(cur, target, dt, tau) { return target + (cur - target) * Math.exp(-dt / tau); }
+
+    /* Split headlines into masked word chunks. Punctuation sticks to the
+       preceding chunk so it never wraps onto its own line. */
+    var segmenter = window.Intl && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'word' }) : null;
+
+    function tokens(text) {
+      if (!segmenter) return text.split(/(\s+)/);
+      var out = [];
+      Array.from(segmenter.segment(text)).forEach(function(s) {
+        var seg = s.segment;
+        if (/^\s+$/.test(seg)) out.push(seg);
+        else if (!s.isWordLike && out.length && !/^\s+$/.test(out[out.length - 1])) out[out.length - 1] += seg;
+        else out.push(seg);
+      });
+      return out;
+    }
+
+    function splitWords(el) {
+      var n = 0;
+      (function walk(node) {
+        Array.prototype.slice.call(node.childNodes).forEach(function(child) {
+          if (child.nodeType === 1) { walk(child); return; }
+          if (child.nodeType !== 3) return;
+          var frag = document.createDocumentFragment();
+          tokens(child.textContent).forEach(function(part) {
+            if (!part) return;
+            if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+            var w = document.createElement('span');
+            var inner = document.createElement('span');
+            w.className = 'w';
+            inner.textContent = part;
+            inner.style.setProperty('--wi', n++);
+            w.appendChild(inner);
+            frag.appendChild(w);
+          });
+          node.replaceChild(frag, child);
+        });
+      })(el);
+    }
+
+    var splitEls = Array.prototype.slice.call(document.querySelectorAll('[data-split]'));
+
+    function afterLang() {
+      splitEls.forEach(function(el) {
+        splitWords(el);
+        if (el.classList.contains('in-view')) {
+          el.classList.remove('in-view');
+          void el.offsetWidth;
+          el.classList.add('in-view');
+        }
+      });
+      if (pwIndicator) moveIndicator();
+    }
+
+    /* One-shot reveal. Elements already scrolled past reveal immediately. */
+    var revealEls = Array.prototype.slice.call(document.querySelectorAll('[data-reveal]'));
+    revealEls.forEach(function(el) {
+      var explicit = el.getAttribute('data-reveal');
+      var sibs = Array.prototype.filter.call(el.parentNode.children, function(c) { return c.hasAttribute('data-reveal'); });
+      el.style.setProperty('--i', explicit !== '' ? explicit : sibs.indexOf(el));
+    });
+
+    var revealIO = hasIO ? new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting || e.boundingClientRect.bottom < 0) {
+          e.target.classList.add('in-view');
+          revealIO.unobserve(e.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 }) : null;
+
+    document.querySelectorAll('.diff-card-icon svg > *').forEach(function(s) { s.setAttribute('pathLength', '1'); });
+
+    /* Spotlight follows the pointer inside each card */
+    document.querySelectorAll('.spot').forEach(function(card) {
+      card.addEventListener('pointermove', function(e) {
+        var b = card.getBoundingClientRect();
+        card.style.setProperty('--mx', (e.clientX - b.left) + 'px');
+        card.style.setProperty('--my', (e.clientY - b.top) + 'px');
+      });
+    });
+
+    /* Nav: active section underline */
+    var navLinks = {};
+    document.querySelectorAll('.nav-links a[href^="#"]:not(.nav-cta)').forEach(function(a) { navLinks[a.getAttribute('href').slice(1)] = a; });
+    if (hasIO) {
+      var sectionIO = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+          if (!e.isIntersecting) return;
+          Object.keys(navLinks).forEach(function(id) { navLinks[id].classList.toggle('active', id === e.target.id); });
+        });
+      }, { rootMargin: '-45% 0px -50% 0px' });
+      document.querySelectorAll('main section, body > section').forEach(function(s) { if (s.id) sectionIO.observe(s); });
+    }
+
+    /* ── Scroll + pointer engine: one rAF loop, runs only while settling ── */
+    var nav = document.querySelector('nav');
+    var hero = document.querySelector('.hero');
+    var progressBar = document.querySelector('.scroll-progress');
+    var pipeSection = document.getElementById('contract');
+    var chapter = document.querySelector('.pipeline-chapter');
+    var chapterStage = document.querySelector('.chapter-stage');
+    var chapterRail = document.querySelector('.chapter-rail');
+    var railItems = Array.prototype.slice.call(document.querySelectorAll('.rail-item'));
+    var pipeCards = Array.prototype.slice.call(document.querySelectorAll('.pipeline-card'));
+    var navH = 65, chapterOn = false, chapterIdx = -1;
+
+    var keys = ['heroOut', 'gx', 'gy', 'tx', 'ty', 'cp'];
+    var tau = { heroOut: 0.08, gx: 0.35, gy: 0.35, tx: 0.16, ty: 0.16, cp: 0.09 };
+    var eps = { heroOut: 0.0005, gx: 0.1, gy: 0.1, tx: 0.002, ty: 0.002, cp: 0.0003 };
+    var cur = {}, tgt = {};
+    keys.forEach(function(k) { cur[k] = 0; tgt[k] = 0; });
+    var raf = 0, last = 0;
+
+    function chapterSpan() { return Math.max(1, chapter.offsetHeight - chapterStage.offsetHeight); }
+
+    function readScroll() {
+      var max = document.documentElement.scrollHeight - innerHeight;
+      progressBar.style.transform = 'scaleX(' + (max > 0 ? clamp(scrollY / max, 0, 1) : 0).toFixed(4) + ')';
+      tgt.heroOut = reduceMQ.matches ? 0 : clamp(scrollY / hero.offsetHeight, 0, 1);
+      if (chapterOn) tgt.cp = clamp((navH - chapter.getBoundingClientRect().top) / chapterSpan(), 0, 1);
+    }
+
+    // Each stage holds still for the middle of its scroll segment, then hands off.
+    function chapterX(p) {
+      var n = pipeCards.length - 1, r = p * n, seg = Math.floor(r);
+      if (seg >= n) return n;
+      return seg + smoothstep(clamp((r - seg - 0.3) / 0.4, 0, 1));
+    }
+
+    function paintChapter(p) {
+      var x = chapterX(p), idx = Math.round(x), n = pipeCards.length - 1;
+      pipeCards.forEach(function(c, i) {
+        var d = x - i, a = Math.abs(d);
+        // Outgoing clears just before incoming arrives: opacity hits 0 at |d| = 0.48.
+        c.style.setProperty('--co', smoothstep(clamp(1 - a / 0.48, 0, 1)).toFixed(3));
+        c.style.setProperty('--cy', (clamp(d, -1, 1) * -64).toFixed(1) + 'px');
+        c.style.setProperty('--cs', (1 - Math.min(a, 1) * 0.05).toFixed(4));
+      });
+      chapterRail.style.setProperty('--rp', (x / n).toFixed(4));
+      if (idx === chapterIdx) return;
+      chapterIdx = idx;
+      pipeCards.forEach(function(c, i) { c.classList.toggle('is-active', i === idx); c.inert = i !== idx; });
+      railItems.forEach(function(li, i) {
+        li.classList.toggle('active', i === idx);
+        li.classList.toggle('done', i < idx);
+        if (i === idx) li.firstElementChild.setAttribute('aria-current', 'step');
+        else li.firstElementChild.removeAttribute('aria-current');
+      });
+    }
+
+    function paint() {
+      hero.style.setProperty('--hero-out', cur.heroOut.toFixed(4));
+      hero.style.setProperty('--gx', cur.gx.toFixed(1));
+      hero.style.setProperty('--gy', cur.gy.toFixed(1));
+      widget.style.setProperty('--tx', cur.tx.toFixed(3));
+      widget.style.setProperty('--ty', cur.ty.toFixed(3));
+      if (chapterOn) paintChapter(cur.cp);
+    }
+
+    function frame(now) {
+      raf = 0;
+      var dt = last ? Math.min((now - last) / 1000, 0.05) : 1 / 60;
+      last = now;
+      var moving = false;
+      keys.forEach(function(k) {
+        var v = reduceMQ.matches ? tgt[k] : damp(cur[k], tgt[k], dt, tau[k]);
+        if (Math.abs(v - tgt[k]) < eps[k]) v = tgt[k]; else moving = true;
+        cur[k] = v;
+      });
+      paint();
+      if (moving) raf = requestAnimationFrame(frame); else last = 0;
+    }
+
+    function schedule() { if (!raf) raf = requestAnimationFrame(frame); }
+
+    function setChapter() {
+      navH = nav.offsetHeight;
+      document.documentElement.style.setProperty('--nav-h', navH + 'px');
+      chapterOn = chapterMQ.matches && !reduceMQ.matches && hasIO;
+      pipeSection.classList.toggle('chapter-on', chapterOn);
+      chapterIdx = -1;
+      if (chapterOn) {
+        chapter.style.height = (chapterStage.offsetHeight + (pipeCards.length - 1) * innerHeight * 0.7) + 'px';
+      } else {
+        chapter.style.height = '';
+        pipeCards.forEach(function(c) {
+          c.inert = false;
+          c.classList.remove('is-active');
+          ['--co', '--cy', '--cs'].forEach(function(p) { c.style.removeProperty(p); });
+        });
+      }
+      readScroll();
+      cur.cp = tgt.cp;
+      paint();
+    }
+
+    railItems.forEach(function(li, i) {
+      li.firstElementChild.addEventListener('click', function() {
+        if (!chapterOn) return;
+        var p = i / (pipeCards.length - 1);
+        var top = scrollY + chapter.getBoundingClientRect().top - navH + p * chapterSpan();
+        window.scrollTo({ top: Math.ceil(top) + 1, behavior: 'smooth' });
+      });
+    });
+
+    hero.addEventListener('pointermove', function(e) {
+      if (!fineMQ.matches || reduceMQ.matches) return;
+      var hb = hero.getBoundingClientRect(), wb = widget.getBoundingClientRect();
+      tgt.gx = ((e.clientX - hb.left) / hb.width * 2 - 1) * 140;
+      tgt.gy = ((e.clientY - hb.top) / hb.height * 2 - 1) * 90;
+      tgt.tx = clamp((e.clientX - (wb.left + wb.width / 2)) / wb.width, -1, 1) * 5;
+      tgt.ty = clamp((e.clientY - (wb.top + wb.height / 2)) / wb.height, -1, 1) * -4;
+      widget.style.setProperty('--px', ((e.clientX - wb.left) / wb.width * 100).toFixed(1) + '%');
+      widget.style.setProperty('--py', ((e.clientY - wb.top) / wb.height * 100).toFixed(1) + '%');
+      schedule();
+    });
+
+    hero.addEventListener('pointerleave', function() {
+      tgt.gx = tgt.gy = tgt.tx = tgt.ty = 0;
+      schedule();
+    });
+
+    addEventListener('scroll', function() { readScroll(); schedule(); }, { passive: true });
+
+    var resizeTimer = 0;
+    addEventListener('resize', function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() { setChapter(); moveIndicator(); schedule(); }, 120);
+    }, { passive: true });
+
+    function onMotionPref() {
+      if (reduceMQ.matches) { autoplay = false; restartTimer(); }
+      setChapter();
+      schedule();
+    }
+
+    [reduceMQ, chapterMQ].forEach(function(mq) {
+      if (mq.addEventListener) mq.addEventListener('change', onMotionPref);
+      else mq.addListener(onMotionPref);
+    });
+
+    document.addEventListener('visibilitychange', syncWidgetPause);
+
+    /* ── Init ── */
+    renderStage(0);
+    applyLang(currentLang);
+    autoplay = !reduceMQ.matches;
+    setStage(0, false);
+    setChapter();
+
+    if (hasIO) {
+      revealEls.forEach(function(el) { revealIO.observe(el); });
+      new IntersectionObserver(function(entries) {
+        widgetVisible = entries[0].isIntersecting;
+        syncWidgetPause();
+      }, { threshold: 0.35 }).observe(widget);
+    } else {
+      revealEls.forEach(function(el) { el.classList.add('in-view'); });
+      widgetVisible = true;
+    }
+    syncWidgetPause();
+
+    // Fonts change line metrics; re-measure layout-dependent pieces once they land.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function() { setChapter(); moveIndicator(); });
+  </script>
+
+</body>
+</html>

@@ -3,3 +3,4 @@
 __pycache__/
 *.py[cod]
 /.autodev-evals/
+.autodev.qoder.site
