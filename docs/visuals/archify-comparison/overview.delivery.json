@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "9e28d271-4dde-4f53-85f2-780afd7a0ae5",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/momoyeyu/Projects/personal/autodev/docs/visuals/archify-comparison/overview.json",
+  "output": "/Users/momoyeyu/Projects/personal/autodev/docs/visuals/archify-comparison/overview.html",
+  "specification": {
+    "sha256": "2fa08940f4cfad6569e567df295b7b35bf31b8c61b2729f82080ce2cb3b26484",
+    "bytes": 3847
+  },
+  "artifact": {
+    "sha256": "250cc63489d81570841122952b1b7483bb98691e0a7f2473805a33f6cde4be62",
+    "bytes": 821975
+  }
+}

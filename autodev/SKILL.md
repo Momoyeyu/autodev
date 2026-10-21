@@ -1,68 +1,52 @@
 ---
 name: autodev
-description: A clarify-first Agent Skill for feature development, bug fixes, and performance optimization. Align the human on a target — blueprint, passing test set, or benchmark threshold — before implementation; then iterate inside a judged loop and hand off as-built diagrams, the passing tests, or a progress chart.
+description: Use when consequential changes in an existing codebase need explicit scope alignment, visible execution, and reviewable verification, such as cross-module features, high-impact fixes, or constrained performance work. Usually skip obvious local edits and quick fixes unless explicitly requested.
 ---
 
 # autodev
 
-Align the agent and the human to reduce natural-language misunderstanding and rework. Improve delivery quality, stability, and overall efficiency while helping the human understand and take over the project.
+Make consequential changes understandable before implementation, inspectable during execution, and verifiable at handoff. Keep a shared picture of **what changes, what stays intact, and what evidence supports the result**.
 
-**Verifiable & measurable & visible:** the result must be easy to verify, possible to measure, and clear to inspect.
+## Choose deliberately
+
+Use for changes whose misunderstandings or regressions are expensive: interacting services, compatibility constraints, stateful flows, migrations, or costly optimization. Repository size alone is not the trigger; a small authorization change may warrant this workflow while a typo in a large application does not. Follow explicit invocation; otherwise handle routine local work directly without adding this ceremony.
+
+AI inspects code, interprets failures, judges whether checks cover the intended behavior, and explains uncertainty. The bundled tools check recorded constraints and execution facts. Neither a diagram nor a green command proves the whole feature correct.
 
 ## Clarify → Loop → Handoff
 
-User input starts the workflow; it is not another stage. Clarify is the core capability: agreeing on the **target**, capturing the baseline, proposing the scope, and human review belong here, not in the implementation loop. The target differs per scenario:
+| Stage | Work | What the human sees |
+|---|---|---|
+| **Clarify** | Inspect the affected system, prepare the target, measure baseline, propose scope, then review the whole pass once | Current state, intended change, preserved behavior, baseline, and consequential open decisions |
+| **Loop** | Implement inside the agreement, check each attempt, and keep the visible state current at meaningful checkpoints | Actual partial state, observed results, failures or gaps, and next action |
+| **Handoff** | Review the delivered code against the agreement, rerun checks, and present evidence for approval | What was built, what was verified, what remains unverified, and how to reproduce or take over |
 
-- **Feature development** — a blueprint: agreed architecture and flow diagrams.
-- **Bug fix** — a passing test set: reproduction plus regression cases.
-- **Performance optimization** — a numeric score reaching an agreed threshold.
+The target is a blueprint for development, an agreed test set for a bug fix, or one numeric benchmark for optimization. Keep the full scenario-specific clarification; do not replace it with a generic planning conversation. Reuse decisions the human has already supplied. Clarify prepares concrete artifacts and baseline before asking for review; it does not ask for approval after each substep.
 
-| Stage | Feature development | Bug fix | Performance optimization |
-|---|---|---|---|
-| **Clarify** | Draw as-is diagrams; draft the blueprint; propose editable scope; the human reviews the whole pass | Prepare runnable tests; record baseline; propose impact; the human reviews the whole pass | Prepare one runnable benchmark; record baseline; propose target, editable files, and time budget; the human reviews the whole pass |
-| **Loop** | Implement until the as-built state realizes every blueprint element and checks stay green | Fix until all agreed tests pass | Optimize until the target is met or the time budget expires |
-| **Handoff** | As-built architecture and flow diagrams, checked against the blueprint | The agreed test set passing | One chart showing the process from baseline through attempts to the final result |
+## Load only what is needed
 
-## Read only what is needed now
-
-| Reference | Load when |
+| Reference | Read when |
 |---|---|
-| [Constitution](references/constitution.md) | The repository has `.autodev/`, or the human wants rules for every round |
 | [Clarify](references/clarify.md) | Starting a task or revisiting its agreement |
-| [Clarify: development](references/clarify-development.md) | Clarifying a feature request; do not load other branches |
-| [Clarify: bug fix](references/clarify-bugfix.md) | Clarifying a defect report; do not load other branches |
-| [Clarify: optimization](references/clarify-optimization.md) | Clarifying a performance goal; do not load other branches |
-| [Loop](references/loop.md) | Agreement and baseline are ready, or taking over a running loop; read shared rules and the relevant scenario |
-| [Handoff](references/handoff.md) | Preparing the required artifact |
+| [Development](references/clarify-development.md), [bug fix](references/clarify-bugfix.md), or [optimization](references/clarify-optimization.md) | Read only the selected Clarify branch |
+| [Visualization](references/visualization.md) | Preparing the first system view; updating it at a meaningful checkpoint |
+| [Verification](references/verification.md) | Choosing checks in Clarify; judging evidence before handoff |
+| [Loop](references/loop.md) | Executing the approved change or taking over a run |
+| [Handoff](references/handoff.md) | Preparing the delivery for human review |
+| [Constitution](references/constitution.md) | The project has `.autodev/`, or standing rules are requested |
 
-Do not preload the directory. Follow the current stage and scenario, keeping shared instructions with the selected branch.
+## Execution contract
 
-`scripts/autodev_verify.py` (Python 3, standard library) is the judge; `scripts/autodev_render.py` turns diagram JSON into self-contained HTML previews. Clarify writes the agreement into the judge with `init`, including a negative control so a target that cannot fail on the unchanged source never reaches Loop; Loop runs `start`, then `attempt` and `status` every round; Handoff runs `verify` and `report`. It enforces the frozen surface, the editable scope, the time budget, the direction-bound comparison, blueprint-element coverage, and rollback, keeping raw output for every verdict. The contract directory and its rules are in [Clarify: the contract](references/clarify.md#the-contract). The rules below describe what it does and what remains your responsibility.
+Use `scripts/autodev_verify.py` with Python 3: `init` records the agreement and baseline, `start` binds an isolated worktree, `attempt` judges committed checkpoints, and `status` names the next action. Read the current reference and use command help for flags. The judge reuses the project's tools; it is not a test framework or a semantic oracle.
 
-## Clarify
+Keep tests, benchmarks, and the agreed blueprint fixed; enforce scope and project rules. A changed goal or scope returns to Clarify. Keep failed checks, rejected ideas, and blocked runs visible. Interpret their causes before choosing the next attempt; never turn environment failure, skipped checks, or missing evidence into success.
 
-Clarify is a human-in-the-loop cycle around the **whole pass**, not around each sub-step. Run one complete pass, present everything it produced, and let the human decide: revise and repeat Clarify, or enter Loop.
+At a meaningful checkpoint, update the affected architecture or flow from the actual code, including unfinished paths. Record a concise `review.md` in the contract directory separating AI assessment from observed checks, then run `report --progress` and show its `progress.html`. This is an inspectable snapshot, not continuous streaming; update when behavior, evidence, risk, or direction changes. Routine tool calls do not need a new diagram or human approval.
 
-If the repository has a constitution (`.autodev/constitution.json`), its frozen paths, guard command, and budget limits bind every round; `init` inherits them, and a round may tighten them but never loosen them.
+## Delivery
 
-For a feature, one pass is: draw the as-is architecture and flow diagrams from the actual code; draft the to-be blueprint as diagram JSON with stable element IDs and their build dependencies; then propose the editable scope, including whether existing tests stay frozen or the blueprint may change them.
+Deliver **as-built diagrams for development, the agreed test results for a bug fix, or the measured process chart for optimization**, with the review notes and reproducible evidence. A final number or prose claim does not replace the artifact.
 
-For a bug fix, one pass is: write the reproduction test that fails on the unchanged source, query existing tests, remove or update outdated ones, add missing regressions, and verify the set executes; run it to record the baseline; then propose the impact.
+When checks are configured, run `verify` on the retained commit, then `report`; show the actual `handoff.html` using a preview or its absolute path and open command. Before claiming completion, compare the user's target with the code and evidence, not only with diagram IDs. State exactly which behavior is checked and what remains unverified. Missing required evidence means an incomplete or blocked result, even if a mechanical gate is green.
 
-For optimization, the benchmark is exactly one numeric measure or one fixed weighted sum. One pass is: prepare and trial-run the benchmark; measure baseline; then propose the target, editable implementation files, and wall-clock limit against that baseline.
-
-The human reviews the prepared artifact, the baseline, and the proposed scope together. Use decisions already supplied; do not impose a question count or assume approval. Tests that can execute may still fail because the bug is present. Preparing artifacts and measuring baseline are not permission to implement the change early.
-
-## Loop
-
-Work in a dedicated git worktree and branch created at Loop entry; every attempt is a commit judged by `autodev_verify.py attempt`, and an invalid attempt is rolled back with `git reset --hard` to the best commit. For a feature, implement the blueprint element by element in its declared build order, naming each checkpoint's elements with `--elements`, then draw the as-built diagrams at the agreed path covering every element ID; `status` reports `handoff` only when coverage is complete and the regression check is green — and if the as-built state does not truly match the blueprint, keep looping. For a bug fix, develop until all agreed tests pass. For optimization, use do-while order: optimize, measure and retain the best valid state, then check the target or time limit; label each attempt's idea with `--route`, and do not retry a route refuted against the current best without stating what differs. Record every attempt for the final artifact; do not bypass the first attempt merely because baseline meets the target.
-
-Do not weaken tests, shrink workloads, alter benchmark weights, change the measuring conditions, or copy the blueprint into the as-built file to manufacture progress. Changes to intent, target meaning, or permitted scope return to Clarify and require a comparable new baseline.
-
-## Handoff
-
-The primary deliverable is mandatory: **as-built diagrams for a feature, the passing test set for a bug fix, a progress chart for an optimization**. A final number, prose summary, or table alone does not replace them.
-
-`report` writes one self-contained `handoff.html` holding the scenario's deliverable, and prints the absolute path plus an `open` command. Open that page for the human (platform preview, `open`, `report --open`) or print the path and command verbatim — a text claim without the visible artifact is not a handoff. The page is evidence for review, not delivery: the handoff stays gated until `autodev_verify.py --home <contract dir> approve` records the human's approval, and only then does the loop branch merge back.
-
-Use actual recorded results, the original baseline, and the delivered source state. Merge the loop branch back into the branch the user started from, then remove the worktree. Include concise reproduction details and relevant changes so the human can verify and take over. Report missed targets, blocked checks, and missing evidence honestly; do not label an incomplete handoff complete.
+Record the human's approval with `approve` only after review. It binds the retained commit, verification record, and report hash; changed evidence invalidates it. Merge back and remove the worktree only after approval. No configured check means manual verification, explicitly disclosed. Preserve the last verified state when blocked and give a concrete next step.

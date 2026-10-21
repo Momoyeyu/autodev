@@ -14,6 +14,12 @@ If the repository has an `.autodev/` directory, read the [Constitution](constitu
 
 Read only the applicable branch. For a combined request, establish the behavior or design first, then optimize it with its own approved benchmark and baseline.
 
+## Understand the production boundary
+
+Inspect the affected system slice, its callers, state transitions, external dependencies, and compatibility obligations. Surface consequential assumptions and preserved behavior, including failure/recovery paths when relevant. Use [Visualization](visualization.md) to make the change understandable, and [Verification](verification.md) to propose evidence that bears on its actual risks. Do not draw the entire repository merely because it is large.
+
+For coordinated repositories, identify owners, contract boundaries, version skew, and rollout order. The judge operates on one working clone per contract; coordinate separate contracts explicitly rather than implying cross-repository atomicity. Reuse project documentation and existing tools.
+
 ## Human-in-the-loop wraps the whole pass
 
 All branches share one shape: **prepare the target artifact → capture baseline → propose the scope → human review**. Run the complete pass first, then present its results together. Do not stop for approval after each sub-step.

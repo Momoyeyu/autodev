@@ -527,6 +527,220 @@ class TestVerify(Harness):
         self.assertEqual(self.run_v("verify").returncode, 3)
 
 
+class TestProgressReport(Harness):
+    def test_snapshot_before_start_shows_measured_baseline(self):
+        self.assertEqual(self.init().returncode, 0)
+        r = self.run_v("report", "--progress")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        with open(json.loads(r.stdout)["progress"]) as f:
+            page = f.read()
+        self.assertIn("No attempts have been judged", page)
+        self.assertIn("200 ms", page)
+
+    def test_snapshot_shows_recorded_state_review_and_next_action(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=170\n"}, note="reduce allocation")
+        write(self.home, "review.md", "Unit checks passed; DB integration remains unverified.")
+        r = self.run_v("report", "--progress")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        manifest = json.loads(r.stdout)
+        with open(manifest["progress"]) as f:
+            page = f.read()
+        for text in ("In progress", "Next action", "AI review", "DB integration remains unverified",
+                     "reduce allocation", self.contract()["best"][:10], "raw/attempt-001.log"):
+            self.assertIn(text, page)
+        self.assertFalse(os.path.exists(os.path.join(self.home, "handoff.html")))
+        self.assertNotIn("report", self.contract())
+
+    def test_dirty_snapshot_does_not_present_working_changes_as_checked(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=170\n"})
+        write(self.wt, "src/impl.py", "N=140\n")
+        r = self.run_v("report", "--progress")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        with open(json.loads(r.stdout)["progress"]) as f:
+            page = f.read()
+        self.assertIn("Working changes are not covered by the recorded checks", page)
+
+    def test_progress_preserves_approved_handoff_and_its_chart_evidence(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=140\n"})
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        self.assertEqual(self.run_v("approve").returncode, 0)
+        paths = ["contract.json", "handoff.html", "process.svg", "caption.json"]
+        before = {}
+        for name in paths:
+            with open(os.path.join(self.home, name), "rb") as f:
+                before[name] = f.read()
+        self.assertEqual(self.run_v("report", "--progress").returncode, 0)
+        for name in paths:
+            with open(os.path.join(self.home, name), "rb") as f:
+                self.assertEqual(f.read(), before[name], name)
+        self.assertIsNotNone(self.status()["approved"])
+
+    def test_progress_cannot_overwrite_handoff_packet(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=140\n"})
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        custom = os.path.join(self.home, "delivery.html")
+        self.assertEqual(self.run_v("report", "--out", custom).returncode, 0)
+        with open(custom, "rb") as f:
+            before = f.read()
+        self.assertEqual(self.run_v("report", "--progress", "--out", custom).returncode, 3)
+        with open(custom, "rb") as f:
+            self.assertEqual(f.read(), before)
+
+    def test_regenerated_handoff_requests_review_instead_of_reusing_old_approval(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=140\n"})
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        self.assertEqual(self.run_v("approve").returncode, 0)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        with open(os.path.join(self.home, "handoff.html")) as f:
+            page = f.read()
+        self.assertNotIn("merge the loop branch", page)
+        self.assertIn("Review this packet", page)
+        self.assertIsNone(self.status()["approved"])
+
+
+class MeasuredHarness(Harness):
+    def seed(self):
+        super().seed()
+        self.measure(200)
+        path = os.path.join(self.root, "measurement.txt")
+        write(self.repo, "bench/run.py", f'print("p95=" + open({path!r}).read())\n')
+
+    def measure(self, score):
+        write(self.root, "measurement.txt", str(score))
+
+    def accept_measurement(self, score):
+        self.measure(score)
+        code, _ = self.attempt({"src/impl.py": f"N={score}\n"})
+        self.assertEqual(code, 0)
+
+
+class TestVerificationDrift(MeasuredHarness):
+    def test_unmet_target_does_not_hide_a_large_regression(self):
+        self.ready()
+        self.accept_measurement(180)
+        self.measure(500)
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertEqual(json.loads(r.stdout)["verdict"], "failed")
+
+    def test_met_target_does_not_hide_a_large_regression(self):
+        self.ready()
+        self.accept_measurement(120)
+        self.measure(140)
+        self.assertEqual(self.run_v("verify").returncode, 2)
+
+    def test_rerun_inside_margin_is_verified(self):
+        self.ready()
+        self.accept_measurement(140)
+        self.measure(145)
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout)["verdict"], "verified")
+
+    def test_rerun_at_margin_is_not_reproduced(self):
+        self.ready()
+        self.accept_measurement(120)
+        self.measure(130)
+        self.assertEqual(self.run_v("verify").returncode, 2)
+
+    def test_failed_rerun_revokes_approval_and_blocks_merge(self):
+        self.ready()
+        self.accept_measurement(140)
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        self.assertEqual(self.run_v("approve").returncode, 0)
+        self.measure(200)
+        self.assertEqual(self.run_v("verify").returncode, 2)
+        self.assertIsNone(self.status()["approved"])
+        self.assertNotIn("merge the loop branch", self.status()["next"])
+        self.assertEqual(self.run_v("report").returncode, 0)
+        self.assertEqual(self.run_v("approve").returncode, 3)
+        with open(os.path.join(self.home, "handoff.html")) as f:
+            page = f.read()
+        self.assertIn("Final verification: failed", page)
+        self.assertNotIn('<span class="badge ok">target met</span>', page)
+        with open(os.path.join(self.home, "caption.json")) as f:
+            caption = json.load(f)
+        self.assertEqual(caption["verification"]["score"], 200)
+        self.assertEqual(caption["verification"]["verdict"], "failed")
+
+
+class TestHigherVerification(MeasuredHarness):
+    init_extra = ["--score-regex", r"p95=([0-9.]+)", "--unit", "req/s", "--direction", "higher",
+                  "--delta", "10", "--target", "300"]
+
+    def test_unmet_target_does_not_hide_a_large_regression(self):
+        self.ready()
+        self.accept_measurement(250)
+        self.measure(210)
+        self.assertEqual(self.run_v("verify").returncode, 2)
+
+
+class TestCommandFrozenChanges(Harness):
+    def test_attempt_rolls_back_frozen_changes_from_the_command(self):
+        self.ready()
+        head = self.commit({"src/impl.py": 'N=140\nopen("bench/run.py", "a").write("\\n")\n'})
+        code, rec = self.attempt()
+        self.assertEqual((code, rec["verdict"]), (2, "invalid"))
+        self.assertEqual(rec["commit"], head)
+        self.assertEqual(self.read("bench/run.py"), BENCH)
+        self.assertEqual(self.contract()["best_score"], 200)
+        self.assertTrue(self.clean())
+
+    def test_attempt_rolls_back_frozen_deletion_from_the_command(self):
+        self.ready()
+        self.commit({"src/impl.py": 'import os\nN=140\nos.remove("bench/run.py")\n'})
+        code, rec = self.attempt()
+        self.assertEqual((code, rec["verdict"]), (2, "invalid"))
+        self.assertEqual(self.read("bench/run.py"), BENCH)
+        self.assertTrue(self.clean())
+
+    def test_verify_refuses_ignored_frozen_drift(self):
+        write(self.repo, ".gitignore", "__pycache__/\nbench/input.txt\n")
+        git(self.repo, "commit", "-qam", "ignore benchmark input")
+        write(self.repo, "bench/input.txt", "original")
+        self.assertEqual(self.init().returncode, 0)
+        git(self.repo, "worktree", "add", "-q", "-b", "autodev/t", self.wt, "HEAD")
+        write(self.wt, "bench/input.txt", "original")
+        self.assertEqual(self.run_v("start", "--worktree", self.wt).returncode, 0)
+        self.attempt({"src/impl.py": "N=140\n"})
+        write(self.wt, "bench/input.txt", "changed")
+        self.assertTrue(self.clean())
+        self.assertEqual(self.run_v("verify").returncode, 3)
+
+    def test_verify_rejects_frozen_changes_from_the_command(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=140\n"})
+        write(self.root, "mutate", "yes")
+        flag = os.path.join(self.root, "mutate")
+        code = f'import os\nN=120\nif os.path.exists({flag!r}):\n open("bench/run.py", "a").write("\\n")\n'
+        os.remove(flag)
+        self.attempt({"src/impl.py": code})
+        write(self.root, "mutate", "yes")
+        r = self.run_v("verify")
+        self.assertEqual(r.returncode, 2, r.stdout)
+        self.assertEqual(json.loads(r.stdout)["files"], ["bench/run.py"])
+
+    def test_guard_frozen_changes_are_rejected_before_the_benchmark(self):
+        write(self.repo, ".autodev/constitution.json", json.dumps({"guard_cmd": "python3 checks/guard.py"}))
+        write(self.repo, "checks/guard.py", 'import sys; sys.path.insert(0, "src"); import impl\n')
+        git(self.repo, "add", "checks")
+        git(self.repo, "commit", "-qm", "guard")
+        self.ready()
+        self.commit({"src/impl.py": 'N=140\nopen("bench/run.py", "a").write("\\n")\n'})
+        code, rec = self.attempt()
+        self.assertEqual((code, rec["verdict"]), (2, "invalid"))
+        self.assertEqual(self.read("bench/run.py"), BENCH)
+        self.assertTrue(self.clean())
+
+
 class TestRenew(Harness):
     def test_renew_records_previous_contract(self):
         self.init()
@@ -608,6 +822,23 @@ class TestBugfix(Harness):
         r = self.run_v("verify")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(json.loads(r.stdout)["verdict"], "verified")
+
+    def test_report_does_not_claim_success_after_failed_verification(self):
+        flag = os.path.join(self.root, "verification-fails")
+        write(self.repo, "tests/test_x.py",
+              'import sys, os; sys.path.insert(0, "src"); import impl\n'
+              f'assert impl.add(1, 2) == 3 and not os.path.exists({flag!r})\n')
+        git(self.repo, "commit", "-qam", "external test failure")
+        self.assertEqual(self.init(frozen="tests", test_cmd="python3 tests/test_x.py").returncode, 0)
+        self.start()
+        self.attempt({"src/impl.py": "def add(a, b):\n    return a + b\n"})
+        write(self.root, "verification-fails", "yes")
+        self.assertEqual(self.run_v("verify").returncode, 2)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        with open(os.path.join(self.home, "handoff.html")) as f:
+            page = f.read()
+        self.assertIn("Final verification: failed", page)
+        self.assertNotIn("all agreed tests pass", page)
 
     def test_bugfix_rejects_baseline_that_already_passes(self):
         write(self.repo, "src/impl.py", "def add(a, b):\n    return a + b\n")
@@ -767,6 +998,48 @@ class TestDevelopment(Harness):
         self.start()
         self.assertEqual(self.run_v("verify").returncode, 3)
 
+    def test_report_from_dirty_or_unjudged_source_cannot_be_approved_after_reset(self):
+        self.assertEqual(self.init_dev(check=self.check).returncode, 0)
+        self.start()
+        self.attempt({"src/impl.py": "OK=True\n", "src/asbuilt.json": ASBUILT}, "", None,
+                     "--elements", "user_service", "billing_api")
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        best = self.contract()["best"]
+        for committed in (False, True):
+            with self.subTest(committed=committed):
+                write(self.wt, "src/asbuilt.json", diag(["user_service", "billing_api", "unjudged"]))
+                if committed:
+                    git(self.wt, "commit", "-qam", "unjudged diagram")
+                self.assertEqual(self.run_v("report").returncode, 0)
+                git(self.wt, "reset", "--hard", best)
+                self.assertEqual(self.run_v("approve").returncode, 3)
+                self.assertFalse(self.status()["report_current"])
+
+    def test_no_check_report_allows_manual_approval(self):
+        self.assertEqual(self.init_dev().returncode, 0)
+        self.start()
+        self.attempt({"src/impl.py": "x=1\n", "src/asbuilt.json": ASBUILT}, "", None,
+                     "--elements", "user_service", "billing_api")
+        self.assertEqual(self.run_v("report").returncode, 0)
+        self.assertNotIn("run verify", self.status()["next"])
+        self.assertIn("approve", self.status()["next"])
+        self.assertEqual(self.run_v("verify").returncode, 3)
+        self.assertTrue(self.status()["report_current"])
+        self.assertEqual(self.run_v("approve").returncode, 0)
+        with open(os.path.join(self.home, "handoff.html")) as f:
+            self.assertIn("Final verification: not configured", f.read())
+        self.assertIn("merge the loop branch", self.status()["next"])
+
+    def test_unsupported_verify_preserves_manual_review_packet(self):
+        self.assertEqual(self.init_dev().returncode, 0)
+        self.start()
+        self.attempt({"src/impl.py": "x=1\n", "src/asbuilt.json": ASBUILT}, "", None,
+                     "--elements", "user_service", "billing_api")
+        self.assertEqual(self.run_v("report").returncode, 0)
+        report = self.contract()["report"]
+        self.assertEqual(self.run_v("verify").returncode, 3)
+        self.assertEqual(self.contract().get("report"), report)
+
     def test_rolled_back_attempt_keeps_green_state(self):
         self.init_dev(check=self.check)
         self.start()
@@ -779,26 +1052,48 @@ class TestDevelopment(Harness):
         self.assertEqual(s["decision"], "handoff")
         self.assertIn("verify", s["next"])
 
-    def test_init_rejects_blueprint_without_new_elements(self):
+    def test_init_preserves_existing_component_ids(self):
         write(self.repo, "docs/asis.json", diag(["user_service", "billing_api"],
                                                 [("user_service", "billing_api")]))
         git(self.repo, "commit", "-qam", "asis covers all")
         r = self.init_dev()
-        self.assertEqual(r.returncode, 3)
-        self.assertIn("new IDs", r.stderr)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.contract()["elements_new"], [])
 
     def test_init_records_new_elements(self):
         self.init_dev()
         self.assertEqual(self.contract()["elements_new"], ["user_service", "billing_api"])
 
-    def test_copied_blueprint_does_not_hand_off(self):
+    def test_matching_blueprint_without_claims_does_not_hand_off(self):
         self.init_dev()
         self.start()
         self.attempt({"src/asbuilt.json": BLUEPRINT})
         s = self.status()
-        self.assertTrue(s["asbuilt_copies_blueprint"])
+        self.assertTrue(s["asbuilt_matches_blueprint"])
         self.assertEqual(s["elements_missing"], [])
         self.assertEqual(s["decision"], "continue")
+
+    def test_matching_asbuilt_is_valid_when_code_and_checks_realize_the_plan(self):
+        self.assertEqual(self.init_dev(check=self.check).returncode, 0)
+        self.start()
+        self.attempt({"src/impl.py": "OK=True\n", "src/asbuilt.json": BLUEPRINT}, "", None,
+                     "--elements", "user_service", "billing_api")
+        s = self.status()
+        self.assertTrue(s["asbuilt_matches_blueprint"])
+        self.assertEqual(s["decision"], "handoff")
+
+    def test_progress_shows_partial_asbuilt_without_claiming_delivery(self):
+        self.assertEqual(self.init_dev(check=self.check).returncode, 0)
+        self.start()
+        self.attempt({"src/asbuilt.json": diag(["user_service"])}, "", None,
+                     "--elements", "user_service")
+        r = self.run_v("report", "--progress")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        with open(json.loads(r.stdout)["progress"]) as f:
+            page = f.read()
+        for text in ("Current implementation", "In progress", "pending", "billing_api"):
+            self.assertIn(text, page)
+        self.assertEqual(self.status()["decision"], "continue")
 
     def test_report_writes_handoff_html(self):
         self.init_dev(check=self.check)
@@ -1173,7 +1468,7 @@ class TestApprovalGate(Harness):
         s = self.status()
         self.assertEqual(s["decision"], "handoff")
         self.assertIsNone(s["approved"])
-        self.assertIn("approve", s["next"])
+        self.assertIn("verify", s["next"])
         self.assertNotIn("merge the loop branch", s["next"])
         self.assertEqual(self.run_v("verify").returncode, 0)
         self.assertEqual(self.run_v("report").returncode, 0)
@@ -1190,11 +1485,54 @@ class TestApprovalGate(Harness):
         self.ready()
         code, _ = self.attempt({"src/impl.py": "N=150\n"})
         self.assertEqual(code, 0)
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        self.assertEqual(self.run_v("report").returncode, 0)
         self.assertEqual(self.run_v("approve").returncode, 0)
         code, _ = self.attempt({"src/impl.py": "N=130\n"})
         self.assertEqual(code, 0)
         self.assertIsNone(self.contract().get("approved"))
         self.assertIsNone(self.status()["approved"])
+
+    def test_approval_requires_verification_and_report(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=140\n"})
+        self.assertEqual(self.run_v("approve").returncode, 3)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        self.assertEqual(self.run_v("approve").returncode, 3)
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        self.assertEqual(self.run_v("approve").returncode, 3)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        self.assertEqual(self.run_v("approve").returncode, 0)
+
+    def test_changed_report_invalidates_approval(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=140\n"})
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        self.assertEqual(self.run_v("approve").returncode, 0)
+        write(self.home, "handoff.html", "different packet")
+        s = self.status()
+        self.assertIsNone(s["approved"])
+        self.assertNotIn("merge the loop branch", s["next"])
+        self.assertEqual(self.run_v("approve").returncode, 3)
+
+    def test_new_verification_requires_a_new_report_and_approval(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=140\n"})
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        self.assertEqual(self.run_v("approve").returncode, 0)
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        self.assertIsNone(self.status()["approved"])
+        self.assertEqual(self.run_v("approve").returncode, 3)
+
+    def test_approval_refuses_an_unjudged_commit(self):
+        self.ready()
+        self.attempt({"src/impl.py": "N=140\n"})
+        self.assertEqual(self.run_v("verify").returncode, 0)
+        self.assertEqual(self.run_v("report").returncode, 0)
+        self.commit({"src/impl.py": "N=130\n"})
+        self.assertEqual(self.run_v("approve").returncode, 3)
 
 
 class TestContractIntegrity(Harness):

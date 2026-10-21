@@ -10,6 +10,13 @@ Read after the human has approved a complete Clarify pass. Apply the shared rule
 - Return to [Clarify](clarify.md) for a new full pass if intent, the target's meaning, or scope changes. A defect in the agreed artifact also needs repair and a comparable baseline, not a silent adjustment during implementation.
 - Work in the dedicated worktree described below. Never reset, clean, or rewrite the user's own checkout or shared history.
 - Judge every round with `scripts/autodev_verify.py`, not by hand. It performs the scope check, frozen-surface check, command run, direction-bound comparison, rollback, and logging described below, and leaves the raw output that Handoff cites. With a [constitution](constitution.md) guard, it also runs the guard before the agreed command; a failing guard makes the attempt invalid in every scenario. Its exit code is the verdict: `0` accepted or green, `1` rejected, failing, or checkpoint, `2` invalid, `3` precondition not met.
+- Frozen files are checked before execution and after each guard or agreed command. A command that modifies or deletes a frozen file makes the attempt invalid and triggers rollback. Final verification checks frozen files too; a mismatch prevents approval.
+
+## Keep execution visible
+
+Read [Visualization](visualization.md) at the first checkpoint. At a coherent implementation checkpoint, a meaningful failed approach, or newly discovered risk, update the affected view from the actual code and explain what remains unfinished. Keep concise `review.md` notes in the contract directory separating observed checks, AI assessment, missing evidence, and next action. Run `report --progress` and show the resulting `progress.html` snapshot; refresh it when the state materially changes. This does not add an approval gate or require a new diagram after every command.
+
+Use [Verification](verification.md) to interpret failures and reassess whether the agreed checks actually cover the change. A green mechanical gate is not permission to claim untested behavior or production readiness. Return to Clarify if the needed target, checks, or scope must change.
 
 ## Isolate the loop in a git worktree
 
@@ -28,9 +35,9 @@ Build products the agreed commands leave under a declared generated path are acc
 The contract directory and the loop branch hold the whole state, so a new session or another agent can continue without the previous conversation:
 
 1. Find the loop: `git worktree list` shows the `autodev/<task>` branch and its worktree. The contract directory is the `--home` recorded in the Clarify evidence, conventionally `<repo>/.autodev/runs/<task>`.
-2. Run `autodev_verify.py --home <contract dir> status`. Besides the scenario's progress and `decision`, it reports `head`, `head_is_best`, `worktree_clean`, `approved` (whether the human gate at Handoff is recorded), and `next`, one line naming the next action.
+2. Run `autodev_verify.py --home <contract dir> status`. Besides the scenario's progress and `decision`, it reports `head`, `head_is_best`, `worktree_clean`, `verification_current`, `report_current`, `approved` (whether the human gate at Handoff is still valid), and `next`, one line naming the next action.
 3. Settle in-flight work before anything else. Uncommitted changes and a committed but unjudged HEAD belong to the previous session: commit them and run `attempt`, or discard them with `git reset --hard <best>`. Never leave them for the next verdict to absorb.
-4. Read what the log already rules out — `ruled_out` routes for optimization, `elements_done` and `elements_pending` for development — and the last raw outputs under `raw/`, then continue from `next`. A `handoff` decision without `approved` means a review packet exists but the human gate has not been crossed — an existing `handoff.html` is pending evidence, not a delivery; do not merge.
+4. Read what the log already rules out — `ruled_out` routes for optimization, `elements_done` and `elements_pending` for development — and the last raw outputs under `raw/`, then continue from `next`. A `handoff` decision means the loop's exit condition holds, not that verification or reporting is complete. Follow `next` through verification, reporting, and approval; do not merge without a current approval.
 
 Taking over does not reopen the agreement. The contract, budget, and deadline stay as they were; a changed target still means a new Clarify pass.
 
@@ -43,8 +50,8 @@ The target is the approved blueprint: every element realized in the delivered co
 1. Read the approved blueprint, its element IDs, build order, the scope, and which test files are frozen or editable.
 2. Run `status` and implement from `elements_ready` — elements whose dependencies are all realized — in focused commits within the editable surface.
 3. At each checkpoint, commit and run `autodev_verify.py --home <contract dir> attempt --elements <IDs> --note "<what changed>"`, naming the elements this checkpoint realizes. `attempt` refuses a claim whose dependencies are neither realized nor claimed in the same checkpoint (exit `3`, commit kept). With a regression `--check-cmd` it exits `0` (green) or `1` (failing); without one it records a `checkpoint`. All three keep the commit. Claimed elements count as realized once the check is green (or at a checkpoint without a check); claims made while it fails stay `elements_pending` until the next green run. An `invalid` verdict — frozen file edited, out-of-scope change, or failing guard — is rolled back with its claims.
-4. When the blueprint is implemented, draw the **as-built** diagrams from the delivered code — the same diagram JSON format as the blueprint, at the agreed `--asbuilt` path, carrying a node for every blueprint element ID — and commit. Preview with `autodev_render.py <asbuilt>.json` if helpful. Then run `autodev_verify.py --home <contract dir> status`: it reports `handoff` only when every element is realized, the regression check is green, every element ID is a node in the as-built file, and that file is not the blueprint copied over (`asbuilt_copies_blueprint`).
-5. Coverage is mechanical; semantic agreement is your judgment. If the as-built state does not actually realize the blueprint — a missing responsibility, a rewired flow — the development is wrong; keep looping instead of exiting.
+4. Maintain the **as-built** view from the current code at the agreed `--asbuilt` path during implementation, including partial states. Use the same diagram JSON format as the blueprint and commit meaningful updates with the checkpoint. At completion it must cover every blueprint element ID. `status` reports `handoff` when all element claims are recorded as complete, the regression check is green when configured, and the as-built view covers those IDs. `asbuilt_matches_blueprint` is informational: the actual system may correctly match the planned topology.
+5. Coverage and dependency ordering are mechanical records of claims, not per-element verification. Semantic agreement and verification adequacy are your judgment. If the as-built state does not actually realize the blueprint — a missing responsibility, a rewired flow — the development is wrong; keep looping instead of exiting.
 
 Do not weaken tests, skip the regression check, or claim coverage the diagrams do not show. Do not impose an optimization timeout or an arbitrary attempt count on feature work.
 
@@ -94,6 +101,6 @@ Label honestly: one label per idea, reused when the same idea returns. The judge
 
 A crash or timeout has no numeric score: mark it invalid, not zero. Preserve enough history to distinguish measured attempts from the best-so-far state. Record which measured candidate is ultimately delivered, even if it is not the last attempt.
 
-Reserve final verification inside the agreed budget: run `autodev_verify.py --home <contract dir> verify`, which reruns the benchmark on the retained `best` commit and compares the fresh score with the recorded one (`verified` / `failed`). Then enter [Handoff](handoff.md#performance-optimization-one-chart); do not replace the process chart with only a before/after number.
+Reserve final verification inside the agreed budget: run `autodev_verify.py --home <contract dir> verify`, which reruns the benchmark on the retained `best` commit. Verification requires `|fresh score - recorded best| < δ` and the same target-met outcome as the recorded measurement; otherwise it records `failed`, even when both measurements miss the target. This reuses the agreed margin, not a statistical confidence guarantee. Then enter [Handoff](handoff.md#performance-optimization-one-chart); do not replace the process chart with only a before/after number.
 
 If permissions, dependencies, or the environment block any loop, report the blockage and last verified state rather than spinning indefinitely or claiming completion.

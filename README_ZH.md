@@ -3,22 +3,76 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/autodev-brand.zh.png" alt="AutoDev · 打开 VibeCoding 的黑盒" width="720">
+  <img src="docs/assets/autodev-brand.zh.svg" alt="autodev — 从设计到交接持续保持共同理解" width="720">
 </p>
 
-![autodev 三步走：Clarify、Loop、Handoff](docs/assets/autodev-overview.zh.png)
+**autodev 是一个按需使用的 Agent Skill，面向需要充分澄清、直观执行过程和可检查证据的复杂生产变更。**
 
-**autodev 是一个以 clarify 为核心的 Agent Skill：先与人对齐，在共识内执行，再交付直观的证据。**
+一次计费重试改造可能跨越 API、队列、数据库和下游账本。对一句需求表示同意还不够：人需要看清准备改什么、实际做到了哪里、哪些检查支撑结论，以及还有哪些不确定性。autodev 通过 **Clarify → Loop → Handoff** 持续保持这种共同理解，使用目标项目自己的代码、测试和 benchmark。
 
 ```bash
 npx skills add Momoyeyu/autodev -g
 ```
 
-面向**功能开发**、**问题修复**与**性能优化**。适用于能够加载 `SKILL.md` 的 Agent，复用目标项目已有的工具。
+适用于能够加载 `SKILL.md` 的 Agent。它提供工作流和本地证据工具，复用项目已有的开发工具。
 
-## 实战案例
+## 什么时候使用
 
-两个用本 skill 跑出的真实优化记录，基于实测数据、使用 skill 的 `autodev_render.py` 绘图函数绘制。
+当理解偏差、隐藏依赖或验证不足可能让重要变更付出较高代价时，使用 autodev：例如跨服务行为、兼容性敏感的迁移、支付流程、难以定位的回归，或有明确预算和验收目标的性能优化。
+
+简单的局部快速修复通常走常规开发流程。仓库大本身不是使用理由；幂等边界上的一处小改动也可能值得使用。依据变更后果和共同理解的需要选择，而不是给每次编辑都套一层仪式。
+
+| 适合 autodev | 通常使用常规开发流程 |
+|---|---|
+| 重试策略跨越计费服务、队列 worker 和账本写入 | 明显的拼写错误或直接的局部重命名 |
+| 导出变更需要保持跨模块兼容性 | 行为清楚、已有检查充分的小改动 |
+| kernel 优化需要可比较测量和受限预算 | 尚无有效测量目标的猜测性优化 |
+
+## 使用体验
+
+![Clarify、Loop、Handoff，贯穿可见状态与可检查证据](docs/assets/autodev-overview.zh.svg)
+
+价值在于持续理解变更，而不是开头画一张图、结尾宣称成功。
+
+| 阶段 | Agent 准备或执行什么 | 人可以检查什么 |
+|---|---|---|
+| **Clarify · 对齐** | 查实际代码；准备目标产物；建立 baseline；提出范围和验证依据 | 实现前一次审阅完整准备结果 |
+| **Loop · 迭代** | 在共识内实现，裁决有意义的检查点，更新实际局部状态 | 改了什么、检查记录、未完成路径、失败和下一步 |
+| **Handoff · 交接** | 验证保留的源码状态，准备必需产物、证据与限制 | 交付了什么、验证过什么、仍有哪些不确定性、如何继续 |
+
+Clarify 是实际准备，不只是问问题。Agent 从代码画图、准备或维护测试、试运行命令、记录未改动源码的 baseline，并提出边界。**一次用户审阅覆盖整轮准备结果**：目标产物、baseline、范围和验证依据。用户决定修订还是批准进入 Loop。已有决定直接复用；意图、target 含义或允许范围变化时，回到 Clarify。
+
+Loop 在独立 git worktree 和专用分支进行。尝试以 commit 记录，调用项目约定命令裁决。开发中的失败检查点保持可见；无效改动会回滚，被拒绝的优化尝试回到保留的最佳状态。在有意义的已裁决检查点，`report --progress` 生成 `progress.html`，展示已记录检查、可用的当前图和剩余工作。它是再次运行命令才刷新的快照，不是流式看板，也不要求每次工具调用都出报告。
+
+Agent 可以在 `<contract dir>/review.md` 说明用户目标、实际进展、已检查事实、证据缺口和下一步。页面将其明确标注为 **AI review**，与命令执行记录分开。局部实现应保持局部状态的真实样子；下游回归失败和不可用的集成检查也应进入画面。
+
+### 功能开发
+
+![功能开发：对齐设计、检查局部实现、对照交付状态](docs/assets/autodev-development.zh.svg)
+
+从实际代码准备 as-is 架构图与流程图，再提出 blueprint、构建依赖、可编辑范围和回归检查，由用户一次审阅整轮结果。Loop 中展示当前已实现和未完成的职责与路径。Handoff 时依据保留的代码绘制 as-built 图，与 blueprint 对照。
+
+图中的节点记录的是实现声明，不是证明。拓扑不变也可以准确描述行为变化；换 ID 或画出不同的图不能证明正确性。Agent 需要对照代码和支撑证据检查语义。
+
+### 问题修复
+
+![问题修复：复现、对齐回归覆盖、检查失败、交付测试证据](docs/assets/autodev-bugfix.zh.svg)
+
+准备在未改动源码上失败的复现，检查现有测试，保留相关覆盖，有依据地修订过时预期，并补充缺失回归。运行约定测试得到 baseline，提出影响范围，一并交给用户审阅。环境损坏是阻塞，不是 bug 已复现。
+
+Loop 修复直到约定测试全部通过，保留测试版本与原始输出。说明测试覆盖了什么、没有覆盖什么：测试通过是受检行为的证据，不是通用 bug 分类，也不能证明所有生产故障都不可能发生。
+
+### 性能优化
+
+![性能优化：固定 benchmark、可比较尝试、保留结果与过程图](docs/assets/autodev-optimization.zh.svg)
+
+准备一个可执行分数或固定加权和，建立 baseline，提出目标、可编辑文件、测量条件和时间预算，供一次审阅。保持尺子不变。Loop 先尝试改进、测量、保留最佳有效状态，再判断目标或截止时间。除了提升，也记录被拒绝的思路、失败尝试和复测结果。
+
+Handoff 包含 baseline → 尝试 → 保留结果的过程图。超时可以结束工作，但不代表达标。两次 baseline 测量检查的是已观察到的波动，不能给出排除噪声的统计保证。缺失的测量保持缺失。
+
+## 实测案例
+
+这两段历史展示优化工作流的具体使用，不能证明 autodev 对所有任务都有提升，也不能建立普遍的工业有效性。两张图均使用实测记录和 skill 的 `autodev_render.py` 渲染器。
 
 **MoE Transformer —— 英译法翻译模型（PyTorch，单卡 RTX 4090D）。** 目标：BLEU ≥ 28.87（dense 参照值），baseline 24.97，只允许修改 `src/train.py`，每次运行固定墙钟预算。benchmark 在未改动的源码上复跑，同一份代码两次成绩相差 0.62，改进余量因此定为 0.8。31 次尝试、30 个思路标签、4 次被保留——`top1-n4`、`batch-up`、`dropout-down`、`cosine-sched`——达到 31.25；verify 复测 30.91。其余思路（torch.compile、EMA、fused AdamW、容量与层数变体等）测量全部低于余量，逐一回滚。
 
@@ -28,154 +82,56 @@ npx skills add Momoyeyu/autodev -g
 
 ![cann2026 六轮连续优化轨迹：baseline 后接 16 次累计尝试，共用固定参考尺度](docs/assets/autodev-case-cann2026.svg)
 
-## 为什么要做 autodev
-
-自然语言上的同意，不保证双方已经理解一致。Agent 可能实现了错误的行为，改掉人希望保留的流程，或者优化了一个并不代表真实目标的数字。
-
-autodev 的目的是**确保 Agent 与人对齐，降低理解偏差，减少返工次数**。Clarify 在实现之前，将意图转化为人确认过的 **target**——blueprint、通过的 test 组或 benchmark 目标值——加上实测 baseline 和明确的边界。
-
-希望提高的是产出的**质量、稳定性和综合效率**，以及人对项目的**理解和接管能力**。只有双方对目标达成共识，自主执行才有价值。
-
-## Verifiable & Measurable & Visible
-
-| 理念 | 含义 |
-|---|---|
-| **Verifiable · 易验证** | 确认后的 target、准确的命令和实际执行记录，让人能够复验结果 |
-| **Measurable · 可度量** | baseline 与最终结果使用相同验收依据和可比较的条件 |
-| **Visible · 够直观** | 功能开发以竣工架构图与流程图交付；问题修复以全绿的测试用例组交付；性能优化以一张实测过程图交付 |
-
-它们是贯穿流程的要求，不是三个独立阶段。偏离真实意图的测试即使通过，或者用虚构数据画出漂亮的图，都不能证明成功。
-
-## 工作流程
-
-**User input → Clarify → Loop → Handoff。** 用户输入触发流程；共用的工作阶段只有三个，具体规则按场景区分。
-
-| 阶段 | 功能开发 | 问题修复 | 性能优化 |
-|---|---|---|---|
-| **Clarify · 对齐** | 绘制 as-is 图；起草 blueprint；提出修改范围；用户审阅整轮结果 | 准备可执行 test；记录 baseline；提出影响范围；用户审阅整轮结果 | 准备唯一的可执行 benchmark；记录 baseline；提出目标、可编辑文件和时间预算；用户审阅整轮结果 |
-| **Loop · 迭代** | 实现 blueprint 的每个元素，直到竣工状态与之相符且回归检查通过 | 修复直到确认后的 test 全部通过 | 优化直到达标或时间耗尽 |
-| **Handoff · 交付** | 按竣工状态绘制的架构图与流程图，与 blueprint 对照 | 全部通过的测试用例组 | 一张图，展示 baseline、优化尝试和最终结果 |
-
-Clarify 不只是问问题。查代码、画图、维护测试、试运行和测量 baseline，都是建立共识的一部分。human-in-the-loop 的循环套在**整个 Clarify 阶段外层**：agent 跑完一轮——准备 target 产物、记录 baseline、提出范围——用户一次审阅全部结果，决定继续 clarify 还是进入 Loop。Loop 负责实现共识，而不是边写代码边重新解释成功标准。Loop 在独立的 git worktree 和专用分支上进行，不触碰用户自己的工作区；每次尝试都是一个 commit，优化中被拒绝的尝试直接 reset 回最佳 commit，Handoff 时把分支合并回用户分支。
-
-### 功能开发
-
-![功能开发流程：as-is 图、blueprint、提出修改范围、用户确认、实现-检查循环、竣工图](docs/assets/autodev-development.zh.png)
-
-功能开发由 **blueprint** 驱动。一轮 Clarify 是：从实际代码绘制 as-is 架构图与流程图（即 baseline）；用 diagram JSON 起草 to-be 的 blueprint，每个元素带稳定 ID 并声明构建依赖；再提出可编辑范围，明确现有 test 默认冻结还是允许 blueprint 修改。裁决脚本把依赖换算成**构建顺序**——哪些元素先做、哪些可以后做；如果 blueprint 的元素 ID 在 as-is 图里全都已经存在，照抄现状就能通过检查，脚本会拒绝。
-
-用户**一次审阅整轮结果**——as-is 图、带构建顺序的 blueprint 和提出的范围——然后决定退回修订还是确认进入 Loop。用户确认的是一份设计，而不只是功能描述。
-
-Loop 在 worktree 里按构建顺序逐元素实现 blueprint：每个检查点都要声明本次实现了哪些元素，依赖还没建好的声明会被拒绝。代码完成后，agent 在约定路径按**竣工状态**绘制 as-built 图；裁决脚本只有在每个元素都已实现、都被 as-built 覆盖、该文件不是照抄的 blueprint、回归检查通过时才给出 `handoff`。如果竣工状态没有真正实现 blueprint，说明开发偏离——继续 loop 而不是退出。Handoff 打开一个自包含的 `handoff.html`，把 blueprint 与 as-built 并排展示，附上每个元素由哪个 commit 实现，以及按进度着色的依赖图，让人对照目标与实际成果。
-
-### 问题修复
-
-![问题修复流程：复现测试、baseline、提出影响范围、用户确认、修复-测试循环、通过的测试用例组](docs/assets/autodev-bugfix.zh.png)
-
-bug 报告通常会明确指出失败的具体 case，target 因此容易锁定：**一组通过的 test**。一轮 Clarify 是：先写在未改动源码上必须失败的复现测试；查询、删改、补充回归测试；运行整组得到 baseline；再提出影响范围。
-
-用户**一次审阅整轮结果**——可执行 test、baseline 结果和提出的影响范围——然后决定退回修订还是确认进入 Loop。“能执行”不等于“已经全部通过”：如果测试集在未改动的源码上就已经全部通过，裁决脚本会拒绝——修复前不会失败的 target，修复后也证明不了什么。损坏的运行环境同样不是有效证据。
-
-Loop 修复直到约定的 test 全部通过；测试文件逐轮冻结并校验哈希。Handoff 交付的是通过的测试用例组——每个约定用例都带原始输出显示为绿——而不只是"bug 已修"的说法。
-
-### 性能优化
-
-![性能优化流程：数值 benchmark、baseline、提出限制、用户确认、优化-测量循环、过程图](docs/assets/autodev-optimization.zh.png)
-
-**一项 benchmark、一个分数：** 可执行的 benchmark 或固定加权和。沿实线从 benchmark 准备走到 baseline、提出限制，再到一次用户确认；虚线表示重做一轮 Clarify 或再做一次优化尝试。Loop 采用 **do-while** 顺序：先优化、测量并保留已验证的最佳结果，再判断是否达标或时间耗尽；均未满足才继续下一轮。每次运行仍受剩余时间预算约束。
-
-工作负载、单位、改善方向、测量方法，以及可能涉及的权重和归一化方式，都在 baseline 之前固定，由用户连同 baseline 和限制一并确认。多个 benchmark 分项仍只产生**一个分数**，不是多个独立优化目标。Loop 中不能换尺子。裁决脚本会在未改动的源码上把 benchmark 再跑一遍，要求两次的差距小于改进余量，这样单纯的测量噪声永远不会被当成进步。
-
-保留已验证的最佳方案，记录每次尝试，包括被拒绝和失败的尝试，让图展示真实过程。每次尝试都要标明测试的是哪个思路；在当前 best 下已被否定的思路，不说明新在哪里就不能重试；best 一旦刷新，这些思路全部重新开放。超时结束循环，不代表目标达成。如果 baseline 已达标，或者没有验证到提升，就如实展示，不虚构优化轨迹。
-
-复用用户已经明确给出的决定。不限制必须问几轮问题，不擅自增加收敛停止条件，也不偷偷延长时间预算。
-
-## 人最终拿到什么
-
-| | 功能开发 | 问题修复 | 性能优化 |
-|---|---|---|---|
-| **必需产物** | 竣工架构图与流程图，与 blueprint 对照 | 全部通过的测试用例组 | 一张 baseline → 尝试 → 最终结果的过程图 |
-| **展示内容** | 约定的目标设计与实际建成的状态逐元素对照 | 同一套确认后的 test 的结果，包含汇总和未解决失败 | 唯一分数随尝试次数或时间的变化、目标、保留的结果和停止状态 |
-| **复验依据** | blueprint 与 as-built 图、元素覆盖表、每个元素对应的 commit、重跑命令 | 测试与源码版本、原始结果、重跑命令 | benchmark 与源码版本、真实历史、尝试过的思路及结果、测量条件、重跑命令 |
-
-`report` 把三个场景的产物都写进契约目录里一个自包含的 `handoff.html`，并打印绝对路径和 `open` 命令；这个页面是给人审阅的证据包而不是交付宣言——合并回分支要等 recorded approval（`approve` 记录的人批准）。文件只需要浏览器，不依赖任何渲染工具。
-
-附上必要的变更、限制和后续入口说明即可。人应该能够理解结果并接管，而不必重新推导 Agent 做过的决定。
-
-**产物形式是约定的一部分：** 文字总结不能代替竣工图或全绿的测试用例组；表格或一个最终数字不能代替优化过程图。图必须展示记录下来的过程，而不只是两个好看的端点。失败或超时的尝试不能被伪造为某个分数。
-
-如果意图、target 含义或允许的范围发生变化，应回到 Clarify，并建立可比较的新 baseline。不能把不同 baseline 的结果拼成一次提升。如果用户对交付不满意，做法是再起一轮 autodev——通常按问题修复场景针对具体问题——而不是续跑已结束的 loop。
-
-## 长期规矩：项目宪法
-
-有些规矩对项目里的每个任务都成立：永远不能动的路径、永远不能坏的检查、优化最多能跑多久。把它们写进 `.autodev/constitution.json` 一次，每一轮都会自动继承：
-
-```json
-{
-  "frozen": ["migrations/", ".github/"],
-  "guard_cmd": "pytest -q",
-  "budget": {"default_minutes": 30, "max_minutes": 120, "reserve_minutes": 5}
-}
-```
-
-宪法是底线。单轮可以冻结更多、给更少的时间，但不能放松；要放松，只能由人修改这个文件。guard 在所有场景的每次尝试前都会运行，失败即判该次尝试无效，所以优化不能拿正确性换速度。该文件只属于本机 clone——`init` 会把 `.autodev/` 写进 `.git/info/exclude`，judge 每轮重算它的哈希而不是要求它被提交；要与团队共享需要显式 `git add -f`，不是默认。文字约定写在项目的 `AGENTS.md` 里。
-
-## 接管运行中的 loop
-
-loop 知道的一切都在它的契约目录和分支里，而不在对话里。新的 session 或另一个 agent 找到 `autodev/<task>` worktree，运行 `status`，就能拿到当前进度、是否有未提交或未裁决的工作、日志里已经排除了什么，以及一句话的下一步。
-
-## 约束由什么保障
-
-autodev 是一套协议加一个小型裁决脚本。Markdown 告诉 agent 该做什么；随 skill 一起安装的 `autodev/scripts/autodev_verify.py`（Python 3 标准库）把其中能机械检查的部分变成每轮真正执行的检查，并保留原始输出。图一律是 agent 可读写的纯 JSON，由 `autodev/scripts/autodev_render.py` 渲染成自包含 HTML 供人直接打开——渲染图由工具从源生成，不可能和检查过的源脱节。
-
-| 保障项 | 由谁提供 |
-|---|---|
-| 冻结文件未被改动（test／benchmark／blueprint／宪法）、改动只落在允许范围内、guard 通过、时间预算被遵守、分数按约定方向和余量比较、被拒绝的尝试回滚无残留、blueprint 元素按依赖顺序实现并被 as-built 文件覆盖、被否定的思路不会被悄悄重试、每次裁决都带原始输出记录 | `autodev_verify.py`：Clarify 用 `init`，Loop 用 `start`／`attempt`／`status`，Handoff 用 `verify`／`report`。`start` 会先故意改一个冻结文件、加一个范围外文件，要求两者都被拒绝，证明检查真的生效。 |
-| 每个 target 都能判出不合格：问题修复的测试在修复前失败、benchmark 噪声小于余量、blueprint 包含 as-is 图里没有的元素 | `init` 的负对照，在用户审阅整轮之前完成 |
-| blueprint 是不是正确的设计、test 量的是不是对的东西、提出的影响范围或限制是否合理、as-built 图与 blueprint 是否真的一致、思路标签是否如实区分不同的想法、契约本身是否被认可 | 无法机械化的部分由 agent 判定，加上用户对整轮 Clarify 的一次审阅 |
-| 产物是否被看过、合并回来的分支是否被接受 | Handoff 时的用户 |
-
-因此，安装 skill 本身并不保证 agent 一定遵守；但它留下的契约目录让人可以逐轮核对"规则是否真的被执行"，而不是"规则是否被写下来"。这里没有运行时框架，也不绑定测试工具：裁决脚本只调用项目自己的测试命令。
 
 ## 快速开始
 
-使用上面的命令安装 skill，然后像平常一样描述任务：
+安装 skill 后，请 Agent 对值得采用该流程的变更使用它：
 
 ```text
-为筛选后的交易列表增加 CSV 导出。
+用 autodev 做计费重试和幂等性改造。检查 API、队列 worker、持久化
+和下游账本流程。准备现状与目标流程、baseline 检查、可编辑范围和
+验证计划，在实现前进行一次完整 Clarify 审阅。保持已有支付兼容性，
+明确展示缺失的集成验证证据。
 ```
 
-```text
-客户姓名里带逗号时，CSV 导出会丢行。
-```
+Agent 加载 [SKILL.md](autodev/SKILL.md) 和相关参考，准备完整 Clarify 结果，再展示产物供审阅。它使用真实项目命令与环境。数据库集成环境不可用时，应记录缺口并限制结论；单元测试全绿不能证明数据库支撑的幂等行为。
 
-```text
-把 API 的 p95 延迟降到 200 ms 以下。实现修改仅限 src/api/，优化时间预算为 20 分钟。
-```
+接管运行中的 loop 时，契约目录和专用分支持有已记录状态。新 session 运行 `status`，检查最新证据和审阅说明，处理尚未裁决的工作，再按下一步继续。可选的[项目宪法](autodev/references/constitution.md)可以让冻结路径、guard 检查和优化预算跨轮生效。
 
-第一个需求从 as-is 图和 blueprint 对齐开始。第二个需求从一条在未改动源码上必须失败的复现测试开始。第三个需求先确认 benchmark 并测量 baseline；已经提供的限制直接复用，不重复询问。
+## 可以信任什么
+
+| 职责 | 依据与边界 |
+|---|---|
+| **机械事实** | 裁决脚本记录源码身份、允许范围、冻结文件检查、已配置命令的结果、依赖声明、benchmark 比较、回滚和批准状态。这些事实只适用于实际配置和执行的内容。 |
+| **语义审阅** | AI 检查代码与图是否描述预期行为、检查是否充分，以及哪些生产风险尚未验证。推理说明与实测证据分开展示。 |
+| **人的决定** | 用户审阅完整 Clarify 准备结果和最终证据包。工具和 AI review 都不能替代这些决定。 |
+
+节点加全绿检查不是语义证明。已批准的 blueprint 可能有误；测试可能遗漏重要交互；环境可能阻断集成验证。autodev 让依据和限制可以被检查，不承诺完美协议或生产就绪。
+
+`report` 生成自包含的最终 `handoff.html`：开发交付 as-built 图，修复交付约定测试结果，优化交付过程图。页面包含源码与原始证据、提供时的 AI review，以及未完成工作。阻塞或局部结果也可以展示，但必须如实标注。
+
+Handoff 批准与进度快照分开。配置检查或 guard 时，批准要求针对保留 commit 的当前验证成功，并有当前最终报告。批准绑定源码、验证记录和报告哈希；源码变化、新验证或最终报告变化都会使其失效。验证失败会阻止批准。未配置检查时，证据包明确标注未配置验证。记录用户批准之后，再合并分支和清理 worktree。
+
+具体操作见[验证](autodev/references/verification.md)、[可视化](autodev/references/visualization.md)和 [Handoff](autodev/references/handoff.md)。产品验证、评估设计与研究背景单独放在[产品验证](docs/evaluation.md)。先把 skill 做成有用的软件，论文是可选结果。
 
 ## Skill 结构
 
 | 文件 | 何时加载 |
 |---|---|
-| [`autodev/SKILL.md`](autodev/SKILL.md) | 入口：目的、理念、场景和三阶段约定 |
-| [`references/constitution.md`](autodev/references/constitution.md) | 项目有 `.autodev/` 目录，或需要长期规矩时 |
-| [`references/clarify.md`](autodev/references/clarify.md) | 开始 Clarify 或重新对齐约定时 |
-| [`references/clarify-development.md`](autodev/references/clarify-development.md) | 澄清功能需求时（blueprint） |
-| [`references/clarify-bugfix.md`](autodev/references/clarify-bugfix.md) | 澄清缺陷报告时（test 组） |
-| [`references/clarify-optimization.md`](autodev/references/clarify-optimization.md) | 澄清性能优化目标时（benchmark） |
-| [`references/loop.md`](autodev/references/loop.md) | 约定与 baseline 就绪，进入 Loop 时，或接管运行中的 loop 时 |
-| [`references/handoff.md`](autodev/references/handoff.md) | 准备必需的交付产物时 |
-| [`scripts/autodev_verify.py`](autodev/scripts/autodev_verify.py) | 运行而非阅读：Clarify 用 `init`，Loop 用 `start`／`attempt`／`status`，Handoff 用 `verify`／`report` |
+| [SKILL.md](autodev/SKILL.md) | 判断是否适用并进入流程 |
+| [Clarify](autodev/references/clarify.md) | 准备或重新对齐约定 |
+| [功能开发](autodev/references/clarify-development.md)、[问题修复](autodev/references/clarify-bugfix.md)、[性能优化](autodev/references/clarify-optimization.md) | 准备相应 target、baseline 和范围 |
+| [Loop](autodev/references/loop.md) | 执行已批准约定，或接管运行中的 loop |
+| [可视化](autodev/references/visualization.md)、[验证](autodev/references/verification.md) | 展示实际状态并评估支撑证据 |
+| [Handoff](autodev/references/handoff.md) | 准备和审阅最终证据包 |
+| [项目宪法](autodev/references/constitution.md) | 使用长期项目约束 |
+| [裁决脚本](autodev/scripts/autodev_verify.py)、[渲染器](autodev/scripts/autodev_render.py) | 运行本地证据工具；命令细节见其帮助 |
 
-只读当前阶段的共用规则与对应场景，不要预加载后续阶段或另一条 Clarify 分支。渐进式披露的含义是需要时才提供细节，即使一个任务最终会经过全部三个阶段。
-
-本仓库分发 skill 及其裁决脚本，不附带测试运行器或评测套件。target 由 Agent 与人共同在使用 skill 的目标项目中约定；脚本只执行约定的命令并记录裁决。README 的流程配图只展示工作流本身；实战案例图使用实测记录和 skill 的绘图函数，跨轮次的计分口径在图旁说明。
+只加载当前阶段和对应分支，不预加载整个参考目录。工具使用 Python 3 标准库，调用项目自己的命令；本仓库不为用户项目提供替代工作负载。
 
 ## 参与贡献
 
-保持 skill、双语 README 和配图源文件一致。配图再生成与验证方式见 [CONTRIBUTING.md](CONTRIBUTING.md)，仓库约定见 [AGENTS.md](AGENTS.md)。
+保持 skill、双语 README 和配图源文件一致。再生成与验证方式见 [CONTRIBUTING.md](CONTRIBUTING.md)。提出改进时请提供具体任务背景、观察到的行为和证据。
 
 ## 许可
 

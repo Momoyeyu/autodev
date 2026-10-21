@@ -1,132 +1,62 @@
 # Contributing
 
-Improve alignment between agents and humans. Changes should reduce misunderstanding and rework, improve quality, stability, and efficiency, and help the human understand and take over the project.
+Improve autodev as an optional skill for consequential changes in real codebases. Useful clarification, visible execution, credible verification, and developer takeover come before research framing. Routine local edits should not acquire a full workflow by default.
 
-## Keep the protocol faithful
+## Preserve the workflow
 
-Use **Clarify → Loop → Handoff** as the only top-level working stages. User input triggers the workflow. Each scenario agrees on a different **target**: a blueprint for feature development, a passing test set for a bug fix, a numeric threshold for performance optimization.
+Keep **Clarify → Loop → Handoff** as the working stages. For development the target is an agreed blueprint; for bug fixes an agreed test set; for optimization one numeric score and fixed conditions.
 
-- **Development Clarify:** draw as-is diagrams from the code (the baseline); draft the to-be blueprint as diagram JSON with stable element IDs; propose the editable scope; then one human review of the whole pass.
-- **Bug-fix Clarify:** write the reproduction test that fails on the unchanged source; query, update/remove, add, and trial-run regression tests; record baseline; propose impact; then one human review of the whole pass.
-- **Optimization Clarify:** prepare one runnable numeric benchmark or fixed weighted score; record baseline; propose target, editable files, and wall-clock budget; then one human review of the whole pass.
-- **Loop:** in a dedicated git worktree, implement until the as-built state realizes every blueprint element and checks stay green, fix until all agreed tests pass, or optimize until target/time limit with post-checked (do-while) exits. Every round is judged by `autodev/scripts/autodev_verify.py`; keep its behavior identical to the prose in `loop.md`.
-- **Handoff:** `report` writes every scenario's deliverable into one self-contained `handoff.html` and prints its path plus an open command; presenting that page — opening it or printing path and command — closes the handoff.
+- Clarify prepares concrete artifacts, baseline, scope, and proposed verification before one human review of the whole pass. Preserve the scenario-specific preparation; do not replace it with a generic question sequence.
+- Loop works in an isolated worktree, records committed attempts and real command output, and keeps actual partial state visible at meaningful checkpoints. A failed development checkpoint can remain; invalid changes and rejected optimization attempts roll back.
+- Handoff compares the code and evidence with the agreement, shows the required artifact and limits, and waits for recorded human approval before merge-back.
 
-Do not split the single human review into per-step approvals, move target preparation outside the human review cycle, equate executable tests with already-passing tests, substitute the blueprint for as-built diagrams drawn from the delivered state, replace the optimization chart with a table, or add convergence/attempt-count exits. Changes to target meaning or permitted scope return to Clarify. An unsatisfying handoff starts a fresh autodev round, typically a bug fix — do not resume a closed loop.
+AI judges intent, code semantics, failure causes, and whether checks are adequate. Scripts enforce and record mechanical facts. Node IDs, graph differences, or a green command do not establish feature correctness. Do not add a universal bug classifier or benchmark-specific behavior to the skill.
 
-## Progressive disclosure
+Changes to agreed target meaning, acceptance commands, or permitted scope return to Clarify. Extra diagnostic checks can run without reopening the agreement when those boundaries stay unchanged.
 
-`autodev/SKILL.md` is the compact entry point. `references/clarify.md` contains shared alignment rules and routes to exactly one of `clarify-development.md`, `clarify-bugfix.md`, or `clarify-optimization.md`. `loop.md` and `handoff.md` load when those stages are reached. `constitution.md` loads only when the target repository has `.autodev/` or the human wants standing rules.
+## Keep the installed skill focused
 
-Keep shared rules with the selected scenario; do not preload the whole directory. Every reference needs a clear trigger and a reachable link inside the installed skill. Preserve framework independence and reuse the target project's tools.
+`autodev/SKILL.md` states when to use it and the core workflow. Shared Clarify rules route to one scenario branch. `visualization.md` and `verification.md` guide the judgments those concerns require. Load references as needed, not the whole directory. Standing rules remain in `constitution.md`.
 
-Measure the Markdown cost without removing approval, comparable measurement, or the required handoff artifact:
+Keep Python tools standard-library only and reuse the target project's commands. The judge is not a framework. `report --progress` updates an inspectable snapshot without replacing the handoff packet, chart evidence, or approval. Human-readable `review.md` adds AI assessment; it does not become a new formal result protocol.
 
-```bash
-for f in autodev/SKILL.md autodev/references/*.md; do
-  printf '%-52s ' "$f"
-  wc -l -w -c < "$f"
-done
-```
+When changing guidance, probe both a consequential production-style change and a trivial counterexample. Distinguish instruction-following probes from actual task success and actual maintainer use. The product evaluation plan is [docs/evaluation.md](docs/evaluation.md); it is not part of the runtime skill.
 
-## README, brand and diagrams
+## Visuals and bilingual documentation
 
-Keep English and Chinese README ordering, scenario sequences, reference inventories, and handoff requirements equivalent. The README has no text title: the brand image replaces it, followed immediately by the overview, before installation and explanatory sections.
-
-The brand and overview are hand-authored SVG rendered with headless Chrome; the scenario detail diagrams are generated with [Archify](https://github.com/tt-a1i/archify). All exist in English and Chinese:
-
-| Source | README image | Role |
-|---|---|---|
-| `docs/diagrams/autodev.brand(.zh).svg` | `docs/assets/autodev-brand(.zh).png` | Title: mark on the left, AutoDev wordmark and slogan on the right, transparent background |
-| `docs/diagrams/autodev.overview(.zh).svg` | `docs/assets/autodev-overview(.zh).png` | Hero: artistic three-step composition, without scenario detail |
-| `docs/diagrams/autodev.development(.zh).json` | `docs/assets/autodev-development(.zh).png` | Feature (blueprint) flow inside the workflow section |
-| `docs/diagrams/autodev.bugfix(.zh).json` | `docs/assets/autodev-bugfix(.zh).png` | Bug-fix flow inside the workflow section |
-| `docs/diagrams/autodev.optimization(.zh).json` | `docs/assets/autodev-optimization(.zh).png` | Optimization flow inside the workflow section |
-| none — judge `report` output | `docs/assets/autodev-case-moe.svg` | Real-run chart; verbatim artifact, never regenerate |
-| Embedded `case-data` metadata: per-case raw latencies, fixed reference vector, and historical verdicts | `docs/assets/autodev-case-cann2026.svg` | Initial baseline plus 16 cumulative attempts; one continuous chart curve in the `autodev_render.chart_svg` style and one shared scale; dashed line is the final-round target |
-
-### Brand and overview
-
-The mark is an original crossbar-less "A" with a cyan loop arrow inside; it is not derived from any company logo. Palette: `#3259B4`, `#3C8CFF`, `#00C8D2`, `#78E6DD`. The wordmark reads `AutoDev`, "Auto" in royal blue and "Dev" in a blue-to-cyan gradient, after a thin vertical divider. The slogan sits under the wordmark: `Open the black box of vibe coding` / `打开 VibeCoding 的黑盒`. Keep the composition minimal.
-
-The overview shows Clarify as scattered intent converging into one focused point, Loop as an orbit around code, and Handoff as the path opening into measured evidence, connected by a single left-to-right spine. Change labels in both language files together; keep geometry identical.
+Keep English and Chinese README headings, scenario ordering, tables, links, and evidence limits equivalent. The README embeds direct SVG assets generated by:
 
 ```bash
-CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-render() { "$CHROME" --headless=new --disable-gpu --hide-scrollbars "$@" 2>/dev/null; }
-for locale in '' '.zh'; do
-  render --force-device-scale-factor=2 --default-background-color=00000000 --window-size=1600,400 --screenshot="docs/assets/autodev-brand${locale}.png" "file://$PWD/docs/diagrams/autodev.brand${locale}.svg"
-  render --window-size=1920,700 --screenshot="docs/assets/autodev-overview${locale}.png" "file://$PWD/docs/diagrams/autodev.overview${locale}.svg"
-done
+python3 docs/visuals/generate.py
 ```
 
-The overview is rendered at 1x (1920×700); the 2x version is over 1.9 MB because of the gradients and glows.
+The authoritative source for the ten brand/overview/scenario images is that generator. [docs/visuals.md](docs/visuals.md) describes the design, actual comparison with updated Archify, captures, and regeneration. Inspect both languages at normal README width after changing labels or geometry. Text bounds and XML checks do not replace visual inspection.
 
-### Detail diagrams
+Legacy PNGs and older diagram sources remain for compatibility with historical material. They are not the current README source. Do not regenerate or overwrite measured case charts when updating explanatory diagrams:
 
-The process maps use Archify's `architecture` schema v1 and grid layout, not its workflow-lane template. This provides explicit canvas bounds without unused columns or full-width empty stage lanes. `components` are process steps, `connections` are directed control flow, and the named regions group stages, not deployment infrastructure. Keep `quality_profile: showcase` and identical topology and geometry within each language pair.
+- `docs/assets/autodev-case-moe.svg` is a recorded result artifact.
+- `docs/assets/autodev-case-cann2026.svg` preserves raw latency data, fixed reference values, and historical verdicts; its cross-round scale is documented in the README.
 
-Detail maps use a compact two-row path: Clarify reads left to right, then Loop and Handoff follow the arrows right to left. Three numbered stage regions remain distinct. Dashed return paths show review and implementation feedback; solid paths show progression and delivery. The optimization loop is post-tested (do-while): limits → optimize → measure and retain → stop check. A negative decision returns to optimization; target reached or time exhausted leads to the chart. Do not introduce a limits-to-stop-check shortcut.
+Scenario pictures are explanatory schematics. Label demonstration outputs and never invent measured scores, real user outcomes, or industrial validation.
 
-This renderer does not support workflow `semanticChecks`. Check directed connections explicitly: target preparation → baseline → proposed scope/limits → one human review; the review's "No" edge returns to preparation and its "Yes" edge enters Loop; each detail map has that Clarify cycle and an execution cycle; only the required artifact is terminal. Do not treat successful geometry validation as a semantic check.
+## Verification
 
-Keep the PNGs opaque and dark regardless of the README viewer's color scheme. Use Archify's Editorial preset and canonical PNG export, not a screenshot containing viewer controls or manually recolored output. These are workflow illustrations; do not add test-result screenshots.
-
-### Regenerate with Archify
-
-Use the installed skill root containing `SKILL.md` and `bin/archify.mjs`. The checked workflow was generated with Archify `2.17.0-dev.1`, checkout `9102a91`.
-
-```bash
-ARCHIFY_SKILL=/path/to/archify/archify
-OUT=$(mktemp -d)
-for name in development bugfix optimization; do
-  for locale in '' '.zh'; do
-    source="docs/diagrams/autodev.${name}${locale}.json"
-    output="$OUT/autodev-${name}${locale}.html"
-    node "$ARCHIFY_SKILL/bin/archify.mjs" validate architecture "$source" --quality showcase --json &&
-    node "$ARCHIFY_SKILL/bin/archify.mjs" deliver architecture "$source" "$output" --quality showcase --json &&
-    node "$ARCHIFY_SKILL/bin/archify.mjs" visual-check "$output" --json || break 2
-  done
-done
-```
-
-Require all nine artifact checks, zero composition errors, and zero warnings. Never inspect stale HTML after a failed delivery. Browser evidence and perceptual review are separate from deterministic validation.
-
-Open each successfully delivered HTML with `?theme=dark`, keep Editorial selected, and use Export → PNG. Save the canonical downloads to the corresponding image paths above. Inspect all four exported PNGs at a 960px README reading width for legibility, balanced margins, clear local cycles, unclipped labels, no viewer UI, and an opaque dark background. Review one detail composition before producing its translated counterpart; a nine-check pass alone is not visual acceptance. Keep validation and export receipts with the generation artifacts; source JSON and final images belong in Git.
-
-Archify renders this repository's explanatory workflow. It is not a mandatory dependency for producing a target project's optimization-result chart.
-
-## Judge script
-
-`autodev/scripts/autodev_verify.py` and `autodev/scripts/autodev_render.py` are standard-library Python 3 with no dependencies, so they run wherever the target project runs. The judge must not grow into a runner or a framework: it executes the agreed test command, checks the contract, decides, rolls back, and logs. The renderer must stay tiny: diagram JSON plus attempt records in, self-contained HTML with inline SVG out — no JS, no external assets, no runtime services. Any rule the judge enforces must appear in the same words in `loop.md`, and any prose rule that can be checked mechanically belongs in the script.
-
-Run its tests before committing changes to it or to the Loop rules:
+For tool changes, write a regression test that demonstrates the behavior, observe it fail, then implement and run:
 
 ```bash
 python3 -m unittest discover -s tests
 ```
 
-The cases in `tests/test_verify.py` are the acceptance criteria from the issue tracker: a frozen-file edit, an out-of-scope file, a regression, a sub-`δ` improvement, a crash, a dirty worktree, a spent budget, the bug-fix scenario, and the blueprint-driven development scenario (element coverage gating `status`) must each get the documented verdict, and rollback must leave no residue.
+Check scope/frozen invariants, source and report provenance, partial states, approval invalidation, and unchanged case data as appropriate. New progress outputs must never overwrite final evidence. Read the raw logs when a check fails.
 
-## Verify changes
+Before delivery:
 
-The legacy evaluation suite remains retired; `tests/` covers only the judge script and does not prove agent adherence.
+- Run `git diff --check` and the full test suite.
+- Check local links, reference triggers, command flags, and bilingual parity.
+- Walk all three scenarios through Clarify, visible Loop checkpoints, final verification, and human approval.
+- Inspect actual report HTML and README visual captures at desktop and narrow widths.
+- Report exactly what was tested; script tests and skill probes do not establish industrial effectiveness.
 
-Before committing:
-
-- Walk through all three scenario paths against the skill, READMEs, and diagram sources.
-- Check local links, anchors, frontmatter, and code fences; verify the deleted reference names are no longer used.
-- Confirm the judge script's commands named in `loop.md`, `clarify-*.md`, and `handoff.md` exist with those flags.
-- Check that baseline precedes the scope proposal and that the single human review closes the whole Clarify pass in all three scenarios.
-- Verify the as-built diagrams, the passing test set, and the optimization process chart are mandatory everywhere, not optional presentation choices.
-- Confirm bilingual diagram topology and geometry match; detail PNGs are dark canonical exports and the brand PNG keeps a transparent background.
-- Run Archify validation/browser checks for the detail diagrams and review every actual image, including the brand and overview; retain the evidence.
-- Run `git diff --check` and `python3 -m unittest discover -s tests`; confirm `git ls-files -- evals` is empty.
-- Keep ignored historical run artifacts and unrelated user work untouched.
-- State whether model behavior was evaluated; document and image checks do not prove agent adherence.
-
-## Commits and license
-
-Follow [AGENTS.md](AGENTS.md): one commit does one thing, with an imperative lowercase `<type>: <what changed>` subject. Do not rewrite shared history or push without approval.
+## License
 
 Contributions are licensed under [MIT](LICENSE).

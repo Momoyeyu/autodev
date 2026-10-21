@@ -302,10 +302,55 @@ def check_constitution(contract, root=None):
 
 
 def check_frozen(contract, root):
-    current = hash_paths(root, contract["frozen_paths"])
+    existing = [rel for rel in contract["frozen_paths"] if os.path.exists(os.path.join(root, rel))]
+    current = hash_paths(root, existing)
     recorded = contract["frozen"]
     changed = sorted(set(k for k in set(current) | set(recorded) if current.get(k) != recorded.get(k)))
     return changed
+
+
+def require_retained_state(c):
+    wt, best = c.get("worktree"), c.get("best")
+    if not wt:
+        die("run start first; the loop has not started")
+    if stray_files(wt, c.get("generated", [])):
+        die("worktree is dirty; commit or clean before review")
+    hidden = hidden_autodev(wt)
+    if hidden:
+        die(f"ignored files under .autodev/ in the worktree must be deleted: {hidden}")
+    drift = check_constitution(c)
+    if drift:
+        die(f"the constitution was {drift[1]} since init; a changed agreement means a new Clarify pass")
+    if git(wt, "rev-parse", "HEAD") != best:
+        die("HEAD differs from the retained best; judge or discard the unjudged commit first")
+    changed = check_frozen(c, wt)
+    if changed:
+        die(f"frozen files changed since Clarify: {changed}")
+    return wt, best
+
+
+def last_verification(rows):
+    return next((r for r in reversed(rows) if r.get("kind") == "verify"), None)
+
+
+def review_state(home, c):
+    verification = last_verification(home.attempts())
+    required = bool(c.get("test_cmd") or c.get("guard_cmd"))
+    verified = not required or bool(verification and verification["commit"] == c.get("best")
+                                   and verification["verdict"] == "verified")
+    verification_n = verification["n"] if verification else None
+    report = c.get("report")
+    current = bool(report and report.get("source_clean") and report["commit"] == c.get("best")
+                   and report["verification_n"] == verification_n
+                   and os.path.isfile(report["path"])
+                   and sha256_file(report["path"]) == report["sha256"])
+    approved = c.get("approved")
+    if not (verified and current and approved and approved.get("best") == c.get("best")
+            and approved.get("verification_n") == verification_n
+            and approved.get("report_sha256") == report["sha256"]):
+        approved = None
+    return {"verification": verification, "verification_current": verified,
+            "report_current": current, "approved": approved}
 
 
 def stray_files(root, generated):
@@ -435,9 +480,6 @@ def cmd_init(a):
         contract["batches"] = build_batches(contract["elements"], contract["depends"])
         asis_ids = node_ids(load_spec(docs["asis"][1]))
         contract["elements_new"] = [e for e in contract["elements"] if e not in asis_ids]
-        if not contract["elements_new"]:
-            die("every blueprint element already appears in the as-is diagrams, so the coverage check "
-                "cannot fail; give added or changed elements new IDs")
         for rel, src in docs.values():
             contract["frozen"][rel] = sha256_file(src)
             if rel not in contract["frozen_paths"]:
@@ -750,6 +792,10 @@ def cmd_attempt(a):
     if c.get("guard_cmd"):
         guard_name = f"attempt-{n:03d}.guard.log"
         code, _, _, timed_out = run_command(c["guard_cmd"], wt, home.raw_path(guard_name), remaining)
+        changed = check_frozen(c, wt)
+        if changed:
+            finish("invalid", INVALID, reason="guard modified frozen files", files=changed,
+                   raw=f"raw/{guard_name}")
         if code != 0:
             finish("invalid", INVALID, reason="guard timed out" if timed_out else f"guard exited {code}",
                    raw=f"raw/{guard_name}")
@@ -759,6 +805,9 @@ def cmd_attempt(a):
     raw_name = f"attempt-{n:03d}.log"
     code, out, elapsed, timed_out = run_command(c["test_cmd"], wt, home.raw_path(raw_name), remaining)
     record.update(raw=f"raw/{raw_name}", elapsed_s=round(elapsed, 1))
+    changed = check_frozen(c, wt)
+    if changed:
+        finish("invalid", INVALID, reason="command modified frozen files", files=changed)
     if timed_out:
         finish("invalid", INVALID, reason="command exceeded remaining budget")
     if c["scenario"] == "bugfix":
@@ -779,9 +828,7 @@ def cmd_attempt(a):
     finish("rejected", REJECTED, score=score, best=c["best_score"])
 
 
-def cmd_status(a):
-    home = Home(a.home)
-    c = home.load()
+def execution_status(home, c):
     remaining = remaining_seconds(c)
     out = {"scenario": c["scenario"], "best": c.get("best"), "best_score": c.get("best_score"),
            "remaining_seconds": None if remaining is None else int(remaining),
@@ -819,15 +866,14 @@ def cmd_status(a):
             out["check_green"] = bool(attempts)
         blueprint = load_spec(os.path.join(home.path, "blueprint.json"))
         out["asbuilt_exists"] = asbuilt_exists
-        out["asbuilt_copies_blueprint"] = (asbuilt is not None and
-                                         render.diagram_signature(asbuilt) == render.diagram_signature(blueprint))
+        out["asbuilt_matches_blueprint"] = (asbuilt is not None and
+                                          render.diagram_signature(asbuilt) == render.diagram_signature(blueprint))
         out["elements_missing"] = [e for e in c["elements"]
                                    if e not in (node_ids(asbuilt) if asbuilt else set())]
         progress = element_progress(c, attempts)
         out.update(elements_done=progress["done"], elements_ready=progress["ready"],
                    elements_blocked=progress["blocked"], elements_pending=progress["pending"])
-        out["decision"] = ("handoff" if asbuilt_exists and not out["asbuilt_copies_blueprint"]
-                           and not out["elements_missing"] and out["check_green"]
+        out["decision"] = ("handoff" if asbuilt_exists and not out["elements_missing"] and out["check_green"]
                            and len(progress["done"]) == len(c["elements"]) else "continue")
     wt = c.get("worktree")
     if wt and os.path.isdir(wt):
@@ -837,17 +883,33 @@ def cmd_status(a):
         out["worktree_clean"] = not stray_files(wt, c.get("generated", [])) and not hidden
         if hidden:
             out["hidden_ignored"] = hidden
-    out["approved"] = c.get("approved")
+        out["frozen_changed"] = check_frozen(c, wt)
+    out["constitution_drift"] = check_constitution(c)
+    out.update(review_state(home, c))
+    if not (out.get("worktree_clean") and out.get("head_is_best")
+            and not out.get("frozen_changed") and not out["constitution_drift"]):
+        out["approved"] = None
     out["next"] = next_step(c, out)
-    print(json.dumps(out, indent=2))
+    return out
+
+
+def cmd_status(a):
+    home = Home(a.home)
+    print(json.dumps(execution_status(home, home.load()), indent=2))
 
 
 def cmd_approve(a):
     home = Home(a.home)
     c = home.load()
-    if not c.get("worktree"):
-        die("the loop has not started; there is no result to approve")
-    c["approved"] = {"at": iso(utc_now()), "best": c.get("best")}
+    require_retained_state(c)
+    state = review_state(home, c)
+    if not state["verification_current"]:
+        die("the retained best needs a successful verify before approval")
+    if not state["report_current"]:
+        die("run report after the latest verify and present the unchanged packet before approval")
+    c["approved"] = {"at": iso(utc_now()), "best": c.get("best"),
+                     "verification_n": c["report"]["verification_n"],
+                     "report_sha256": c["report"]["sha256"]}
     if a.note:
         c["approved"]["note"] = a.note
     home.save(c)
@@ -870,13 +932,19 @@ def next_step(c, s):
         return "uncommitted changes in the worktree: commit them and run attempt, or discard them"
     if not s["head_is_best"]:
         return "HEAD is a commit not yet judged: run attempt on it, or reset to best"
+    if s.get("frozen_changed") or s.get("constitution_drift"):
+        return "restore the frozen files and constitution before verification or approval"
     if s["decision"] == "handoff":
-        if c.get("approved"):
+        if not s["verification_current"]:
+            return "run verify on the retained best; final verification is missing, stale, or failed"
+        if not s["report_current"]:
+            return "run report to assemble the current review packet and present it to the human"
+        if s["approved"]:
             return f"merge the loop branch into {c.get('branch_from')} and remove the worktree"
         if c["scenario"] == "optimization" and not s["target_met"]:
-            return ("the budget is spent — run verify and report, present the results, and let the "
+            return ("the budget is spent — present the current packet and let the "
                     "human decide: approve and deliver what exists, or start a new round")
-        return ("run verify and report to assemble the review packet, present it, and wait for human "
+        return ("present the current review packet and wait for human "
                 "approval (autodev_verify.py --home <run> approve); do not merge or remove the worktree")
     if c["scenario"] == "optimization":
         dead = ", ".join(s["ruled_out"]) or "none"
@@ -895,30 +963,21 @@ def next_step(c, s):
 def cmd_verify(a):
     home = Home(a.home)
     c = home.load()
-    wt, best = c.get("worktree"), c.get("best")
-    if not wt:
-        die("run start first")
     if not c.get("test_cmd") and not c.get("guard_cmd"):
         die("no check command recorded for this contract")
-    if stray_files(wt, c.get("generated", [])):
-        die("worktree is dirty; commit or clean before verify")
-    hidden = hidden_autodev(wt)
-    if hidden:
-        die(f"ignored files under .autodev/ in the worktree must be deleted, e.g. git clean -fdx: {hidden}")
-    drift = check_constitution(c)
-    if drift:
-        die(f"the constitution was {drift[1]} since init; a changed agreement means a new Clarify pass")
-    head = git(wt, "rev-parse", "HEAD")
-    if head != best:
-        die("HEAD differs from the retained best; git reset --hard to best before verify")
+    c.pop("approved", None)
+    c.pop("report", None)
+    home.save(c)
+    wt, best = require_retained_state(c)
     rec = {"n": 1 + max([r["n"] for r in home.attempts()] + [0]), "kind": "verify",
-           "commit": head, "time": iso(utc_now())}
+           "commit": best, "time": iso(utc_now())}
     ok = True
     if c.get("guard_cmd"):
         code, _, _, _ = run_command(c["guard_cmd"], wt, home.raw_path("verify.guard.log"), None)
         rec.update(guard_exit=code, guard_raw="raw/verify.guard.log")
         ok = code == 0
-    if c.get("test_cmd"):
+    changed = check_frozen(c, wt)
+    if c.get("test_cmd") and not changed:
         code, out, elapsed, _ = run_command(c["test_cmd"], wt, home.raw_path("verify.log"), None)
         rec.update(raw="raw/verify.log", exit=code, elapsed_s=round(elapsed, 1))
         ok = ok and code == 0
@@ -927,7 +986,13 @@ def cmd_verify(a):
             rec.update(score=score, recorded_best=c.get("best_score"),
                        target_met=meets_target(c, score),
                        target_met_recorded=meets_target(c, c.get("best_score")))
-            ok = ok and score is not None and rec["target_met"] == rec["target_met_recorded"]
+            reproduced = score is not None and abs(score - c["best_score"]) < c["delta"]
+            rec["score_reproduced"] = reproduced
+            ok = ok and reproduced and rec["target_met"] == rec["target_met_recorded"]
+    changed = check_frozen(c, wt)
+    if changed:
+        rec.update(reason="command modified frozen files", files=changed)
+        ok = False
     rec["verdict"] = "verified" if ok else "failed"
     home.log(rec)
     print(json.dumps(rec, indent=2))
@@ -938,32 +1003,119 @@ def cmd_report(a):
     home = Home(a.home)
     c = home.load()
     rows = home.attempts()
+    progress = a.progress
+    name = "progress" if progress else "handoff"
+    output = os.path.abspath(a.out or os.path.join(home.path, name + ".html"))
+    if progress:
+        protected = [os.path.join(home.path, p) for p in ("handoff.html", "process.svg", "caption.json")]
+        if c.get("report"):
+            protected.append(c["report"]["path"])
+        if any(os.path.realpath(output) == os.path.realpath(p) for p in protected):
+            die("a progress snapshot cannot overwrite handoff artifacts")
+    wt = c.get("worktree")
+    source = git(wt, "rev-parse", "HEAD") if wt and os.path.isdir(wt) else None
+    clean = bool(source and not stray_files(wt, c.get("generated", [])) and not hidden_autodev(wt))
     builder = {"bugfix": report_bugfix, "development": report_development}.get(
         c["scenario"], report_optimization)
-    title, subtitle, body, extra = builder(home, c, rows)
-    handoff = os.path.abspath(a.out or os.path.join(home.path, "handoff.html"))
-    render.write_page(handoff, title, subtitle, body)
-    artifacts = [{"kind": "handoff", "path": handoff}] + extra
-    cmd = render.open_command(handoff)
-    open_text = shlex.join(cmd) if cmd else f'start "" "{handoff}"'
-    manifest = {"handoff": handoff, "artifacts": artifacts, "open": open_text}
+    title, subtitle, body, extra = builder(home, c, rows, progress=progress)
+    verification = review_state(home, c)["verification"]
+    result = "not run" if c.get("test_cmd") or c.get("guard_cmd") else "not configured"
+    if verification:
+        result = verification["verdict"] if verification["commit"] == c.get("best") else "stale"
+    cls = "ok" if result == "verified" else "bad" if result == "failed" else "warn"
+    evidence = ""
+    if verification:
+        evidence = " · " + _raw_link(verification)
+        if verification.get("score") is not None:
+            evidence += f' · measured score {render.esc(verification["score"])}'
+    state = execution_status(home, c)
+    body = checkpoint_view(home, c, rows, state, progress) + f'<p class="{cls}">Final verification: {result}{evidence}</p>' + body
+    if progress:
+        title = "autodev — execution snapshot"
+        phase = "In progress" if state["decision"] == "continue" else "Awaiting review"
+        if state["approved"]:
+            phase = "Approved state"
+        subtitle = f'<span class="badge">{phase} · snapshot</span> ' + subtitle
+    render.write_page(output, title, subtitle, body)
+    if not progress:
+        c["report"] = {"path": output, "commit": source, "source_clean": clean,
+                       "sha256": sha256_file(output),
+                       "verification_n": verification["n"] if verification else None}
+        c.pop("approved", None)
+        home.save(c)
+    artifacts = [{"kind": name, "path": output}] + extra
+    cmd = render.open_command(output)
+    open_text = shlex.join(cmd) if cmd else f'start "" "{output}"'
+    manifest = {name: output, "artifacts": artifacts, "open": open_text}
     print(json.dumps(manifest, indent=2))
-    if a.open_ and not render.open_path(handoff):
-        print(f"autodev: no viewer opened; open manually: {handoff}", file=sys.stderr)
+    if a.open_ and not render.open_path(output):
+        print(f"autodev: no viewer opened; open manually: {output}", file=sys.stderr)
+
+
+def checkpoint_view(home, c, rows, state, progress):
+    baseline = c["baseline"]["source"][:10]
+    best = (c.get("best") or "not started")[:10]
+    head = (state.get("head") or "unavailable")[:10]
+    body = render.section("Current state", render.stats([
+        ("scenario", render.esc(c["scenario"])), ("baseline commit", baseline),
+        ("retained commit", best), ("working HEAD", head)]))
+    if "head" in state and (not state["worktree_clean"] or not state["head_is_best"]):
+        body += '<p class="warn">Working changes are not covered by the recorded checks. '
+        body += 'The current diagram may describe uncommitted or unjudged work.</p>'
+    next_action = state["next"]
+    if (not progress and state["decision"] == "handoff" and state.get("worktree_clean")
+            and state.get("head_is_best") and state["verification_current"]
+            and not state.get("frozen_changed") and not state["constitution_drift"]):
+        next_action = "Review this packet and its evidence limits; record human approval with approve before merge-back."
+    body += render.section("Next action", f'<p class="next-action">{render.esc(next_action)}</p>')
+    review = os.path.join(home.path, "review.md")
+    if os.path.isfile(review):
+        with open(review, encoding="utf-8") as f:
+            notes = f.read()
+        body += render.section("AI review · assessment and limits",
+                               '<p class="mute">Agent-authored interpretation, not a test verdict.</p>'
+                               f'<pre class="review-notes">{render.esc(notes)}</pre>')
+    else:
+        body += render.section("AI review · assessment and limits",
+                               '<p class="warn">No review notes provided. Semantic coverage and '
+                               'unverified behavior are not assessed by this report.</p>')
+    attempts = [r for r in rows if r.get("kind") == "attempt"]
+    recent = []
+    for r in attempts[-8:]:
+        cls = "ok" if r["verdict"] in ("accepted", "green") else "warn"
+        detail = r.get("reason") or r.get("note") or r.get("route") or "—"
+        recent.append([r["n"], f'<code>{r["commit"][:10]}</code>',
+                       f'<span class="{cls}">{render.esc(r["verdict"])}</span>',
+                       render.esc(detail), _raw_link(r)])
+    body += render.section("Recent recorded checks", render.table(
+        ["Attempt", "Source", "Recorded outcome", "Change or failure", "Raw evidence"], recent)
+        if recent else '<p class="mute">No attempts have been judged.</p>')
+    scope = ", ".join(c["editable"])
+    frozen = ", ".join(c["frozen_paths"]) or "none recorded"
+    body += render.section("Agreed boundaries",
+                           f'<p>Editable: <code>{render.esc(scope)}</code><br>'
+                           f'Frozen: <code>{render.esc(frozen)}</code></p>'
+                           '<p class="mute">Snapshot generated ' + render.esc(iso(utc_now()))
+                           + '. Rerun the report and refresh this page for updated state. '
+                           'Recorded commands do not establish untested behavior.</p>')
+    return body
 
 
 def _raw_link(rec):
     return f'<a href="{render.esc(rec["raw"])}">raw log</a>' if rec.get("raw") else "-"
 
 
-def report_bugfix(home, c, rows):
+def report_bugfix(home, c, rows, progress=False):
     attempts = [r for r in rows if r.get("kind") == "attempt"]
-    final = attempts[-1] if attempts else None
+    verification = last_verification(rows)
+    if verification and verification["commit"] != c.get("best"):
+        verification = None
+    final = verification or (attempts[-1] if attempts else None)
     b = c["baseline"]
-    passed = bool(final and final.get("passed"))
+    passed = bool(final and (final.get("passed") or final.get("verdict") == "verified"))
 
     def result(rec):
-        text = ("pass" if rec.get("passed") else "fail")
+        text = ("pass" if rec.get("passed") or rec.get("verdict") == "verified" else "fail")
         return text + (f' (exit {rec["exit"]})' if "exit" in rec else "")
 
     run_rows = [["baseline", f'<span class="bad">{result(b)}</span>', _raw_link(b), "—"]]
@@ -971,6 +1123,8 @@ def report_bugfix(home, c, rows):
         cls = "ok" if r["verdict"] == "accepted" else "bad" if r["verdict"] == "invalid" else "warn"
         run_rows.append([f'attempt {r["n"]}', f'<span class="{cls}">{r["verdict"]}</span> / {result(r)}',
                          _raw_link(r), render.esc(r.get("note") or "")])
+    if verification:
+        run_rows.append(["final verification", result(verification), _raw_link(verification), "—"])
     body = render.stats([
         ("baseline", f'<span class="bad">{result(b)}</span>'),
         ("final", f'<span class="{"ok" if passed else "bad"}">{result(final) if final else "not run"}</span>'),
@@ -988,7 +1142,7 @@ def report_bugfix(home, c, rows):
     return "autodev handoff — bug fix", subtitle, body, []
 
 
-def report_development(home, c, rows):
+def report_development(home, c, rows, progress=False):
     blueprint = load_spec(os.path.join(home.path, "blueprint.json"))
     wt = c.get("worktree") or c["repo"]
     asbuilt, asbuilt_err = None, None
@@ -998,26 +1152,31 @@ def report_development(home, c, rows):
             asbuilt = render.load_diagram(asbuilt_path)
         except (OSError, ValueError) as e:
             asbuilt_err = str(e)
-    progress = element_progress(c, rows)
+    claims = element_progress(c, rows)
     deps = c.get("depends", {})
     covered = node_ids(asbuilt) if asbuilt else set()
-    done = progress["done"]
-    body = render.section("Agreed blueprint", render.graph_svg(blueprint))
+    done = claims["done"]
+    body = '<div class="diagram-pair">' + render.section("Agreed blueprint", render.graph_svg(blueprint))
+    heading = "Current implementation" if progress else "As-built (delivered)"
     if asbuilt is not None:
-        body += render.section("As-built (delivered)", render.graph_svg(asbuilt))
+        body += render.section(heading, render.graph_svg(asbuilt))
     else:
-        body += render.section("As-built (delivered)",
+        body += render.section(heading,
                                f'<p class="bad">as-built file missing or invalid: '
                                f'<code>{render.esc(c["asbuilt"])}</code> {render.esc(asbuilt_err or "")}</p>')
+    body += '</div><p class="mute">Diagrams describe implementation claims. Matching nodes and '
+    body += 'green checks do not prove semantic agreement; inspect code and the evidence limits above.</p>'
     cov_rows = []
     for e in c["elements"]:
         needs = ", ".join(f"<code>{render.esc(d)}</code>" for d in deps.get(e, [])) or "-"
-        commit = progress["realized_in"].get(e)
+        commit = claims["realized_in"].get(e)
+        claim_state = "pending check" if e in claims["pending"] else "recorded complete" if commit else "not claimed"
         cov_rows.append([f"<code>{render.esc(e)}</code>", needs,
                          f'<code>{commit[:10]}</code>' if commit else '<span class="bad">not realized</span>',
-                         '<span class="ok">yes</span>' if e in covered else '<span class="bad">no</span>'])
+                         '<span class="ok">yes</span>' if e in covered else '<span class="bad">no</span>',
+                         claim_state])
     body += render.section("Element coverage",
-                           render.table(["Element", "Depends on", "Realized in", "In as-built"], cov_rows))
+                           render.table(["Element", "Depends on", "Claim recorded at", "In as-built", "Claim status"], cov_rows))
     batches = c.get("batches", [c["elements"]])
     body += render.section("Build order", '<ol class="batches">' + "".join(
         "<li>" + " ".join(f"<code>{render.esc(e)}</code>" for e in batch) + "</li>"
@@ -1025,9 +1184,10 @@ def report_development(home, c, rows):
     dep_spec = {"nodes": [{"id": e, "label": e} for e in c["elements"]],
                 "edges": [{"from": d, "to": e} for e in c["elements"] for d in deps.get(e, [])]}
     pmap = {e: "done" for e in done}
-    pmap.update({e: "pending" for e in progress["pending"]})
+    pmap.update({e: "pending" for e in claims["pending"]})
     body += render.section("Dependency graph",
-                           '<p class="mute">Green: realized; amber: claimed while the check was failing.</p>'
+                           '<p class="mute">Green: claimed with a green check or manual checkpoint; '
+                           'amber: claimed while the check was failing. Neither is per-element proof.</p>'
                            + render.graph_svg(dep_spec, pmap))
     evidence = f'<p>Delivered commit <code>{(c.get("best") or "-")[:10]}</code>.'
     if c.get("check_cmd"):
@@ -1035,21 +1195,28 @@ def report_development(home, c, rows):
     evidence += ' Contract evidence: <a href="attempts.jsonl">attempts.jsonl</a>, <code>raw/</code>.</p>'
     body += render.section("Evidence", evidence)
     subtitle = (f'<span class="badge">feature development</span> '
-                f'{len(done)}/{len(c["elements"])} blueprint elements realized')
+                f'{len(done)}/{len(c["elements"])} element claims recorded complete')
     extra = [{"kind": "diagram", "path": os.path.abspath(os.path.join(home.path, n + ".html"))}
              for n in ("blueprint", "asis")]
     return "autodev handoff — feature development", subtitle, body, extra
 
 
-def report_optimization(home, c, rows):
+def report_optimization(home, c, rows, progress=False):
     pts = [r for r in rows if r.get("kind") in ("baseline", "attempt")]
     unit, direction = c["score"]["unit"], c["score"]["direction"]
     target, baseline = c["target"], c["baseline"]["score"]
+    if not pts:
+        pts = [{"kind": "baseline", "verdict": "baseline", "score": baseline,
+                "commit": c["baseline"]["source"]}]
     svg = render.chart_svg(pts, unit, direction, target, baseline)
-    svg_path = os.path.join(home.path, "process.svg")
+    prefix = "progress-" if progress else ""
+    svg_name, caption_name = prefix + "process.svg", prefix + "caption.json"
+    svg_path = os.path.join(home.path, svg_name)
     with open(svg_path, "w") as f:
         f.write(svg + "\n")
     final = c.get("best_score")
+    if final is None:
+        final = baseline
     imp = (baseline - final) if direction == "lower" else (final - baseline)
     pct = None if baseline == 0 else imp / abs(baseline) * 100
     routes = {}
@@ -1057,18 +1224,22 @@ def report_optimization(home, c, rows):
         tally = routes.setdefault(r.get("route") or "-", {"accepted": 0, "rejected": 0, "invalid": 0})
         tally[r["verdict"]] = tally.get(r["verdict"], 0) + 1
     met = meets_target(c, final)
+    verification = last_verification(rows)
+    if verification and verification["commit"] != c.get("best"):
+        verification = None
     caption = {"baseline": baseline, "final": final, "unit": unit, "direction": direction,
                "improvement": imp, "improvement_pct": pct, "target": target,
                "target_met": met, "attempts": len(pts) - 1, "routes": routes,
+               "score_basis": "recorded best", "verification": verification,
                "delivered_commit": c.get("best"), "rerun": c["test_cmd"], "chart": svg_path}
-    caption_path = os.path.join(home.path, "caption.json")
+    caption_path = os.path.join(home.path, caption_name)
     with open(caption_path, "w") as f:
         json.dump(caption, f, indent=2)
     body = render.stats([
         ("baseline", f"{baseline:g} {render.esc(unit)}"),
-        ("delivered", f"{final:g} {render.esc(unit)}"),
+        ("recorded best", f"{final:g} {render.esc(unit)}"),
         ("improvement", f'{imp:g} {render.esc(unit)}' + (f" ({pct:.1f}%)" if pct is not None else "")),
-        ("target", f'<span class="{"ok" if met else "bad"}">{target:g} {"met" if met else "missed"}</span>')])
+        ("recorded target", f'<span class="{"ok" if met else "bad"}">{target:g} {"met" if met else "missed"}</span>')])
     body += render.section("Process", svg)
     route_rows = [[render.esc(k), v.get("accepted", 0), v.get("rejected", 0), v.get("invalid", 0)]
                   for k, v in routes.items()]
@@ -1078,11 +1249,16 @@ def report_optimization(home, c, rows):
                            f'<p>Delivered commit <code>{(c.get("best") or "-")[:10]}</code>. '
                            f'Rerun benchmark: <code>{render.esc(c["test_cmd"])}</code>. '
                            '<a href="attempts.jsonl">attempts.jsonl</a> · '
-                           '<a href="caption.json">caption.json</a> · '
-                           '<a href="process.svg">process.svg</a>; raw logs under <code>raw/</code>.</p>')
-    subtitle = (f'<span class="badge {"ok" if met else "warn"}">'
-                f'{"target met" if met else "target not met"}</span> '
-                f'baseline {baseline:g} → delivered {final:g} {render.esc(unit)} · {len(pts) - 1} attempts')
+                           f'<a href="{caption_name}">{caption_name}</a> · '
+                           f'<a href="{svg_name}">{svg_name}</a>; raw logs under <code>raw/</code>.</p>')
+    outcome = "verification pending"
+    cls = "warn"
+    if verification:
+        outcome, cls = "verification failed", "bad"
+        if verification["verdict"] == "verified":
+            outcome, cls = ("target met", "ok") if met else ("target not met", "warn")
+    subtitle = (f'<span class="badge {cls}">{outcome}</span> '
+                f'baseline {baseline:g} → recorded best {final:g} {render.esc(unit)} · {len(pts) - 1} attempts')
     extra = [{"kind": "chart", "path": os.path.abspath(svg_path)},
              {"kind": "caption", "path": os.path.abspath(caption_path)}]
     return "autodev handoff — optimization", subtitle, body, extra
@@ -1144,6 +1320,8 @@ def main():
 
     r = sub.add_parser("report")
     r.add_argument("--out", help="handoff.html output path; defaults to the contract directory")
+    r.add_argument("--progress", action="store_true",
+                   help="write progress.html without changing the handoff packet or approval")
     r.add_argument("--open", dest="open_", action="store_true",
                    help="open handoff.html in the system viewer after writing it")
     r.set_defaults(fn=cmd_report)

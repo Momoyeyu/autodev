@@ -39,11 +39,11 @@ A diagram file is one JSON object: `nodes` carry the elements, `edges` draw the 
 }
 ```
 
-Node `id`s are the element IDs — stable, `[A-Za-z0-9_-]+`, reused across as-is and blueprint where an element survives unchanged, and new for added or changed elements. At least one blueprint ID must be absent from the as-is diagram, otherwise redrawing the starting state would already pass the coverage check. `label`/`sublabel` are display text; `kind` (`service`/`store`/`external`/`decision`/`flow`) only picks a marker color. Optional `row`/`col` place a node on the layout grid; leave them out and the renderer layers nodes left-to-right by connection order. Preview any draft with `python3 <skill>/scripts/autodev_render.py FILE.json` — it writes `FILE.html` next to the source.
+Node `id`s are stable element identities matching `[A-Za-z0-9_-]+`. Reuse them across views for the same component, including changed responsibilities; assign new IDs to genuinely added or replaced components. Explain changed behavior in labels, flows, and the accompanying review. There is no new-ID quota: graph novelty cannot establish implementation progress. `label`/`sublabel` are display text; `kind` (`service`/`store`/`external`/`decision`/`flow`) only picks a marker color. Optional `row`/`col` place a node on the layout grid; leave them out and the renderer layers nodes left-to-right by connection order. Preview any draft with `python3 <skill>/scripts/autodev_render.py FILE.json` — it writes `FILE.html` next to the source.
 
 Declare build dependencies in `depends`, read as "the key needs the listed elements". A dependency means one element cannot be realized before another exists: a service before the API that calls it, a data model before the flow that writes it. It is build order, not every arrow in the diagram. `init` refuses unknown IDs and cycles, and prints the resulting **build order** as batches, for example `[1] order-service inventory-client → [2] order-api → [3] checkout-flow`. Elements without declared dependencies can be built in any order.
 
-The blueprint is the target: Loop ends only when the delivered state realizes every element. Keep it at the level of architecture and flows, not pseudocode — the point is to fix *what* is built and *how the parts connect*, leaving implementation detail to Loop.
+The blueprint is the agreed design target: Loop ends only when the code realizes its responsibilities and flows, supported by appropriate checks. Element coverage records implementation claims; it is not semantic proof. Keep it at the level of architecture and flows, not pseudocode — the point is to fix *what* is built and *how the parts connect*, leaving implementation detail to Loop.
 
 If the feature legitimately changes existing behavior, say so explicitly and mark the affected test files as editable in step 3; otherwise existing tests stay frozen and must remain green.
 
@@ -66,7 +66,7 @@ python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/runs/<task>" ini
   --asbuilt docs/asbuilt.json --check-cmd "pytest -q"
 ```
 
-`init` copies the as-is and blueprint files into the contract directory, freezes their hashes, parses the element list and its dependencies into `depends` and `batches`, records which elements are new relative to the as-is diagrams (`elements_new`, refusing an empty list), renders `asis.html` and `blueprint.html` previews for the review pass, and runs the regression check once as the recorded baseline. Both files must live outside the editable surface and be committed — either on the starting branch or inside the worktree's baseline commit — so the Loop worktree carries them.
+`init` copies the as-is and blueprint files into the contract directory, freezes their hashes, parses the element list and its dependencies into `depends` and `batches`, records new element IDs relative to the as-is diagrams (`elements_new`, which may be empty), renders `asis.html` and `blueprint.html` previews for the review pass, and runs the regression check once as the recorded baseline. Both files must live outside the editable surface and be committed — either on the starting branch or inside the worktree's baseline commit — so the Loop worktree carries them.
 
 ## 4. Human review of the whole pass
 
@@ -75,6 +75,6 @@ Show the rendered `asis.html` and `blueprint.html` previews, the build order, an
 - **Revise:** apply the feedback and repeat from step 1. A changed blueprint needs a new contract, so rerun `init --renew`.
 - **Approve:** record the approved blueprint, as-is baseline, and scope, then enter Loop.
 
-The human confirms the blueprint is the right design, not merely that it was drawn. If the blueprint reveals disagreement about the architecture or a flow, resolve it here — not during Loop.
+Include how important user-visible behaviors will be checked and which production conditions cannot be exercised locally. The human confirms the blueprint is the right design, not merely that it was drawn. If the blueprint reveals disagreement about the architecture or a flow, resolve it here — not during Loop.
 
 **Exit:** the human has approved one complete pass — the blueprint, its as-is baseline, and the permitted scope. Continue to [Loop: development](loop.md#feature-development).

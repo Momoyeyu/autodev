@@ -1,0 +1,199 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "autodev \u00b7 Clarify \u2192 Loop \u2192 Handoff",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "docs/visuals/archify-comparison/overview.html",
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": "Agent activity"
+        },
+        "database": {
+          "label": "Artifact"
+        },
+        "external": {
+          "label": "Human review"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "work",
+      "label": "Agent work"
+    },
+    {
+      "id": "evidence",
+      "label": "Concrete artifacts"
+    }
+  ],
+  "phases": [
+    {
+      "id": "clarify",
+      "label": "Clarify",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "loop",
+      "label": "Loop",
+      "fromCol": 2,
+      "toCol": 3
+    },
+    {
+      "id": "handoff",
+      "label": "Handoff",
+      "fromCol": 4,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "inspect",
+    "review",
+    "change",
+    "check",
+    "deliver",
+    "accept"
+  ],
+  "nodes": [
+    {
+      "id": "inspect",
+      "lane": "work",
+      "col": 0,
+      "type": "backend",
+      "label": "Inspect system",
+      "sublabel": "intent + baseline + scope"
+    },
+    {
+      "id": "review",
+      "lane": "work",
+      "col": 1,
+      "type": "external",
+      "label": "Human review",
+      "sublabel": "whole Clarify pass once"
+    },
+    {
+      "id": "change",
+      "lane": "work",
+      "col": 2,
+      "type": "backend",
+      "label": "Implement change",
+      "sublabel": "AI judgment guides work"
+    },
+    {
+      "id": "check",
+      "lane": "work",
+      "col": 3,
+      "type": "backend",
+      "label": "Run agreed checks",
+      "sublabel": "measured outputs"
+    },
+    {
+      "id": "deliver",
+      "lane": "work",
+      "col": 4,
+      "type": "backend",
+      "label": "Build delivery",
+      "sublabel": "as-built + verification"
+    },
+    {
+      "id": "accept",
+      "lane": "work",
+      "col": 5,
+      "type": "external",
+      "label": "Human acceptance",
+      "sublabel": "review delivery"
+    },
+    {
+      "id": "agreement",
+      "lane": "evidence",
+      "col": 1,
+      "type": "database",
+      "label": "Agreed system slice",
+      "sublabel": "target + baseline + boundaries"
+    },
+    {
+      "id": "history",
+      "lane": "evidence",
+      "col": 3,
+      "type": "database",
+      "label": "Change + evidence",
+      "sublabel": "commits + raw check outputs"
+    },
+    {
+      "id": "packet",
+      "lane": "evidence",
+      "col": 4,
+      "type": "database",
+      "label": "Handoff packet",
+      "sublabel": "as-built + verification evidence"
+    }
+  ],
+  "edges": [
+    {
+      "from": "inspect",
+      "to": "review"
+    },
+    {
+      "from": "review",
+      "to": "change",
+      "label": "agreed"
+    },
+    {
+      "from": "change",
+      "to": "check"
+    },
+    {
+      "from": "check",
+      "to": "deliver",
+      "label": "ready"
+    },
+    {
+      "from": "deliver",
+      "to": "accept"
+    },
+    {
+      "from": "review",
+      "to": "agreement"
+    },
+    {
+      "from": "check",
+      "to": "history"
+    },
+    {
+      "from": "deliver",
+      "to": "packet"
+    },
+    {
+      "from": "check",
+      "to": "change",
+      "role": "return",
+      "label": "continue",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "top",
+      "route": "up-channel"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "Judgment",
+      "items": [
+        "AI proposes the design and interprets results.",
+        "Human reviews Clarify once, then the delivery."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Evidence",
+      "items": [
+        "Agreed checks produce recorded outputs.",
+        "Judgment is not measured proof."
+      ]
+    }
+  ]
+}

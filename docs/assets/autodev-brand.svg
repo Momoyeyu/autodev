@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="310" viewBox="0 0 1200 310" role="img" aria-labelledby="title desc"><title id="title">autodev — Clarity for consequential changes.</title><desc id="desc">autodev turns intent into an agreed system slice, a checked implementation, and visible delivery evidence.</desc>
+<defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 8 4 0 8" fill="none" stroke="#2462d2" stroke-width="1.3"/></marker><pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#dce6ed" stroke-width="0.7"/></pattern></defs>
+<rect width="1200" height="310" rx="4" fill="#fafbf9"/>
+<rect x="784" y="0" width="416" height="310" rx="0" fill="#edf3f8"/>
+<rect x="784" y="0" width="416" height="310" rx="0" fill="url(#grid)"/>
+<path d="M784 0L784 310" fill="none" stroke="#cfdae2" stroke-width="1"/>
+<path d="M43 56H78V91H43Z" fill="none" stroke="#142d47" stroke-width="3" stroke-linejoin="round"/>
+<path d="M51 79L60 65H70M60 65V82H74" fill="none" stroke="#2462d2" stroke-width="3" stroke-linejoin="round"/>
+<text x="94" y="88" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="53" font-weight="700" text-anchor="start" letter-spacing="-2">autodev</text>
+<text x="44" y="123" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="650" text-anchor="start" letter-spacing="1.4">CLARIFY  /  LOOP  /  HANDOFF</text>
+<text x="44" y="187" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="30" font-weight="550" text-anchor="start" letter-spacing="-0.7">Clarity for consequential changes.</text>
+<text x="44" y="229" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="21" font-weight="400" text-anchor="start">Align on intent. Deliver evidence you can inspect.</text>
+<text x="44" y="279" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="500" text-anchor="start" letter-spacing="1">DEVELOPMENT  ·  BUG FIXES  ·  OPTIMIZATION</text>
+<text x="814" y="37" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="650" text-anchor="start" letter-spacing="1.4">SYSTEM SLICE</text>
+<rect x="817" y="58" width="160" height="151" rx="2" fill="#f9fbfd" stroke="#2462d2"/>
+<rect x="817" y="58" width="160" height="29" rx="0" fill="#edf3f8"/>
+<text x="829" y="78" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" text-anchor="start">scope</text>
+<rect x="837" y="106" width="52" height="29" rx="2" fill="white" stroke="#2462d2"/>
+<rect x="910" y="151" width="48" height="29" rx="2" fill="white" stroke="#2462d2"/>
+<path d="M889 121H933V150" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round"/>
+<rect x="837" y="151" width="52" height="29" rx="2" fill="white" stroke="#cfdae2"/>
+<path d="M863 135V150" fill="none" stroke="#526a7e" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M988 133L1014 133" fill="none" stroke="#2462d2" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="1030" y="83" width="133" height="126" rx="3" fill="#142d47"/>
+<text x="1045" y="107" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="600" text-anchor="start">as-built</text>
+<rect x="1048" y="127" width="29" height="20" rx="1" fill="#b8d6ef"/>
+<rect x="1115" y="161" width="29" height="20" rx="1" fill="#b8d6ef"/>
+<rect x="1048" y="161" width="29" height="20" rx="1" fill="#b8d6ef"/>
+<path d="M1077 137H1129V160M1062 147V161" fill="none" stroke="#b8d6ef" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M817 237L1163 237" fill="none" stroke="#cfdae2" stroke-width="1"/>
+<path d="M823 266l5 5 10 -12" fill="none" stroke="#137d85" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="850" y="269" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" text-anchor="start">agreed</text>
+<path d="M930 266l5 5 10 -12" fill="none" stroke="#137d85" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="956" y="269" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" text-anchor="start">checked</text>
+<path d="M1050 266l5 5 10 -12" fill="none" stroke="#137d85" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="1076" y="269" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" text-anchor="start">visible</text>
+</svg>

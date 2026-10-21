@@ -266,7 +266,7 @@ h1{font-size:22px;margin:0 0 6px}
 .badge.ok{border-color:#3DDC97;color:#3DDC97}
 .badge.bad{border-color:#FF7A7A;color:#FF7A7A}
 section{margin:26px 0}
-h2{font-size:13px;color:#9DB5E8;text-transform:uppercase;letter-spacing:.1em;margin:0 0 12px}
+h2{font-size:16px;color:#DCE6F7;font-weight:600;margin:0 0 12px}
 table{border-collapse:collapse;width:100%}
 th,td{padding:8px 12px;border-bottom:1px solid #22304E;text-align:left;font-size:13px;vertical-align:top}
 th{color:#9DB5E8;font-weight:600}
@@ -282,6 +282,12 @@ summary{cursor:pointer;color:#9DB5E8}
 pre{background:#0E1730;border:1px solid #22304E;border-radius:8px;padding:12px;overflow:auto;font-size:12px;max-height:340px}
 .ok{color:#3DDC97}.bad{color:#FF7A7A}.warn{color:#FFB454}.mute{color:#9DB5E8}
 ol.batches li{margin:4px 0}
+.diagram-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.diagram-pair section{min-width:0;overflow-x:auto}
+.diagram-pair svg{max-width:none}
+.next-action{padding:16px 20px;border-left:3px solid #3C8CFF;background:#101D32;border-radius:0 8px 8px 0}
+.review-notes{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.65 -apple-system,"Segoe UI",Helvetica,Arial,sans-serif;max-height:none;border-color:#324869}
+@media(max-width:720px){main{padding:24px 16px 48px}.diagram-pair{grid-template-columns:1fr;gap:0}table{display:block;overflow-x:auto}.stats>div{min-width:100px}}
 """
 
 
