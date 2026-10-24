@@ -11,27 +11,14 @@
 <text x="44" y="187" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="31" font-weight="550" text-anchor="start">让复杂变更看得清，验得明。</text>
 <text x="44" y="229" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="21" font-weight="400" text-anchor="start">先对齐意图，再交付可核验的结果。</text>
 <text x="44" y="279" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="500" text-anchor="start">开发 · 修复 · 优化</text>
-<text x="814" y="37" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="650" text-anchor="start" letter-spacing="1.4">系统切片</text>
-<rect x="817" y="58" width="160" height="151" rx="2" fill="#f9fbfd" stroke="#2462d2"/>
-<rect x="817" y="58" width="160" height="29" rx="0" fill="#edf3f8"/>
-<text x="829" y="78" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" text-anchor="start">范围</text>
-<rect x="837" y="106" width="52" height="29" rx="2" fill="white" stroke="#2462d2"/>
-<rect x="910" y="151" width="48" height="29" rx="2" fill="white" stroke="#2462d2"/>
-<path d="M889 121H933V150" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round"/>
-<rect x="837" y="151" width="52" height="29" rx="2" fill="white" stroke="#cfdae2"/>
-<path d="M863 135V150" fill="none" stroke="#526a7e" stroke-width="1.6" stroke-linejoin="round"/>
-<path d="M988 133L1014 133" fill="none" stroke="#2462d2" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="1030" y="83" width="133" height="126" rx="3" fill="#142d47"/>
-<text x="1045" y="107" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="600" text-anchor="start">实建</text>
-<rect x="1048" y="127" width="29" height="20" rx="1" fill="#b8d6ef"/>
-<rect x="1115" y="161" width="29" height="20" rx="1" fill="#b8d6ef"/>
-<rect x="1048" y="161" width="29" height="20" rx="1" fill="#b8d6ef"/>
-<path d="M1077 137H1129V160M1062 147V161" fill="none" stroke="#b8d6ef" stroke-width="1.5" stroke-linejoin="round"/>
-<path d="M817 237L1163 237" fill="none" stroke="#cfdae2" stroke-width="1"/>
-<path d="M823 266l5 5 10 -12" fill="none" stroke="#137d85" stroke-width="2.5" stroke-linejoin="round"/>
-<text x="850" y="269" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" text-anchor="start">已对齐</text>
-<path d="M930 266l5 5 10 -12" fill="none" stroke="#137d85" stroke-width="2.5" stroke-linejoin="round"/>
-<text x="956" y="269" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" text-anchor="start">已核验</text>
-<path d="M1050 266l5 5 10 -12" fill="none" stroke="#137d85" stroke-width="2.5" stroke-linejoin="round"/>
-<text x="1076" y="269" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="600" text-anchor="start">可见</text>
+<circle cx="985" cy="150" r="102" fill="#e3ecf5"/>
+<path d="M911 105H1045V197H911Z" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" stroke-dasharray="5 5"/>
+<rect x="895" y="87" width="56" height="42" rx="8" fill="white" stroke="#2462d2"/>
+<path d="M913 99l-8 9 8 9M933 99l8 9 -8 9" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round"/>
+<rect x="1028" y="132" width="56" height="42" rx="8" fill="#e5f3ef" stroke="#137d85"/>
+<path d="M1047 154l5 5 10 -12" fill="none" stroke="#137d85" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="937" y="194" width="56" height="42" rx="8" fill="#e5f3ef" stroke="#137d85"/>
+<path d="M956 216l5 5 10 -12" fill="none" stroke="#137d85" stroke-width="2.5" stroke-linejoin="round"/>
+<path d="M951 108H1056V131M1056 174V215H994" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M936 215H923V132" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
 </svg>

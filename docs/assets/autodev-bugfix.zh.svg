@@ -1,48 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="624" viewBox="0 0 1200 624" role="img" aria-labelledby="title desc"><title id="title">缺陷修复 · 从复现到通过证据</title><desc id="desc">修复前后，用同一组约定测试作对照。人一次审阅整个 Clarify；Loop 重复实施与检查；Handoff 由人审阅接手。本图为结构示意，不是实测案例数据。</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="550" viewBox="0 0 1200 550" role="img" aria-labelledby="title desc"><title id="title">让故障路径对应到回归检查</title><desc id="desc">Illustrative workflow only, not benchmark results. The diagram does not establish correctness or measured improvement.</desc>
 <defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 8 4 0 8" fill="none" stroke="#2462d2" stroke-width="1.3"/></marker><pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#dce6ed" stroke-width="0.7"/></pattern></defs>
-<rect width="1200" height="624" rx="4" fill="#fafbf9"/>
-<text x="38" y="35" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="650" text-anchor="start" letter-spacing="1.4">SCENARIO / 02</text>
-<text x="38" y="77" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="29" font-weight="650" text-anchor="start">缺陷修复 · 从复现到通过证据</text>
+<rect width="1200" height="550" rx="4" fill="#fafbf9"/>
+<text x="38" y="35" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="650" text-anchor="start" letter-spacing="1.4">BUG FIX</text>
+<text x="38" y="77" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="29" font-weight="650" text-anchor="start">让故障路径对应到回归检查</text>
 <path d="M38 101L1162 101" fill="none" stroke="#cfdae2" stroke-width="1"/>
-<text x="38" y="137" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="20" font-weight="400" text-anchor="start">修复前后，用同一组约定测试作对照</text>
-<text x="38" y="186" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="650" text-anchor="start" letter-spacing="1.4">01</text>
-<text x="73" y="188" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="25" font-weight="650" text-anchor="start">Clarify</text>
-<text x="38" y="228" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="400" text-anchor="start">用测试复现故障</text>
-<text x="38" y="257" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="400" text-anchor="start">补齐相关回归用例</text>
-<text x="38" y="286" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="400" text-anchor="start">记录基线，并约定影响范围</text>
-<path d="M366 181L387 181" fill="none" stroke="#2462d2" stroke-width="1.7" marker-end="url(#arrow)"/>
-<text x="430" y="186" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="650" text-anchor="start" letter-spacing="1.4">02</text>
-<text x="465" y="188" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="25" font-weight="650" text-anchor="start">Loop</text>
-<text x="430" y="228" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="400" text-anchor="start">在批准范围内修复</text>
-<text x="430" y="257" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="400" text-anchor="start">冻结已约定的测试集合</text>
-<text x="430" y="286" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="400" text-anchor="start">运行全部测试并保留原始输出</text>
-<path d="M758 181L779 181" fill="none" stroke="#2462d2" stroke-width="1.7" marker-end="url(#arrow)"/>
-<text x="822" y="186" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="650" text-anchor="start" letter-spacing="1.4">03</text>
-<text x="857" y="188" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="25" font-weight="650" text-anchor="start">Handoff</text>
-<text x="822" y="228" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="400" text-anchor="start">逐项查看约定测试结果</text>
-<text x="822" y="257" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="400" text-anchor="start">审阅原始输出与限制</text>
-<text x="822" y="286" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="400" text-anchor="start">接手时可以重新运行检查</text>
-<circle cx="44" cy="322" r="5" fill="#9c6522"/>
-<text x="59" y="328" fill="#9c6522" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="550" text-anchor="start">一次审阅整个 Clarify</text>
-<path d="M750 316V336H460V316" fill="none" stroke="#2462d2" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
-<text x="600" y="361" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="16" font-weight="400" text-anchor="middle">变更与检查持续迭代</text>
-<circle cx="828" cy="322" r="5" fill="#9c6522"/>
-<text x="843" y="328" fill="#9c6522" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="550" text-anchor="start">审阅交付，决定接手</text>
-<path d="M38 382L1162 382" fill="none" stroke="#cfdae2" stroke-width="1"/>
-<text x="57" y="416" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="650" text-anchor="start" letter-spacing="1.4">修复前</text>
-<text x="57" y="451" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="19" font-weight="400" text-anchor="start">复现用例</text>
-<text x="57" y="486" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="19" font-weight="400" text-anchor="start">回归测试组</text>
-<text x="658" y="416" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="15" font-weight="650" text-anchor="start" letter-spacing="1.4">修复后</text>
-<text x="658" y="451" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="19" font-weight="400" text-anchor="start">复现用例</text>
-<text x="658" y="486" fill="#183249" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="19" font-weight="400" text-anchor="start">回归测试组</text>
-<text x="342" y="451" fill="#a24936" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="650" text-anchor="start">失败</text>
-<text x="342" y="486" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="400" text-anchor="start">已记录</text>
-<path d="M1013 446l5 5 10 -12" fill="none" stroke="#137d85" stroke-width="2.5" stroke-linejoin="round"/>
-<text x="1041" y="451" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="650" text-anchor="start">通过</text>
-<path d="M1013 481l5 5 10 -12" fill="none" stroke="#137d85" stroke-width="2.5" stroke-linejoin="round"/>
-<text x="1041" y="486" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="650" text-anchor="start">通过</text>
-<path d="M600 407L600 507" fill="none" stroke="#cfdae2" stroke-width="1"/>
-<text x="57" y="530" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="16" font-weight="400" text-anchor="start">预期证据形态示意 · 不代表真实用例数量</text>
-<path d="M38 551L1162 551" fill="none" stroke="#cfdae2" stroke-width="1"/>
-<text x="38" y="589" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="19" font-weight="550" text-anchor="start">复现测试必须在原代码上失败；环境损坏不能充当缺陷证据。</text>
+<text x="48" y="151" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="16" font-weight="650" text-anchor="start">01</text>
+<text x="84" y="153" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="25" font-weight="650" text-anchor="start">Clarify</text>
+<path d="M343 145L398 145" fill="none" stroke="#2462d2" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="448" y="151" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="16" font-weight="650" text-anchor="start">02</text>
+<text x="484" y="153" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="25" font-weight="650" text-anchor="start">Loop</text>
+<path d="M743 145L798 145" fill="none" stroke="#2462d2" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="848" y="151" fill="#2462d2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="16" font-weight="650" text-anchor="start">03</text>
+<text x="884" y="153" fill="#142d47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="25" font-weight="650" text-anchor="start">Handoff</text>
+<path d="M74 241L320 241" fill="none" stroke="#cfdae2" stroke-width="2"/>
+<path d="M73 269H208" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="52" y="260" width="15" height="18" rx="3" fill="#2462d2"/>
+<text x="83" y="256" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="400" text-anchor="start">同一 key</text>
+<rect x="233" y="254" width="84" height="30" rx="5" fill="#f9eae6"/>
+<text x="275" y="274" fill="#b85649" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" text-anchor="middle">写入</text>
+<path d="M73 326H208" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="52" y="317" width="15" height="18" rx="3" fill="#2462d2"/>
+<text x="83" y="313" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="400" text-anchor="start">同一 key</text>
+<rect x="233" y="311" width="84" height="30" rx="5" fill="#f9eae6"/>
+<text x="275" y="331" fill="#b85649" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" text-anchor="middle">写入</text>
+<text x="48" y="387" fill="#b85649" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="600" text-anchor="start">重复扣费</text>
+<rect x="48" y="423" width="57" height="34" rx="5" fill="#b85649"/>
+<text x="76" y="446" fill="white" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="24" font-weight="600" text-anchor="middle">×</text>
+<rect x="121" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M141 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="194" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M214 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="267" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M287 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="48" y="491" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="400" text-anchor="start">同一组约定测试</text>
+<path d="M474 241L720 241" fill="none" stroke="#cfdae2" stroke-width="2"/>
+<path d="M473 269H608" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="452" y="260" width="15" height="18" rx="3" fill="#2462d2"/>
+<text x="483" y="256" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="400" text-anchor="start">同一 key</text>
+<rect x="633" y="254" width="84" height="30" rx="5" fill="#e5f3ef"/>
+<text x="675" y="274" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" text-anchor="middle">写入</text>
+<path d="M473 326H608" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="452" y="317" width="15" height="18" rx="3" fill="#2462d2"/>
+<text x="483" y="313" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="400" text-anchor="start">同一 key</text>
+<rect x="633" y="311" width="84" height="30" rx="5" fill="#e5f3ef"/>
+<text x="675" y="331" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" text-anchor="middle">复用</text>
+<text x="448" y="387" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="600" text-anchor="start">一次写入</text>
+<rect x="448" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M468 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="521" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M541 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="594" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M614 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="667" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M687 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="448" y="491" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="400" text-anchor="start">同一组约定测试</text>
+<path d="M874 241L1120 241" fill="none" stroke="#cfdae2" stroke-width="2"/>
+<path d="M873 269H1008" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="852" y="260" width="15" height="18" rx="3" fill="#2462d2"/>
+<text x="883" y="256" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="400" text-anchor="start">同一 key</text>
+<rect x="1033" y="254" width="84" height="30" rx="5" fill="#e5f3ef"/>
+<text x="1075" y="274" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" text-anchor="middle">写入</text>
+<path d="M873 326H1008" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="852" y="317" width="15" height="18" rx="3" fill="#2462d2"/>
+<text x="883" y="313" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="400" text-anchor="start">同一 key</text>
+<rect x="1033" y="311" width="84" height="30" rx="5" fill="#e5f3ef"/>
+<text x="1075" y="331" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="600" text-anchor="middle">复用</text>
+<text x="848" y="387" fill="#137d85" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="18" font-weight="600" text-anchor="start">一次写入</text>
+<rect x="848" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M868 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="921" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M941 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="994" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M1014 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="1067" y="423" width="57" height="34" rx="5" fill="#137d85"/>
+<path d="M1087 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="848" y="491" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="400" text-anchor="start">同一组约定测试</text>
+<text x="48" y="530" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="400" text-anchor="start">结构示意 · 结论依赖实际代码与原始证据</text>
 </svg>

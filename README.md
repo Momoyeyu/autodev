@@ -34,6 +34,8 @@ A simple local quick fix normally bypasses it. Repository size alone is not a re
 
 The value is sustained understanding of the change, not a diagram at the beginning and a success claim at the end.
 
+The same API → queue → ledger path carries through all three stages: blue marks the agreed design, green marks implemented parts, and dashed paths remain unfinished. Check records appear separately below the system state. These are workflow illustrations, not benchmark results.
+
 | Stage | What the agent prepares or does | What the human can inspect |
 |---|---|---|
 | **Clarify** | Inspect the actual code; prepare the target artifact; establish baseline; propose scope and verification | The complete pass, reviewed together before implementation |

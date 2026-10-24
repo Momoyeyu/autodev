@@ -44,3 +44,8 @@ node "$ARCHIFY_SKILL/bin/archify.mjs" finalize workflow \
 ```
 
 Use a fresh evidence directory after changing the candidate. Open the resulting HTML and use **Export → SVG · Light** for the canonical comparison image.
+
+
+## October 2026 visual revision
+
+The README suite now uses a repeated billing retry system to show topology, implementation state, and separate check records. Development compares blueprint, partial state and as-built paths. Bugfix uses two requests with the same key and a stable regression strip. Optimization shows fixed workload, branching rejected attempts and retained state; bars are explicitly schematic, not measured scores. Actual measured charts remain in the recorded cases. The brand mark uses the same boundary, directed path and checked component vocabulary. English and Chinese assets share geometry and are regenerated with `python3 docs/visuals/generate.py`. Earlier Archify comparisons document the previous version, not this revision.

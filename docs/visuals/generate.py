@@ -42,110 +42,136 @@ def brand(zh):
     s.text(44,187,slogan,31 if zh else 30,NAVY,550,spacing='-0.7' if not zh else None)
     s.text(44,229,'先对齐意图，再交付可核验的结果。' if zh else 'Align on intent. Deliver evidence you can inspect.',21,MUTED)
     s.text(44,279,'开发 · 修复 · 优化' if zh else 'DEVELOPMENT  ·  BUG FIXES  ·  OPTIMIZATION',14,MUTED,500,spacing='1' if not zh else None)
-    # A scope window becomes a checked assembly, with measured outputs below.
-    label(s,814,37,'SYSTEM SLICE' if not zh else '系统切片',MUTED)
-    s.rect(817,58,160,151,'#f9fbfd',BLUE,2);s.rect(817,58,160,29,PALE)
-    s.text(829,78,'scope' if not zh else '范围',14,BLUE,600)
-    s.rect(837,106,52,29,'white',BLUE,2);s.rect(910,151,48,29,'white',BLUE,2)
-    s.path('M889 121H933V150',BLUE,2);s.rect(837,151,52,29,'white',LINE,2)
-    s.path('M863 135V150',MUTED,1.6)
-    s.line(988,133,1014,133,BLUE,2,arrow=True)
-    s.rect(1030,83,133,126,NAVY,rx=3)
-    s.text(1045,107,'as-built' if not zh else '实建',17,'#ffffff',600)
-    for x,y in [(1048,127),(1115,161),(1048,161)]:s.rect(x,y,29,20,'#b8d6ef',rx=1)
-    s.path('M1077 137H1129V160M1062 147V161','#b8d6ef',1.5)
-    s.line(817,237,1163,237,LINE)
-    s.check(823,266);s.text(850,269,'agreed' if not zh else '已对齐',15,TEAL,600)
-    s.check(930,266);s.text(956,269,'checked' if not zh else '已核验',15,TEAL,600)
-    s.check(1050,266);s.text(1076,269,'visible' if not zh else '可见',15,TEAL,600)
+    s.circle(985,150,102,'#e3ecf5')
+    s.path('M911 105H1045V197H911Z',BLUE,2,dash='5 5')
+    for x,y,done in [(895,87,False),(1028,132,True),(937,194,True)]:
+        s.rect(x,y,56,42,'#e5f3ef' if done else 'white',TEAL if done else BLUE,8)
+        if done:s.check(x+19,y+22)
+        else:s.path(f'M{x+18} {y+12}l-8 9 8 9M{x+38} {y+12}l8 9 -8 9',BLUE,2)
+    s.path('M951 108H1056V131M1056 174V215H994',BLUE,2,arrow=True)
+    s.path('M936 215H923V132',BLUE,2,arrow=True)
     s.save('autodev-brand'+('.zh' if zh else '')+'.svg')
 
-def overview(zh):
-    title='从意图到证据，变更始终可见' if zh else 'A visible path from intent to evidence'
-    s=SVG(1200,650,title,'Clarify 一次审阅目标、基线与范围。Loop 持续更新实现并记录检查证据。Handoff 交付实建产物与核验结果，由人审阅接手。AI 判断与测量证据明确区分。' if zh else 'Clarify agrees the target, baseline and scope with one human review. Loop evolves implementation and recorded check evidence. Handoff delivers as-built artifacts and verification for human acceptance. AI judgment remains distinct from measured evidence.')
-    header(s,title,zh)
-    xs=[38,430,822]
-    stages=[('01','Clarify','对齐系统与范围' if zh else 'Agree on the system slice'),('02','Loop','实施，并持续核验' if zh else 'Build against the agreement'),('03','Handoff','看清结果，再接手' if zh else 'Inspect the result. Take over.')]
-    for x,(n,t,sub) in zip(xs,stages):
-        label(s,x,137,n);s.text(x+35,139,t,26,NAVY,650);s.text(x,174,sub,21,INK,550)
-    for x in [402,794]:s.line(x,126,x+15,126,BLUE,1.8,arrow=True)
-    # Clarify's artifact is a real framed scope slice with target and baseline.
-    s.rect(38,198,340,230,'#ffffff',LINE,3);label(s,57,228,'AGREEMENT' if not zh else '共同约定')
-    s.rect(57,245,133,100,PALE,BLUE,2);s.text(68,268,'system slice' if not zh else '系统切片',16,BLUE,600)
-    for x,y in [(70,283),(143,310),(70,310)]:s.rect(x,y,34,18,'white',BLUE,1)
-    s.path('M104 292H160V310M87 301V310',BLUE,1.5)
-    s.text(208,268,'Target' if not zh else '目标',18,INK,650);s.text(208,297,'Baseline' if not zh else '基线',18,INK,650);s.text(208,326,'Boundaries' if not zh else '边界',18,INK,650)
-    s.line(57,363,359,363)
-    s.circle(65,389,5,GOLD);s.text(80,395,'Human reviews the whole pass' if not zh else '人一次审阅整个 Clarify',17,GOLD,550)
-    # Loop artifact: code patch and independent measured output track.
-    s.rect(430,198,340,230,'#ffffff',LINE,3);label(s,449,228,'STATE + EVIDENCE' if not zh else '状态 + 证据')
-    s.text(449,265,'Implement' if not zh else '实施变更',20,INK,650);s.line(571,258,619,258,BLUE,1.8,arrow=True);s.text(638,265,'Check' if not zh else '核验',20,INK,650)
-    s.path('M708 279V298H490V280',BLUE,1.5,dash='5 4',arrow=True)
-    s.text(590,318,'repeat within scope' if not zh else '在约定范围内迭代',15,MUTED,anchor='middle')
-    s.line(449,337,751,337)
-    s.rect(449,350,128,54,PALE,rx=2);s.text(461,373,'partial view' if not zh else '当前局部视图',17,BLUE,600);s.text(461,395,'next action' if not zh else '下一步行动',15,MUTED)
-    s.rect(592,350,159,54,'#edf6f4',rx=2);s.text(604,373,'check output' if not zh else '检查原始输出',17,TEAL,600);s.text(604,395,'recorded' if not zh else '持续留存',15,MUTED)
-    # Handoff artifact as paired delivered documents, no fake results.
-    s.rect(822,198,340,230,'#ffffff',LINE,3);label(s,841,228,'DELIVERY' if not zh else '交付包')
-    sheet(s,841,246,139,107,'As-built' if not zh else '实建产物',['Design' if not zh else '设计对照','Realized' if not zh else '实际落地'],BLUE)
-    sheet(s,993,246,150,107,'Verification' if not zh else '核验证据',['Commands' if not zh else '命令与输出','Raw outputs' if not zh else '状态与限制'],TEAL)
-    s.line(841,372,1143,372);s.circle(849,397,5,GOLD);s.text(864,403,'Human reviews the delivery' if not zh else '人审阅交付，再决定接手',17,GOLD,550)
-    # Honest distinctions and review semantics below the primary artifact path.
-    s.text(38,465,'What carries forward' if not zh else '每一阶段，都留下可接续的产物',17,MUTED,600)
-    s.line(38,482,1162,482)
-    if zh:
-        s.text(38,514,'先看懂并认可目标，再让变更推进；最后看见实际交付与证据。',21,NAVY,550)
-        a=['AI 判断','提出设计、选择路径、解释结果'];b=['测量证据','由约定检查产生，可回放核验']
+def stage_headers(s, zh, labels=None):
+    for i,x in enumerate([48,448,848]):
+        s.text(x,151,f"0{i+1}",16,BLUE,650)
+        s.text(x+36,153,['Clarify','Loop','Handoff'][i],25,NAVY,650)
+        if i<2:s.line(x+295,145,x+350,145,BLUE,2,arrow=True)
+
+
+def node(s,x,y,name,state='solid',kind='service'):
+    color=TEAL if state=='done' else BLUE if state=='solid' else MUTED
+    if state=='pending':
+        s.add(f'<rect x="{x}" y="{y}" width="76" height="58" rx="10" fill="{PAPER}" stroke="{color}" stroke-width="2" stroke-dasharray="5 5"/>')
+    else:s.rect(x,y,76,58,'#e5f3ef' if state=='done' else PALE,color,10)
+    if kind=='database':
+        s.add(f'<ellipse cx="{x+38}" cy="{y+18}" rx="17" ry="6" fill="none" stroke="{color}" stroke-width="2"/>')
+        s.path(f'M{x+21} {y+18}v19c0 8 34 8 34 0V{y+18}',color,2)
+    elif kind=='queue':
+        for dx in [20,32,44]:s.rect(x+dx,y+17,8,24,color,rx=2)
     else:
-        s.text(38,514,'Understand the target first. See what changed and what the checks establish.',21,NAVY,550)
-        a=['AI judgment','Design choices, next steps, interpretation'];b=['Measured evidence','Recorded outputs from the agreed checks']
-    s.circle(45,558,5,GOLD);s.text(60,564,a[0],18,GOLD,650);s.text(38,594,a[1],18,MUTED)
-    s.line(600,544,600,604)
-    s.circle(632,558,5,TEAL);s.text(647,564,b[0],18,TEAL,650);s.text(625,594,b[1],18,MUTED)
+        s.path(f'M{x+28} {y+16}l-10 12 10 12M{x+48} {y+16}l10 12 -10 12',color,2)
+    s.text(x+38,y+81,name,16,color,550,anchor='middle')
+
+
+def system(s,x,y,zh,mode='solid'):
+    states=['solid']*3 if mode=='solid' else ['done','done','pending'] if mode=='partial' else ['done']*3
+    names=['API','Queue','Ledger'] if not zh else ['API','队列','账本']
+    for i,(name,state) in enumerate(zip(names,states)):
+        node(s,x+i*112,y,name,state,['service','queue','database'][i])
+        if i<2:s.line(x+i*112+78,y+29,x+(i+1)*112-5,y+29,TEAL if mode=='done' else BLUE,2,dash='4 4' if mode=='partial' and i==1 else None,arrow=True)
+    s.path(f'M{x+150} {y-7}v-25H{x+38}v25',BLUE,2,arrow=True)
+    s.text(x+94,y-42,'retry' if not zh else '重试',14,MUTED,anchor='middle')
+
+
+def review(s,x,y,zh):
+    s.circle(x,y-7,8,GOLD);s.path(f'M{x-13} {y+17}v-5q13-17 26 0v5',GOLD,2)
+    s.text(x+25,y+3,'review' if not zh else '审阅',15,GOLD,550)
+
+
+def overview(zh):
+    title='同一个变更，从目标到交付' if zh else 'One change. Visible from intent to delivery.'
+    s=SVG(1200,520,title,'Illustrative billing retry workflow; dashed paths remain unfinished. Check records support specific paths, not universal correctness.')
+    header(s,title,zh);stage_headers(s,zh)
+    for x,mode in [(48,'solid'),(448,'partial'),(848,'done')]:system(s,x,251,zh,mode)
+    s.rect(33,195,338,168,'none',BLUE,12)
+    s.text(225,348,'约定范围' if zh else 'Agreed scope',14,BLUE,550)
+    s.line(48,403,1144,403,LINE,2)
+    for x,status in [(90,'fail'),(490,'pass'),(602,'gap'),(890,'pass'),(1002,'pass')]:
+        s.line(x,350,x,390,LINE,1,dash='3 4');s.circle(x,403,12,TEAL if status=='pass' else GOLD if status=='gap' else '#b85649')
+        if status=='pass':s.check(x-7,404,'white')
+        else:s.text(x,408,'?' if status=='gap' else '×',18,'white',650,anchor='middle')
+    for x,t in [(48,'baseline / 基线' if zh else 'Baseline'),(448,'checks + gaps / 检查与缺口' if zh else 'Checks + gaps'),(848,'retained source + evidence' if not zh else '保留源码 + 证据')]:s.text(x,446,t,17,MUTED)
+    review(s,270,480,zh);review(s,1070,480,zh)
+    s.text(448,488,'虚线 = 尚未实现' if zh else 'Dashed = unfinished',15,MUTED)
     s.save('autodev-overview'+('.zh' if zh else '')+'.svg')
 
-SCENARIOS={
-'development':{
-'en': {'title':'Feature development · from blueprint to as-built','artifact':'A design you can inspect before and after','clarify':['Inspect the existing system','Draw the target blueprint','Agree on scope and build order'],'loop':['Implement blueprint elements','Run the agreed regression checks','Update the partial system view'],'handoff':['Compare blueprint and as-built','Inspect element coverage','Review verification and limits'],'left':'Agreed blueprint','right':'As-built system','bottom':'The target is an agreed design. The delivery shows how the system actually changed.'},
-'zh': {'title':'功能开发 · 从蓝图到实建','artifact':'动手前看清设计，交付时对照实建','clarify':['检查现有系统','绘制目标蓝图','约定范围与构建顺序'],'loop':['逐项实现蓝图元素','运行约定回归检查','同步更新实际局部视图'],'handoff':['对照蓝图与实建图','检查元素覆盖','审阅核验结果与限制'],'left':'约定蓝图','right':'实建系统','bottom':'目标是共同认可的设计；交付展示系统实际发生了什么变化。'}},
-'bugfix':{
-'en':{'title':'Bug fixes · from reproduction to passing evidence','artifact':'The same agreed tests, before and after','clarify':['Reproduce the failure in a test','Add relevant regression cases','Record baseline and agree scope'],'loop':['Fix within the approved scope','Keep the agreed test set frozen','Run all agreed tests and record output'],'handoff':['Inspect every agreed test result','Review raw outputs and limitations','Rerun the checks when taking over'],'left':'Before the fix','right':'After the fix','bottom':'A reproduction must fail on unchanged source. Broken setup is not proof of the bug.'},
-'zh':{'title':'缺陷修复 · 从复现到通过证据','artifact':'修复前后，用同一组约定测试作对照','clarify':['用测试复现故障','补齐相关回归用例','记录基线，并约定影响范围'],'loop':['在批准范围内修复','冻结已约定的测试集合','运行全部测试并保留原始输出'],'handoff':['逐项查看约定测试结果','审阅原始输出与限制','接手时可以重新运行检查'],'left':'修复前','right':'修复后','bottom':'复现测试必须在原代码上失败；环境损坏不能充当缺陷证据。'}},
-'optimization':{
-'en':{'title':'Optimization · a fixed ruler, an honest history','artifact':'One benchmark · one score · comparable conditions','clarify':['Define the benchmark and target','Measure baseline and observed noise','Agree on scope, margin and time'],'loop':['Optimize, then measure','Retain the best verified change','Log every attempt, including failures'],'handoff':['Show baseline, attempts and final','Rerun verification on the retained state','State whether the target was met'],'left':'Fixed measurement','right':'Recorded history','bottom':'Stop at the agreed target or deadline. A timeout does not imply success.'},
-'zh':{'title':'性能优化 · 固定标尺，如实记录过程','artifact':'一个基准 · 一个分数 · 可比的测量条件','clarify':['约定基准与目标','记录基线和观察到的波动','确认范围、改进幅度与时间'],'loop':['先优化，再测量','保留已验证的最优改动','记录每次尝试，包括失败'],'handoff':['展示基线、尝试与最终结果','在保留版本上重新核验','说明目标是否真正达到'],'left':'固定测量方式','right':'真实过程记录','bottom':'达到约定目标或时间用尽即停止；超时并不代表成功。'}}}
 
+def development(s,zh):
+    for x,mode in [(48,'solid'),(448,'partial'),(848,'done')]:
+        system(s,x,270,zh,mode)
+    for x in [48,448,848]:
+        s.rect(x,389,300,62,'white',LINE,8)
+        for i in range(3):
+            color=TEAL if x==848 or (x==448 and i<2) else BLUE if x==48 else LINE
+            s.rect(x+18+i*94,409,76,20,color,rx=3)
+    s.text(48,490,'蓝图' if zh else 'Blueprint',18,BLUE,600)
+    s.text(448,490,'2 / 3 已实现' if zh else '2 / 3 implemented',18,TEAL,600)
+    s.text(848,490,'逐路径对照代码与检查' if zh else 'Compare paths with code + checks',17,TEAL,600)
+
+
+def bugfix(s,zh):
+    for x,fixed in [(48,False),(448,True),(848,True)]:
+        s.line(x+26,241,x+272,241,LINE,2)
+        for j in range(2):
+            y=269+j*57
+            s.path(f'M{x+25} {y}H{x+160}',BLUE,2,arrow=True)
+            s.rect(x+4,y-9,15,18,BLUE,rx=3)
+            s.text(x+35,y-13,'same key' if not zh else '同一 key',14,MUTED)
+            s.rect(x+185,y-15,84,30,'#f9eae6' if not fixed else '#e5f3ef',rx=5)
+            s.text(x+227,y+5,('WRITE' if not fixed or j==0 else 'REUSE') if not zh else ('写入' if not fixed or j==0 else '复用'),14,'#b85649' if not fixed else TEAL,600,anchor='middle')
+        s.text(x,387,'重复扣费' if not fixed and zh else 'Duplicate charge' if not fixed else '一次写入' if zh else 'One ledger write',18,'#b85649' if not fixed else TEAL,600)
+        for j in range(4):
+            color='#b85649' if j==0 and not fixed else TEAL
+            s.rect(x+j*73,423,57,34,color,rx=5)
+            if j==0 and not fixed:s.text(x+28,446,'×',24,'white',600,anchor='middle')
+            else:s.check(x+j*73+20,440,'white')
+        s.text(x,491,'同一组约定测试' if zh else 'Same agreed test set',17,MUTED)
+
+
+def optimization(s,zh):
+    s.text(48,222,'固定负载' if zh else 'Fixed workload',18,BLUE,600)
+    for i,h in enumerate([36,68,48,84,58]):s.rect(52+i*43,345-h,25,h,PALE,BLUE,3)
+    s.line(48,362,333,362,BLUE,2)
+    for x in range(48,334,24):s.line(x,362,x,373,BLUE,1)
+    s.text(48,408,'同一标尺 · 同一环境' if zh else 'Same ruler · same environment',17,MUTED)
+    s.text(448,222,'尝试与回滚' if zh else 'Attempts + rollback',18,BLUE,600)
+    s.line(461,350,750,350,TEAL,3)
+    for x,y,keep in [(485,350,True),(565,275,False),(650,350,True),(725,285,False)]:
+        if not keep:
+            s.path(f'M{x-32} 350L{x} {y}',MUTED,2)
+            s.path(f'M{x} {y+12}Q{x+38} 335 {x+16} 348',MUTED,1.5,dash='4 4',arrow=True)
+        s.circle(x,y,9,TEAL if keep else GOLD)
+        if not keep:s.text(x,y+5,'×',15,'white',600,anchor='middle')
+    s.text(448,408,'保留有效版本' if zh else 'Retain the valid state',17,TEAL)
+    s.text(848,222,'保留结果与复测' if zh else 'Retained state + rerun',18,TEAL,600)
+    s.rect(857,264,58,87,PALE,BLUE,5);s.rect(945,303,58,48,'#e5f3ef',TEAL,5)
+    s.line(974,295,974,311,TEAL,2);s.line(962,295,986,295,TEAL,2)
+    s.line(848,362,1145,362,LINE,2)
+    s.text(886,389,'baseline',14,MUTED,anchor='middle');s.text(974,389,'retained',14,TEAL,anchor='middle')
+    s.text(848,439,'示意，非实测数据' if zh else 'Schematic · not measured data',16,MUTED)
+    s.text(48,491,'真实测量轨迹见下方实测案例' if zh else 'Measured trajectories appear in the recorded cases below.',17,MUTED)
+
+
+SCENARIOS=['development','bugfix','optimization']
 def scenario(kind,zh):
-    t=SCENARIOS[kind]['zh' if zh else 'en'];s=SVG(1200,624,t['title'],t['artifact']+('。人一次审阅整个 Clarify；Loop 重复实施与检查；Handoff 由人审阅接手。本图为结构示意，不是实测案例数据。' if zh else '. Clarify is reviewed once as a whole. Loop repeats implementation and checks. Handoff is reviewed by the human. Diagram is schematic, not measured case data.'))
-    header(s,t['title'],zh,{'development':'SCENARIO / 01','bugfix':'SCENARIO / 02','optimization':'SCENARIO / 03'}[kind])
-    s.text(38,137,t['artifact'],20,MUTED)
-    xs=[38,430,822]
-    for i,(x,stage) in enumerate(zip(xs,['Clarify','Loop','Handoff'])):
-        label(s,x,186,f'0{i+1}');s.text(x+35,188,stage,25,NAVY,650)
-        for j,line in enumerate(t[stage.lower()]):s.text(x,228+j*29,line,18,INK)
-        if i<2:s.line(x+328,181,x+349,181,BLUE,1.7,arrow=True)
-    # Single human review after the whole clarification, acceptance at delivery.
-    s.circle(44,322,5,GOLD);s.text(59,328,'Review the whole pass once' if not zh else '一次审阅整个 Clarify',17,GOLD,550)
-    s.path('M750 316V336H460V316',BLUE,1.5,dash='5 4',arrow=True);s.text(600,361,'repeat change + check' if not zh else '变更与检查持续迭代',16,MUTED,anchor='middle')
-    s.circle(828,322,5,GOLD);s.text(843,328,'Review the delivery' if not zh else '审阅交付，决定接手',17,GOLD,550)
-    s.line(38,382,1162,382)
-    if kind=='development':
-        for x,key in [(57,'left'),(658,'right')]:
-            label(s,x,416,t[key]);s.rect(x,434,100,49,PALE,BLUE,2);s.text(x+50,464,'UI',17,BLUE,600,anchor='middle');s.rect(x+155,434,100,49,PALE,BLUE,2);s.text(x+205,464,'Logic' if not zh else '逻辑',17,BLUE,600,anchor='middle');s.line(x+100,459,x+154,459,BLUE,1.7,arrow=True);s.rect(x+310,434,100,49,PALE,BLUE,2);s.text(x+360,464,'Data' if not zh else '数据',17,BLUE,600,anchor='middle');s.line(x+255,459,x+309,459,BLUE,1.7,arrow=True)
-        s.text(600,466,'→',29,MUTED,anchor='middle');s.text(57,518,'Schematic · stable element identities' if not zh else '结构示意 · 元素身份保持一致',16,MUTED);s.check(659,514);s.text(685,520,'Element coverage + regression evidence' if not zh else '元素覆盖 + 回归检查证据',17,TEAL)
-    elif kind=='bugfix':
-        for x,key in [(57,'left'),(658,'right')]:
-            label(s,x,416,t[key]);s.text(x,451,'reproduction' if not zh else '复现用例',19,INK);s.text(x,486,'regression set' if not zh else '回归测试组',19,INK)
-        s.text(342,451,'FAIL' if not zh else '失败',18,'#a24936',650);s.text(342,486,'recorded' if not zh else '已记录',18,MUTED)
-        s.check(1013,446);s.text(1041,451,'PASS' if not zh else '通过',18,TEAL,650);s.check(1013,481);s.text(1041,486,'PASS' if not zh else '通过',18,TEAL,650)
-        s.line(600,407,600,507);s.text(57,530,'Expected evidence pattern · no real test counts shown' if not zh else '预期证据形态示意 · 不代表真实用例数量',16,MUTED)
-    else:
-        label(s,57,416,t['left']);s.text(57,454,'Workload · unit · direction' if not zh else '负载 · 单位 · 优化方向',20,INK,550);s.text(57,488,'Method · margin · budget' if not zh else '方法 · 改进幅度 · 时间',20,INK,550)
-        label(s,658,416,t['right']);items=[('baseline' if not zh else '基线',BLUE),('attempts' if not zh else '各次尝试',MUTED),('final' if not zh else '最终状态',TEAL)]
-        s.line(674,459,1100,459,LINE,2)
-        for x,(txt,col) in zip([674,879,1100],items):s.circle(x,459,6,col);s.text(x,494,txt,18,col,550,anchor='middle')
-        s.text(658,530,'Process schematic · no invented scores or trajectory' if not zh else '过程结构示意 · 不虚构分数或提升曲线',16,MUTED)
-    s.line(38,551,1162,551);s.text(38,589,t['bottom'],19,NAVY,550)
+    titles={'development':('See what is built. See what is still missing.','看见已实现，也看见未完成'), 'bugfix':('A failure path becomes a regression check.','让故障路径对应到回归检查'), 'optimization':('Keep the ruler. Keep the history.','固定标尺，保留全部尝试')}
+    title=titles[kind][int(zh)]
+    s=SVG(1200,550,title,'Illustrative workflow only, not benchmark results. The diagram does not establish correctness or measured improvement.')
+    header(s,title,zh,'DEVELOPMENT' if kind=='development' else 'BUG FIX' if kind=='bugfix' else 'OPTIMIZATION')
+    stage_headers(s,zh)
+    {'development':development,'bugfix':bugfix,'optimization':optimization}[kind](s,zh)
+    s.text(48,530,'结构示意 · 结论依赖实际代码与原始证据' if zh else 'Schematic · conclusions depend on actual code and raw evidence.',14,MUTED)
     s.save('autodev-'+kind+('.zh' if zh else '')+'.svg')
 
 if __name__=='__main__':
