@@ -3,78 +3,66 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/autodev-brand.svg" alt="autodev — shared understanding from design to handoff" width="720">
+  <img src="docs/assets/autodev-brand.svg" alt="autodev — clarify, execute, hand off the evidence" width="720">
 </p>
 
-**autodev is an optional Agent Skill for complex production changes that need careful clarification, visible execution, and evidence people can inspect.**
+**autodev is an explicitly invoked Agent Skill for concise illustrated plans, execution with relevant checks, and clear handoffs.**
 
-A billing retry change can touch an API, a queue, a database, and a downstream ledger. Agreeing on a sentence is not enough: the human needs to see what will change, what is actually built, which checks support it, and what remains uncertain. autodev keeps that shared understanding through **Clarify → Loop → Handoff**, using the target project's own code, tests, and benchmarks.
+**Clarify → Loop → Handoff** means plan → execute → explain the result. Clarify important uncertainties, show the core flow rather than an exhaustive blueprint, implement with the project's own tools, and make the verification evidence easy to assess.
 
 ```bash
 npx skills add Momoyeyu/autodev -g
 ```
 
-Works with agents that load `SKILL.md`. It adds a workflow and local evidence tools; it does not replace the project's development tools.
+Ask your agent to use autodev when you want this workflow. It should never activate merely because a task is complex or matches a development category. Codex additionally disables implicit invocation through [its skill policy](autodev/agents/openai.yaml).
 
 ## When to use it
 
-Use autodev when misunderstanding, hidden dependencies, or inadequate verification could make a consequential change expensive to get wrong: cross-service behavior, compatibility-sensitive migrations, payment flows, difficult regressions, or performance work with a meaningful budget and acceptance target.
+Use it when you want help understanding a change before implementation and assessing the result afterward: an ambiguous feature, a difficult regression, or a measured optimization. Production changes across modules often benefit from that conversation. A small task that you explicitly bring to autodev should still get a small plan and proportionate checks.
 
-A simple local quick fix normally bypasses it. Repository size alone is not a reason to use it; a small change to an idempotency boundary may warrant it. Choose according to the change's consequences and the need for shared understanding, rather than applying a ceremony to every edit.
-
-| Fits autodev | Usually use the normal development flow |
+| What you need | What autodev contributes |
 |---|---|
-| A retry policy spans billing, queue workers, and ledger writes | An obvious typo or straightforward local rename |
-| An export change must preserve compatibility across modules | A small, understood change with adequate existing checks |
-| A kernel optimization needs comparable measurements and a bounded budget | A speculative optimization without a useful measurement target |
+| A feature with important open choices | Focused clarification and a short illustrated plan |
+| A bug fix with credible evidence | Reproduction before the fix and relevant regression checks |
+| A performance improvement | Comparable baseline, measured attempts, and an honest retained result |
 
 ## The working experience
 
-![Clarify, Loop, Handoff with visible state and inspectable evidence](docs/assets/autodev-overview.svg)
+![Clarify, Loop, Handoff: a focused plan, implementation and checks, concise evidence](docs/assets/autodev-overview.svg)
 
-The value is sustained understanding of the change, not a diagram at the beginning and a success claim at the end.
-
-The same API → queue → ledger path carries through all three stages: blue marks the agreed design, green marks implemented parts, and dashed paths remain unfinished. Check records appear separately below the system state. These are workflow illustrations, not benchmark results.
-
-| Stage | What the agent prepares or does | What the human can inspect |
+| Stage | What happens | What the user sees |
 |---|---|---|
-| **Clarify** | Inspect the actual code; prepare the target artifact; establish baseline; propose scope and verification | The complete pass, reviewed together before implementation |
-| **Loop** | Implement within the agreement, judge meaningful checkpoints, update the actual partial state | What changed, recorded checks, unfinished paths, failures, and the next action |
-| **Handoff** | Verify the retained source state and prepare the required artifact with evidence and limitations | What was delivered, what was checked, what remains uncertain, and how to continue |
+| **Clarify** | Inspect the relevant context, resolve consequential uncertainties, draft a plan | Key choices, one core flow where useful, and a few implementation/check steps |
+| **Loop** | Implement and verify using the project's own tools | Brief updates when progress, evidence, or direction changes |
+| **Handoff** | Explain the delivered outcome and supporting evidence | Important changes, actual check results, remaining limits, and useful links |
 
-Clarify is practical preparation, not a questions-only stage. The agent draws from code, prepares or maintains tests, trial-runs commands, records the unchanged-source baseline, and proposes boundaries. **One human review covers the whole prepared pass**: target artifact, baseline, scope, and verification basis. The human can revise it or approve entry into Loop. Existing decisions are reused; changes to intent, target meaning, or permitted scope return to Clarify.
+Existing instructions and decisions carry forward. An authorized task can proceed after planning; there is no additional approval gate for its own sake. If a newly discovered choice changes the goal, compatibility, significant cost, or an irreversible action, the agent brings that choice back to you.
 
-Loop runs in a dedicated git worktree and branch. Attempts are committed and judged with the project's agreed commands. Failing development checkpoints remain visible; invalid changes are rolled back, and rejected optimization attempts return to the retained best state. At meaningful judged checkpoints, `report --progress` writes `progress.html` with recorded checks, the current diagram when available, and remaining work. It is a snapshot refreshed by running the command again, not a streaming dashboard or a report for every tool call.
-
-The agent can add `<contract dir>/review.md` to explain the user goal, actual progress, checked facts, evidence gaps, and next action. The page labels this as **AI review**, separate from recorded command evidence. A partial implementation stays visibly partial; failed downstream regressions and unavailable integration checks belong in the picture.
+Work happens in your chosen directory. Git, branches, commits, and worktrees are optional project choices. Autodev has no contract engine, frozen-file registry, mandatory report schema, or special runtime setup.
 
 ### Feature development
 
-![Feature development: agree on design, inspect partial implementation, compare delivered state](docs/assets/autodev-development.svg)
+![Feature development: concise plan, implementation, focused checks](docs/assets/autodev-development.svg)
 
-Prepare as-is architecture and flow diagrams from the actual code, then the proposed blueprint, build dependencies, editable scope, and regression checks. The human reviews that complete pass. During Loop, show the implemented and unfinished responsibilities and paths as they stand. At Handoff, draw as-built diagrams from the retained code and compare them with the blueprint.
+Start with a draft you can scan: the goal, key constraints, a small flow or component diagram, and a few steps. Mermaid is often enough; the format stays flexible. The agent investigates what the code can answer and asks about consequential uncertainties. It updates the picture when the approach changes, rather than maintaining three complete architecture documents.
 
-A diagram node records a claim about implementation, not proof of it. An unchanged topology may correctly describe changed behavior; different IDs or different-looking pictures do not establish correctness. The agent must check the semantics against the code and supporting evidence.
+Verification follows the change's risks. A billing retry fix may need a duplicate-request check and ledger integration evidence; a small UI change may need a quick interaction check. A diagram explains the intended behavior; observed checks support the implementation claims.
 
 ### Bug fix
 
-![Bug fix: reproduce, agree on regression coverage, inspect failures, deliver test evidence](docs/assets/autodev-bugfix.svg)
+![Bug fix: reproduce the failure, fix it, check regressions](docs/assets/autodev-bugfix.svg)
 
-Prepare a reproduction that fails on unchanged source, inspect existing tests, preserve relevant coverage, repair obsolete expectations when justified, and add missing regressions. Run the agreed set for baseline, propose the impact, and present it together for human review. A broken setup is a blockage, not a reproduced bug.
-
-Loop fixes until the agreed set passes, with test versions and raw output preserved. Explain what the tests cover and what they do not: a passing suite is evidence for its checked behavior, not a universal classification of bugs or proof that every production failure is impossible.
+Prefer a focused failing reproduction before changing the implementation, then make the fix and check relevant regressions. Use a documented manual reproduction when automation is impractical. Distinguish the reported defect from fixture or environment failures, and explain any changed test expectations. See [bug fixes and TDD](autodev/references/clarify-bugfix.md).
 
 ### Performance optimization
 
-![Performance optimization: fixed benchmark, comparable attempts, retained result and process chart](docs/assets/autodev-optimization.svg)
+![Performance optimization: fixed workload, comparable attempts, retained measurements](docs/assets/autodev-optimization.svg)
 
-Prepare one executable score or fixed weighted sum, establish baseline, and propose the target, editable files, measurement conditions, and time budget for one review. Keep the ruler fixed. Loop attempts an improvement, measures it, retains the best valid state, and then checks the target or deadline. Record rejected ideas, failed attempts, and rerun results as well as improvements.
-
-Handoff includes a chart of baseline → attempts → retained result. A timeout can end work without meeting the target. Two baseline measurements assess observed variation; they do not establish a statistical guarantee against noise. Missing measurements remain missing.
+Measure a meaningful baseline, keep workload and conditions comparable, and make each attempt test a hypothesis. Retain supported improvements and preserve failed or rejected attempts in the record. Reuse the user's budget; bound open-ended searches and stop when the goal is met or further work is no longer useful. A short comparison can use a table; longer histories may benefit from a chart. See [performance optimization](autodev/references/clarify-optimization.md).
 
 ## Recorded cases
 
-These two histories show concrete use of the optimization workflow. They are not evidence that autodev improves every task or establishes general industrial effectiveness. Both charts use recorded measurements and the skill's `autodev_render.py` renderer.
+These histories were recorded with an earlier version of the optimization workflow. The measured charts are preserved; they do not establish that the current skill improves every task or has general industrial effectiveness.
 
 **MoE Transformer — English→French translation (PyTorch, single RTX 4090D).** Target: BLEU ≥ 28.87 (the dense reference), baseline 24.97, only `src/train.py` editable, a fixed wall-clock budget per run. Re-running the benchmark on the unchanged source moved the score by 0.62, so the improvement margin was set at 0.8. Thirty-one attempts, thirty named routes, four retained — `top1-n4`, `batch-up`, `dropout-down`, `cosine-sched` — reached 31.25; the verify re-run scored 30.91. The other routes (torch.compile, EMA, fused AdamW, capacity and depth variants…) all measured under the margin and were rolled back.
 
@@ -87,54 +75,45 @@ These two histories show concrete use of the optimization workflow. They are not
 
 ## Get started
 
-Install the skill, then ask the agent to use it for a change whose consequences justify the workflow:
-
 ```text
-Use autodev for our billing retry/idempotency change. Inspect the API,
-queue worker, persistence, and downstream ledger flow. Prepare the current
-and proposed flows, baseline checks, editable scope, and a verification plan
-for one Clarify review before implementation. Preserve existing payment
-compatibility and make missing integration evidence visible.
+Use $autodev for the billing retry change. Preserve payment compatibility.
+Clarify the important open questions, show a concise core-flow plan,
+then implement and check it. Keep the final handoff short and make
+missing integration evidence explicit.
 ```
 
-The agent loads [SKILL.md](autodev/SKILL.md) and the relevant references, prepares the whole Clarify pass, and presents the artifacts for review. It uses real project commands and environments. If database integration is unavailable, it records the gap and limits its claims; green unit tests do not establish database-backed idempotency.
+The agent loads [SKILL.md](autodev/SKILL.md), plus bug-fix or performance guidance only when needed. It uses existing project instructions, tests, and tools. Durable notes are useful for long tasks or takeover, but a separate artifact directory is not required.
 
-For a running loop, the contract directory and dedicated branch hold the recorded state. A new session runs `status`, inspects the latest evidence and review notes, settles unjudged work, and continues from the next action. Optional [project constitution](autodev/references/constitution.md) rules can bind frozen paths, guard checks, and optimization budgets across rounds.
+## Optional HTML handoff
 
-## What can be trusted
+The default handoff is a concise response or your project's usual delivery format: what changed, what was checked, and what remains uncertain, with useful links. It should be easy to read without opening a report.
 
-| Responsibility | Basis and limit |
-|---|---|
-| **Mechanical facts** | The judge records source identities, permitted scope, frozen-file checks, configured command outcomes, dependency claims, benchmark comparisons, rollback, and approval state. These facts apply to what was configured and executed. |
-| **Semantic review** | The AI inspects whether code and diagrams describe the intended behavior, whether checks are adequate, and which production risks remain untested. It explains its reasoning separately from measured evidence. |
-| **Human decisions** | The human reviews the prepared Clarify pass and the final evidence packet. Neither the tool nor AI review replaces those decisions. |
+If you prefer a visual page, request it and choose a rendering skill. [Archify's explainer](https://github.com/tt-a1i/archify/blob/main/archify/SKILL.md) supports conclusion-first HTML pages; [visual-explainer](https://github.com/nicobailon/visual-explainer) covers visual explanations, change reviews, and project recaps. Autodev supplies the verified substance and can hand it to the selected skill. Neither is a required dependency.
 
-Nodes plus green checks are not semantic proof. An approved blueprint can be wrong; a test can miss a relevant interaction; an environment can block integration verification. autodev makes the basis and limits inspectable rather than promising a perfect protocol or production readiness.
+```text
+Use $autodev to implement this change. For the final handoff,
+use Archify to turn the result, actual checks, and limitations
+into a concise HTML explainer.
+```
 
-`report` writes the final self-contained `handoff.html`: as-built diagrams for development, the agreed test results for bug fixes, or a process chart for optimization. It includes source and raw evidence, AI review when provided, and unresolved work. Blocked or partial packets can be shown, but must be labelled honestly.
+## What the evidence means
 
-Handoff approval remains separate from progress snapshots. When checks or guards are configured, approval requires successful current verification on the retained commit and a current final report. Approval binds the source, verification record, and report hash; changed source, new verification, or a changed final report invalidates it. A failed verification blocks approval. Without configured checks, the packet says verification is not configured. Merge-back and worktree cleanup follow the recorded human approval.
+Report commands and outcomes that actually occurred. Keep measured observations separate from AI inference. Label existing failures, skipped or unavailable checks, and partial work plainly. Passing unit tests do not establish an integration property that was never checked.
 
-For instructions, see [verification](autodev/references/verification.md), [visualization](autodev/references/visualization.md), and [Handoff](autodev/references/handoff.md). Product validation, evaluation design, and research context live separately in [Product validation](docs/evaluation.md). Product usefulness comes first; a paper is an optional outcome.
+The skill guides judgment; it does not mechanically prove correctness or guarantee faster development. [Product evaluation](docs/evaluation.md) focuses on whether the clarification, visuals, and handoff help people enough to justify their cost.
 
 ## Skill structure
 
-| File | Load when |
+| File | Purpose |
 |---|---|
-| [SKILL.md](autodev/SKILL.md) | Deciding fit and entering the workflow |
-| [Clarify](autodev/references/clarify.md) | Preparing or revisiting the agreement |
-| [Development](autodev/references/clarify-development.md), [bug fix](autodev/references/clarify-bugfix.md), [optimization](autodev/references/clarify-optimization.md) | Preparing the applicable target, baseline, and scope |
-| [Loop](autodev/references/loop.md) | Executing the approved agreement or taking over a running loop |
-| [Visualization](autodev/references/visualization.md), [verification](autodev/references/verification.md) | Showing actual states and assessing supporting evidence |
-| [Handoff](autodev/references/handoff.md) | Preparing and reviewing the final packet |
-| [Constitution](autodev/references/constitution.md) | Using standing project constraints |
-| [Judge](autodev/scripts/autodev_verify.py), [renderer](autodev/scripts/autodev_render.py) | Running local evidence tools; use their help for command details |
-
-Load the current stage and applicable branch, not the whole reference directory. The tools use Python 3's standard library and invoke the project's own commands; this repository does not supply a substitute workload for the user's project.
+| [SKILL.md](autodev/SKILL.md) | Explicit invocation and the complete Clarify → Loop → Handoff workflow |
+| [Bug fixes and TDD](autodev/references/clarify-bugfix.md) | Reproduction, regression coverage, and evidence limits |
+| [Performance optimization](autodev/references/clarify-optimization.md) | Comparable measurements and bounded experimentation |
+| [Codex policy](autodev/agents/openai.yaml) | Disable implicit invocation |
 
 ## Contributing
 
-Keep the skill, bilingual READMEs, and diagram sources consistent. See [CONTRIBUTING.md](CONTRIBUTING.md) for regeneration and verification. Report concrete task context, observed behavior, and evidence when proposing improvements.
+Keep the skill, bilingual READMEs, and visual sources consistent. See [CONTRIBUTING.md](CONTRIBUTING.md) for regeneration and checks. Report concrete usage friction and evidence when proposing changes.
 
 ## License
 

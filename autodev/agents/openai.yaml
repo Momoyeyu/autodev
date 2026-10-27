@@ -1,0 +1,7 @@
+interface:
+  display_name: "Autodev"
+  short_description: "Explicitly invoked plans, execution, and evidence"
+  default_prompt: "Use $autodev to clarify the important uncertainties, draft a concise illustrated plan, implement it, and hand off the verification evidence."
+
+policy:
+  allow_implicit_invocation: false

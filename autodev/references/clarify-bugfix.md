@@ -1,56 +1,12 @@
-# Clarify: bug fix
+# Bug fixes and TDD
 
-Read for a defect report, alongside the shared [Clarify](clarify.md) rules. The target of this scenario is a **passing test set**: an agreed group of unit, integration, or smoke tests that reproduce the bug and guard the fix. One pass runs steps 1–3 in order; the human reviews the whole pass in step 4. Do not fix the bug during Clarify.
+Use the reported behavior to guide the fix. Keep the loop small: reproduce → fix → check regressions.
 
-## 1. Prepare runnable tests
+1. Inspect the affected path and nearby tests. Identify the expected behavior and the conditions that trigger the defect.
+2. Prefer a focused reproduction test before changing the implementation. Run it against the pre-fix source and confirm it fails for the reported reason, rather than a broken fixture or environment. A reliable manual reproduction is useful when automation is impractical; record its steps and limitations.
+3. Make the fix, rerun the reproduction, and run relevant existing checks. Add adjacent cases when they cover a plausible regression, not merely the new code's structure.
+4. Explain the before/after outcome and any behavior that remains unverified. If the defect cannot be reproduced, say so and separate the diagnosis from a demonstrated fix.
 
-A bug report usually names the concrete failing case, which makes the tests easier to pin down than in feature work. Test maintenance happens here, before baseline, not after approval:
+Tests may evolve as understanding improves. Explain changes to expected behavior; preserve still-relevant coverage. Do not weaken an assertion, skip a case, or change an input merely to make the fix pass. If the reproduction already passes before the fix, investigate the mismatch instead of claiming a red-to-green result.
 
-1. **Write the reproduction test first.** Turn the reported case into a test with a stable ID and an observable expected outcome. It must fail on the unchanged source — a reproduction that already passes does not capture the bug.
-2. **Query existing tests.** Map coverage around the defect area and identify outdated expectations and missing regression cases.
-3. **Remove or update outdated tests.** Explain how each change follows from the bug report. Keep still-relevant tests and regressions; do not discard a test merely because it fails.
-4. **Add missing regression tests.** Cover the boundaries and adjacent behaviors the fix must not break, using the project's existing tools.
-5. **Verify the tests can run.** Check discovery, dependencies, fixtures, and execution. Trial runs must produce meaningful results; failure caused by the bug is valid, while unrelated setup errors need repair.
-
-"Can run" does not mean "already passes." Do not fix the bug merely to obtain a green trial run.
-
-Judge test changes by what they still constrain. For every removed or changed test, show the old and new expectation side by side and state which behavior it constrained and where that behavior is now covered. Flag anything that widens accepted results, narrows inputs, adds skips or expected failures, or moves a check behind a condition. The reproduction test must fail against the unchanged source; regression cases must pass there. During Loop the test files are frozen and hash-checked, so this review is the only point at which weakening can enter.
-
-## 2. Capture baseline
-
-Run the prepared test set on the pre-fix source state. Record case IDs, actual outcomes, failure reasons, totals, the command, and test/source identities. The reproduction case should appear in the baseline as a failure.
-
-This baseline uses the reconciled suite. Removing outdated tests is preparation, not a fix gain. Use the same test version and comparable conditions for the final results.
-
-## 3. Propose the impact
-
-Inspect the relevant code and make the proposed changes and preserved behavior explicit, informed by which baseline cases fail and why.
-
-| Boundary | Propose for the human's confirmation |
-|---|---|
-| Editable files | Explicit paths the fix may change; the agreed test files stay outside them |
-| Generated paths | Run-artifact paths the test suite writes (reports, caches, regenerated fixtures); declare with `--generated` |
-| Existing workflows | Which flows are affected? May their outputs or side effects change? Which behavior must remain compatible? |
-
-A bug report is not unrestricted permission to redesign the surrounding code.
-
-Write the proposal as a contract with `init`, under the shared [contract rules](clarify.md#the-contract):
-
-```bash
-python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/runs/<task>" init \
-  --scenario bugfix --editable src/ --frozen tests/ \
-  --test-cmd "pytest -q tests/"
-```
-
-`--editable` is the file-level form of the permitted impact; `--frozen` is the agreed test set, which Loop may not edit. `init` runs the tests once more to record the baseline and its raw output. This run is also the negative control: `init` refuses a test set that passes on the unchanged source, because a target that cannot fail before the fix proves nothing after it.
-
-## 4. Human review of the whole pass
-
-Show the runnable tests, the old/new expectation for every changed or removed test, the baseline results with any coverage gaps, and the proposed impact, together. The human decides:
-
-- **Revise:** apply the feedback and repeat from step 1. Rerun baseline on the updated suite; a changed test set needs a new baseline, so rerun `init --renew`.
-- **Approve:** record the approved tests, baseline, and impact, then enter Loop.
-
-If `init` refuses an all-green baseline, find out why before review: the bug is already fixed, the reproduction test does not capture it, or the environment differs from the report.
-
-**Exit:** the human has approved one complete pass — runnable tests, their baseline, and the permitted impact. Continue to [Loop: bug fix](loop.md#bug-fix).
+Use the project's test runner and normal development practices. No frozen test manifest, separate approval ceremony, or special repository layout is needed.

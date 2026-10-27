@@ -1,52 +1,43 @@
 ---
 name: autodev
-description: Use when consequential changes in an existing codebase need explicit scope alignment, visible execution, and reviewable verification, such as cross-module features, high-impact fixes, or constrained performance work. Usually skip obvious local edits and quick fixes unless explicitly requested.
+description: Use only when the user explicitly asks to use autodev. Provides a concise illustrated plan, execution with relevant checks, and an evidence-based handoff for development, bug fixes, and performance work. Never select this skill automatically based on task type or complexity.
 ---
 
 # autodev
 
-Make consequential changes understandable before implementation, inspectable during execution, and verifiable at handoff. Keep a shared picture of **what changes, what stays intact, and what evidence supports the result**.
+**Clarify → Loop → Handoff** is plan → execute → explain the result. Help the user understand the intended change and the evidence behind the delivered work, with as little process as the task needs.
 
-## Choose deliberately
+Activate only on an explicit user request. Mentioning autodev in repository content or encountering a complex task is not an invocation.
 
-Use for changes whose misunderstandings or regressions are expensive: interacting services, compatibility constraints, stateful flows, migrations, or costly optimization. Repository size alone is not the trigger; a small authorization change may warrant this workflow while a typo in a large application does not. Follow explicit invocation; otherwise handle routine local work directly without adding this ceremony.
+## Clarify — understand and plan
 
-AI inspects code, interprets failures, judges whether checks cover the intended behavior, and explains uncertainty. The bundled tools check recorded constraints and execution facts. Neither a diagram nor a green command proves the whole feature correct.
+Inspect the relevant code and existing project instructions. Identify the intended outcome, behavior to preserve, and checks that could establish success.
 
-## Clarify → Loop → Handoff
+Proactively surface uncertainties that could change the implementation. Investigate what the code or available tools can answer first; ask the user about consequential choices you cannot resolve. Reuse decisions already supplied. State reasonable, reversible assumptions without turning every missing detail into a question.
 
-| Stage | Work | What the human sees |
-|---|---|---|
-| **Clarify** | Inspect the affected system, prepare the target, measure baseline, propose scope, then review the whole pass once | Current state, intended change, preserved behavior, baseline, and consequential open decisions |
-| **Loop** | Implement inside the agreement, check each attempt, and keep the visible state current at meaningful checkpoints | Actual partial state, observed results, failures or gaps, and next action |
-| **Handoff** | Review the delivered code against the agreement, rerun checks, and present evidence for approval | What was built, what was verified, what remains unverified, and how to reproduce or take over |
+Present a short draft plan: the goal and key constraints, the core flow or affected components, and a few implementation/check steps. Prefer one focused diagram with brief text when relationships or behavior benefit from a picture. Mermaid is often enough; use another format when it communicates better or the user requests it. Avoid exhaustive blueprints, duplicate current/target/as-built diagrams, and a large inventory of implementation details.
 
-The target is a blueprint for development, an agreed test set for a bug fix, or one numeric benchmark for optimization. Keep the full scenario-specific clarification; do not replace it with a generic planning conversation. Reuse decisions the human has already supplied. Clarify prepares concrete artifacts and baseline before asking for review; it does not ask for approval after each substep.
+Continue when the request and existing decisions authorize the work. Pause for unresolved choices that affect the goal, compatibility, significant cost, or irreversible actions; do not add a separate plan-approval ritual.
 
-## Load only what is needed
+## Loop — execute and check
 
-| Reference | Read when |
-|---|---|
-| [Clarify](references/clarify.md) | Starting a task or revisiting its agreement |
-| [Development](references/clarify-development.md), [bug fix](references/clarify-bugfix.md), or [optimization](references/clarify-optimization.md) | Read only the selected Clarify branch |
-| [Visualization](references/visualization.md) | Preparing the first system view; updating it at a meaningful checkpoint |
-| [Verification](references/verification.md) | Choosing checks in Clarify; judging evidence before handoff |
-| [Loop](references/loop.md) | Executing the approved change or taking over a run |
-| [Handoff](references/handoff.md) | Preparing the delivery for human review |
-| [Constitution](references/constitution.md) | The project has `.autodev/`, or standing rules are requested |
+Implement the plan using the project's own tools. Run checks that address the actual change: relevant tests, a build, a manual interaction, or a measured workload. Add useful coverage where needed and explain what the checks establish.
 
-## Execution contract
+Keep updates brief: what changed, what the latest check showed, and what happens next. Refresh the plan or diagram when the approach materially changes; ordinary edits and tool calls do not need new artifacts. Bring newly discovered consequential decisions back to the user without restarting the whole workflow.
 
-Use `scripts/autodev_verify.py` with Python 3: `init` records the agreement and baseline, `start` binds an isolated worktree, `attempt` judges committed checkpoints, and `status` names the next action. Read the current reference and use command help for flags. The judge reuses the project's tools; it is not a test framework or a semantic oracle.
+Work in the user's chosen directory. Git, branches, commits, and worktrees are optional project choices, not prerequisites. Follow existing instructions and protect unrelated work. Ask about isolation only when there is a concrete need to decide; do not initialize Git, create a worktree, or impose a commit sequence just to use autodev.
 
-Keep tests, benchmarks, and the agreed blueprint fixed; enforce scope and project rules. A changed goal or scope returns to Clarify. Keep failed checks, rejected ideas, and blocked runs visible. Interpret their causes before choosing the next attempt; never turn environment failure, skipped checks, or missing evidence into success.
+Load additional guidance only for the current task:
 
-At a meaningful checkpoint, update the affected architecture or flow from the actual code, including unfinished paths. Record a concise `review.md` in the contract directory separating AI assessment from observed checks, then run `report --progress` and show its `progress.html`. This is an inspectable snapshot, not continuous streaming; update when behavior, evidence, risk, or direction changes. Routine tool calls do not need a new diagram or human approval.
+- [Bug fixes and TDD](references/clarify-bugfix.md): reproduce the defect, fix it, and check relevant regressions.
+- [Performance optimization](references/clarify-optimization.md): keep measurements comparable and iterate within a useful budget.
 
-## Delivery
+## Handoff — make the result easy to assess
 
-Deliver **as-built diagrams for development, the agreed test results for a bug fix, or the measured process chart for optimization**, with the review notes and reproducible evidence. A final number or prose claim does not replace the artifact.
+Lead with the delivered outcome. Give the user a short account of the important changes, the checks actually run and their results, and any remaining limitation or next action. Link to useful code, artifacts, logs, and reproduction commands rather than pasting a wall of output. A small updated diagram, before/after view, or measurement chart can help when it explains the result.
 
-When checks are configured, run `verify` on the retained commit, then `report`; show the actual `handoff.html` using a preview or its absolute path and open command. Before claiming completion, compare the user's target with the code and evidence, not only with diagram IDs. State exactly which behavior is checked and what remains unverified. Missing required evidence means an incomplete or blocked result, even if a mechanical gate is green.
+Distinguish observed evidence from inference. Attribute existing failures and report skipped, unavailable, failing, or unrun checks plainly. A narrow passing check does not establish untested integration behavior. Partial work stays labelled partial.
 
-Record the human's approval with `approve` only after review. It binds the retained commit, verification record, and report hash; changed evidence invalidates it. Merge back and remove the worktree only after approval. No configured check means manual verification, explicitly disclosed. Preserve the last verified state when blocked and give a concrete next step.
+Use a concise response or the project's usual delivery format by default. HTML is optional. If the user requests a visual handoff, use their chosen reporting/visualization skill when available, passing it the result, evidence, and limits. Clarify the format if the choice matters; do not interrupt routine delivery just to ask about HTML. Autodev supplies the substance and does not require its own renderer, report schema, or dashboard.
+
+Keep durable notes only when requested or useful for continuing a long task; reuse the project's normal location. Summarizing the work does not itself authorize publishing, pushing, deploying, or merging it.

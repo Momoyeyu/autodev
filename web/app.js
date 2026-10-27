@@ -10,14 +10,14 @@ let stage = 0;
 let statusTimer;
 const notes = {
   en: [
-    "Agree on the API → queue → ledger path and the checks that can support it.",
+    "Sketch the API → queue → ledger path and choose the checks that matter.",
     "API implemented. Queue work in progress. Ledger integration is still unverified.",
-    "Compare the delivered path, checks, and remaining integration gaps before approval.",
+    "Summarize the delivered path, checks, and remaining integration gaps.",
   ],
   zh: [
-    "对齐 API → 队列 → 账本的路径，以及支撑它的验证方式。",
+    "画出 API → 队列 → 账本的核心路径，选出必要的检查。",
     "API 已实现，队列仍在开发，账本集成尚未验证。",
-    "批准前，对照交付路径、检查结果，以及尚未验证的集成缺口。",
+    "简要交代交付路径、检查结果，以及尚未验证的集成缺口。",
   ],
 };
 function changed() {
@@ -96,8 +96,8 @@ function applyLanguage(next) {
       : "autodev — Clarity for consequential changes";
   const description =
     language === "zh"
-      ? "面向复杂变更的 Agent Skill：对齐意图、看见真实进展、交付可审视的证据。"
-      : "An Agent Skill for complex changes. Clarify the intent, inspect the work as it develops, and hand over evidence you can examine.";
+      ? "由用户主动调用的 Agent Skill：澄清关键疑问、给出简洁的图文计划、执行并交付验证依据。"
+      : "An explicitly invoked Agent Skill: clarify important unknowns, make a concise visual plan, execute, and hand over evidence.";
   document.title = title;
   document.querySelector("meta[name=description]").content = description;
   document.querySelector('meta[property="og:title"]').content = title;

@@ -1,5 +1,7 @@
 # Production workflow implementation plan
 
+> Historical record for the earlier contract-based version. The current lightweight workflow is defined in `autodev/SKILL.md`; the tools and required gates described here have since been removed.
+
 > **For agentic workers:** Use superpowers:executing-plans for the core changes; independent visual and evaluation work uses focused agents. Preserve the existing uncommitted quick fixes. The initial implementation scope did not request commits or pushes; the user subsequently approved GitHub delivery.
 
 **Goal:** Make autodev useful for consequential changes in production codebases, with explicit opt-in, visible execution, and honest verification.

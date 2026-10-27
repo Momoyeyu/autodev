@@ -32,7 +32,7 @@ def header(s,title,zh=False,tag='WORKFLOW / 01'):
     label(s,38,35,tag);s.text(38,77,title,29,NAVY,650);s.line(38,101,1162,101)
 
 def brand(zh):
-    s=SVG(1200,310,'autodev — '+('让复杂变更看得清，验得明。' if zh else 'Clarity for consequential changes.'),'autodev 将意图转化为约定的系统范围、经过核验的实现和可见的交付证据。' if zh else 'autodev turns intent into an agreed system slice, a checked implementation, and visible delivery evidence.')
+    s=SVG(1200,310,'autodev — '+('让复杂变更看得清，验得明。' if zh else 'Clarity for consequential changes.'),'用户主动调用 autodev 后，先澄清重要疑问并画出简要计划，再执行、检查并交付证据。' if zh else 'When explicitly invoked, autodev clarifies consequential questions, illustrates a short plan, then implements, checks, and hands over evidence.')
     s.rect(784,0,416,310,PALE);s.rect(784,0,416,310,'url(#grid)');s.line(784,0,784,310,LINE)
     # Folded engineering mark: explicit boundary + advancing path.
     s.path('M43 56H78V91H43Z',NAVY,3);s.path('M51 79L60 65H70M60 65V82H74',BLUE,3)
@@ -41,7 +41,7 @@ def brand(zh):
     slogan='让复杂变更看得清，验得明。' if zh else 'Clarity for consequential changes.'
     s.text(44,187,slogan,31 if zh else 30,NAVY,550,spacing='-0.7' if not zh else None)
     s.text(44,229,'先对齐意图，再交付可核验的结果。' if zh else 'Align on intent. Deliver evidence you can inspect.',21,MUTED)
-    s.text(44,279,'开发 · 修复 · 优化' if zh else 'DEVELOPMENT  ·  BUG FIXES  ·  OPTIMIZATION',14,MUTED,500,spacing='1' if not zh else None)
+    s.text(44,279,'主动调用 · 开发 · 修复 · 优化' if zh else 'EXPLICITLY INVOKED  ·  DEVELOP  ·  FIX  ·  OPTIMIZE',14,MUTED,500,spacing='1' if not zh else None)
     s.circle(985,150,102,'#e3ecf5')
     s.path('M911 105H1045V197H911Z',BLUE,2,dash='5 5')
     for x,y,done in [(895,87,False),(1028,132,True),(937,194,True)]:
@@ -84,40 +84,49 @@ def system(s,x,y,zh,mode='solid'):
     s.text(x+94,y-42,'retry' if not zh else '重试',14,MUTED,anchor='middle')
 
 
-def review(s,x,y,zh):
-    s.circle(x,y-7,8,GOLD);s.path(f'M{x-13} {y+17}v-5q13-17 26 0v5',GOLD,2)
-    s.text(x+25,y+3,'review' if not zh else '审阅',15,GOLD,550)
+def delivery(s,x,y,zh):
+    node(s,x,y+20,'结果' if zh else 'Result','done')
+    s.line(x+79,y+49,x+106,y+49,TEAL,2,arrow=True)
+    s.rect(x+114,y,184,134,'white',LINE,8)
+    for i,(name,color) in enumerate([('改动' if zh else 'Changed',BLUE),('检查' if zh else 'Checked',TEAL),('未决' if zh else 'Open',GOLD)]):
+        row=y+30+i*37
+        s.circle(x+136,row-5,7,color)
+        s.text(x+154,row,name,16,color,550)
 
 
 def overview(zh):
-    title='同一个变更，从目标到交付' if zh else 'One change. Visible from intent to delivery.'
-    s=SVG(1200,520,title,'Illustrative billing retry workflow; dashed paths remain unfinished. Check records support specific paths, not universal correctness.')
+    title='简要计划，执行检查，清楚交付' if zh else 'A short plan. Work you can verify.'
+    s=SVG(1200,520,title,'按需澄清疑问并画出核心流程草稿；实现与检查；简短交付改动、证据和未决事项。示意图不代表实际测试结果，HTML 仅在用户需要时提供。' if zh else 'Clarify questions and sketch the core flow; implement and check; hand over changes, evidence, and open issues concisely. Illustrative, not actual test results; HTML is optional.')
     header(s,title,zh);stage_headers(s,zh)
-    for x,mode in [(48,'solid'),(448,'partial'),(848,'done')]:system(s,x,251,zh,mode)
+    for x,mode in [(48,'solid'),(448,'partial')]:system(s,x,251,zh,mode)
+    delivery(s,848,231,zh)
     s.rect(33,195,338,168,'none',BLUE,12)
-    s.text(225,348,'约定范围' if zh else 'Agreed scope',14,BLUE,550)
+    s.text(225,348,'核心流程草稿' if zh else 'Core flow draft',14,BLUE,550)
     s.line(48,403,1144,403,LINE,2)
-    for x,status in [(90,'fail'),(490,'pass'),(602,'gap'),(890,'pass'),(1002,'pass')]:
+    for x,status in [(90,'gap'),(490,'pass'),(602,'gap'),(890,'pass'),(1002,'pass')]:
         s.line(x,350,x,390,LINE,1,dash='3 4');s.circle(x,403,12,TEAL if status=='pass' else GOLD if status=='gap' else '#b85649')
         if status=='pass':s.check(x-7,404,'white')
         else:s.text(x,408,'?' if status=='gap' else '×',18,'white',650,anchor='middle')
-    for x,t in [(48,'baseline / 基线' if zh else 'Baseline'),(448,'checks + gaps / 检查与缺口' if zh else 'Checks + gaps'),(848,'retained source + evidence' if not zh else '保留源码 + 证据')]:s.text(x,446,t,17,MUTED)
-    review(s,270,480,zh);review(s,1070,480,zh)
-    s.text(448,488,'虚线 = 尚未实现' if zh else 'Dashed = unfinished',15,MUTED)
+    for x,t in [(48,'重要疑问 + 简要计划' if zh else 'Key questions + short plan'),(448,'实现 + 有针对性的检查' if zh else 'Implement + focused checks'),(848,'改动 + 证据 + 剩余问题' if zh else 'Changes + evidence + limits')]:s.text(x,446,t,17,MUTED)
+    s.text(48,488,'按用户要求启用' if zh else 'Invoke when you want it',15,MUTED)
+    s.text(448,488,'重要变化时再更新' if zh else 'Update when it matters',15,MUTED)
+    s.text(848,488,'HTML 仅在需要时提供' if zh else 'HTML only if you want it',15,MUTED)
     s.save('autodev-overview'+('.zh' if zh else '')+'.svg')
 
 
 def development(s,zh):
-    for x,mode in [(48,'solid'),(448,'partial'),(848,'done')]:
+    for x,mode in [(48,'solid'),(448,'partial')]:
         system(s,x,270,zh,mode)
-    for x in [48,448,848]:
+    delivery(s,848,250,zh)
+    for x in [48,448]:
         s.rect(x,389,300,62,'white',LINE,8)
         for i in range(3):
-            color=TEAL if x==848 or (x==448 and i<2) else BLUE if x==48 else LINE
+            color=TEAL if x==448 and i<2 else BLUE if x==48 else LINE
             s.rect(x+18+i*94,409,76,20,color,rx=3)
-    s.text(48,490,'蓝图' if zh else 'Blueprint',18,BLUE,600)
-    s.text(448,490,'2 / 3 已实现' if zh else '2 / 3 implemented',18,TEAL,600)
-    s.text(848,490,'逐路径对照代码与检查' if zh else 'Compare paths with code + checks',17,TEAL,600)
+    s.text(848,423,'简短结论，链接到证据' if zh else 'Short summary; link the evidence',17,MUTED)
+    s.text(48,490,'只画核心流程' if zh else 'Sketch the core flow',18,BLUE,600)
+    s.text(448,490,'实现与检查' if zh else 'Implement + check',18,TEAL,600)
+    s.text(848,490,'可交由其他 skill 生成 HTML' if zh else 'Optional HTML via another skill',17,TEAL,600)
 
 
 def bugfix(s,zh):
@@ -136,16 +145,16 @@ def bugfix(s,zh):
             s.rect(x+j*73,423,57,34,color,rx=5)
             if j==0 and not fixed:s.text(x+28,446,'×',24,'white',600,anchor='middle')
             else:s.check(x+j*73+20,440,'white')
-        s.text(x,491,'同一组约定测试' if zh else 'Same agreed test set',17,MUTED)
+        s.text(x,491,('先复现故障' if zh else 'Reproduce before fixing') if not fixed else ('修复并检查回归' if zh else 'Fix + check regressions') if x==448 else ('报告检查与局限' if zh else 'Report checks + limits'),17,MUTED)
 
 
 def optimization(s,zh):
-    s.text(48,222,'固定负载' if zh else 'Fixed workload',18,BLUE,600)
+    s.text(48,222,'固定负载 + 基线采样' if zh else 'Fixed workload + baseline samples',17,BLUE,600)
     for i,h in enumerate([36,68,48,84,58]):s.rect(52+i*43,345-h,25,h,PALE,BLUE,3)
     s.line(48,362,333,362,BLUE,2)
     for x in range(48,334,24):s.line(x,362,x,373,BLUE,1)
     s.text(48,408,'同一标尺 · 同一环境' if zh else 'Same ruler · same environment',17,MUTED)
-    s.text(448,222,'尝试与回滚' if zh else 'Attempts + rollback',18,BLUE,600)
+    s.text(448,222,'测量，保留或舍弃' if zh else 'Measure; retain or reject',18,BLUE,600)
     s.line(461,350,750,350,TEAL,3)
     for x,y,keep in [(485,350,True),(565,275,False),(650,350,True),(725,285,False)]:
         if not keep:
@@ -153,7 +162,7 @@ def optimization(s,zh):
             s.path(f'M{x} {y+12}Q{x+38} 335 {x+16} 348',MUTED,1.5,dash='4 4',arrow=True)
         s.circle(x,y,9,TEAL if keep else GOLD)
         if not keep:s.text(x,y+5,'×',15,'white',600,anchor='middle')
-    s.text(448,408,'保留有效版本' if zh else 'Retain the valid state',17,TEAL)
+    s.text(448,408,'记录有效和无效的尝试' if zh else 'Record retained + rejected attempts',16,TEAL)
     s.text(848,222,'保留结果与复测' if zh else 'Retained state + rerun',18,TEAL,600)
     s.rect(857,264,58,87,PALE,BLUE,5);s.rect(945,303,58,48,'#e5f3ef',TEAL,5)
     s.line(974,295,974,311,TEAL,2);s.line(962,295,986,295,TEAL,2)
@@ -165,7 +174,7 @@ def optimization(s,zh):
 
 SCENARIOS=['development','bugfix','optimization']
 def scenario(kind,zh):
-    titles={'development':('See what is built. See what is still missing.','看见已实现，也看见未完成'), 'bugfix':('A failure path becomes a regression check.','让故障路径对应到回归检查'), 'optimization':('Keep the ruler. Keep the history.','固定标尺，保留全部尝试')}
+    titles={'development':('Sketch the plan. Build it. Show the evidence.','画出计划，执行检查，交付证据'), 'bugfix':('A failure path becomes a regression check.','让故障路径对应到回归检查'), 'optimization':('Keep the ruler. Keep the history.','固定标尺，保留全部尝试')}
     title=titles[kind][int(zh)]
     s=SVG(1200,550,title,'Illustrative workflow only, not benchmark results. The diagram does not establish correctness or measured improvement.')
     header(s,title,zh,'DEVELOPMENT' if kind=='development' else 'BUG FIX' if kind=='bugfix' else 'OPTIMIZATION')

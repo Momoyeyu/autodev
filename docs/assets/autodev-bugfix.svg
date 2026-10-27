@@ -32,7 +32,7 @@
 <path d="M214 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
 <rect x="267" y="423" width="57" height="34" rx="5" fill="#137d85"/>
 <path d="M287 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-<text x="48" y="491" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="400" text-anchor="start">Same agreed test set</text>
+<text x="48" y="491" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="400" text-anchor="start">Reproduce before fixing</text>
 <path d="M474 241L720 241" fill="none" stroke="#cfdae2" stroke-width="2"/>
 <path d="M473 269H608" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <rect x="452" y="260" width="15" height="18" rx="3" fill="#2462d2"/>
@@ -53,7 +53,7 @@
 <path d="M614 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
 <rect x="667" y="423" width="57" height="34" rx="5" fill="#137d85"/>
 <path d="M687 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-<text x="448" y="491" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="400" text-anchor="start">Same agreed test set</text>
+<text x="448" y="491" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="400" text-anchor="start">Fix + check regressions</text>
 <path d="M874 241L1120 241" fill="none" stroke="#cfdae2" stroke-width="2"/>
 <path d="M873 269H1008" fill="none" stroke="#2462d2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <rect x="852" y="260" width="15" height="18" rx="3" fill="#2462d2"/>
@@ -74,6 +74,6 @@
 <path d="M1014 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
 <rect x="1067" y="423" width="57" height="34" rx="5" fill="#137d85"/>
 <path d="M1087 440l5 5 10 -12" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-<text x="848" y="491" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="400" text-anchor="start">Same agreed test set</text>
+<text x="848" y="491" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="17" font-weight="400" text-anchor="start">Report checks + limits</text>
 <text x="48" y="530" fill="#526a7e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="14" font-weight="400" text-anchor="start">Schematic · conclusions depend on actual code and raw evidence.</text>
 </svg>

@@ -1,5 +1,7 @@
 # Product iteration checks — 2026-10-21
 
+> Historical record for the earlier contract-based version. The current lightweight workflow is defined in `autodev/SKILL.md`; the tools and required gates described here have since been removed.
+
 This record distinguishes implementation checks from product-effectiveness evidence. No production user study or SWE-bench experiment was executed in this iteration. The next product trials are proposed in [the evaluation plan](../evaluation.md).
 
 ## Skill instruction-following probes

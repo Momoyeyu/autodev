@@ -1,75 +1,22 @@
-# Clarify: performance optimization
+# Performance optimization
 
-Read for a performance goal, alongside the shared [Clarify](clarify.md) rules. The target of this scenario is a **numeric score reaching an agreed threshold**. One pass runs steps 1–3 in order; the human reviews the whole pass in step 4. Do not optimize during Clarify.
+Optimize an observed workload, not a score detached from useful work. Keep the original baseline and make each experiment answer a concrete hypothesis.
 
-## 1. Prepare the benchmark
+## Establish a useful comparison
 
-Prepare an executable benchmark, make explicit what it measures, and trial-run it to verify meaningful execution.
+- Identify the primary metric, unit, improvement direction, and correctness constraints. Record secondary effects such as memory or tail latency when they matter. Reuse an existing benchmark where possible.
+- Fix the workload, inputs, command, environment, cache/warmup conditions, repetitions, and aggregation. Check that the workload does the intended work and validates its output.
+- Measure the unchanged implementation. Keep raw samples and enough source/configuration information to reproduce them. Repeat as needed to understand variability; two readings alone do not guarantee a reliable noise bound.
+- Reuse the user's target and resource limits. For an open-ended search, propose a bounded time/attempt budget before expensive work. A small comparison need not acquire a formal target or a new approval step. If the baseline already satisfies the requested goal, report it rather than forcing an unnecessary attempt.
 
-The benchmark must be:
+## Iterate with evidence
 
-- **Quantifiable:** produce a finite numeric result with a named unit and an explicit improvement direction.
-- **Single:** exactly one benchmark, or several benchmarks combined into one fixed weighted score. Component readings are diagnostics, not independent optimization targets.
+For each attempt, state the hypothesis, make a coherent change, check correctness, and measure under comparable conditions. Retain improvements supported by the measurements; restore only your own rejected changes using a method appropriate to the project. Git is optional. Do not discard unrelated work.
 
-Fix workload, input data, valid output, command, execution environment/cache conditions, repetition, aggregation, and treatment of measurement variability. The benchmark must perform the intended work and reject invalid results; a constant or fabricated score is not evidence.
+Keep a lightweight record of the change, samples/result, validity, and retention decision. Include rejected ideas, compile failures, crashes, and timeouts. Invalid or unavailable runs have no fabricated score. A noisy apparent win needs confirmation before it becomes a claimed improvement.
 
-For a composite benchmark, fix the formula before baseline:
+Keep the ruler comparable. Changing the workload, scoring formula, environment, or resource limits calls for a new baseline and a clear explanation, not an improvement claim across incompatible runs. Do not reduce the required work, weaken output validation, or pick favorable samples to manufacture a gain.
 
-```text
-score = sum(weight_i * normalize_i(measurement_i))
-```
+Stop when the goal is met, the agreed budget ends, the user redirects the work, or further attempts lack a useful hypothesis. Reserve enough time for a final correctness check and remeasurement of the retained state. Report an unmet target plainly.
 
-Explain the weights, normalization, directions, and permitted trade-offs. Do not average away invalid output or choose weights after seeing which implementation wins.
-
-## 2. Capture baseline
-
-Run the prepared benchmark on the unchanged implementation using the fixed conditions. Save the original numeric result, raw samples, aggregation, variability where relevant, and benchmark/source identities. For a composite score, retain its component readings too.
-
-This is the original baseline for the handoff chart. Later improvements must not overwrite it.
-
-## 3. Propose the limits using the baseline
-
-| Limit | Propose for the human's confirmation |
-|---|---|
-| Optimization target | Threshold on the one score and whether equality counts, taken from how the human phrased it; reaching it permits early exit |
-| Editable files | Explicit implementation paths the agent may change; benchmark, inputs, weights, and scoring logic remain outside this surface |
-| Time budget | A mandatory wall-clock limit (`--budget-minutes`); `--reserve-minutes` marks its tail, during which `attempt` refuses new runs so `verify` and Handoff fit inside the budget |
-| Generated paths | Run-artifact paths the benchmark or build writes (build output, caches, reports); declare with `--generated` |
-
-Reuse values already supplied by the human, but do not silently invent missing permissions or an unlimited budget. State the proposal relative to the measured starting point.
-
-Write the proposal as a contract with `init`, under the shared [contract rules](clarify.md#the-contract):
-
-```bash
-python3 <skill>/scripts/autodev_verify.py --home "$PWD/.autodev/runs/<task>" init \
-  --scenario optimization --editable src/api \
-  --frozen bench/ --test-cmd "python bench/run.py" \
-  --score-regex "p95=([0-9.]+)" --unit ms --direction lower \
-  --delta-pct 5 --target 200 --exclusive --budget-minutes 20 --reserve-minutes 3
-```
-
-`init` runs the benchmark once more to record the baseline and its raw output, converts `δ`, and hashes the frozen paths. It then reruns the benchmark on the same unchanged source as a negative control and records the gap as `noise`: an unchanged candidate must never look like an improvement, so `init` refuses a `δ` that is not larger than that gap. Raise `δ` or stabilise the benchmark, and show the noise in the review.
-
-Bind both Loop comparisons to the approved `direction`. `best` is the retained best verified score and starts at baseline; `δ` is the improvement margin:
-
-| direction | Attempt is accepted | Target is met |
-|---|---|---|
-| lower | `score < best - δ` | `score ≤ target`, or `score < target` if the human excluded equality |
-| higher | `score > best + δ` | `score ≥ target`, or `score > target` if the human excluded equality |
-
-Acceptance compares with `best`, not baseline, so a retained result is never replaced by a worse one. Fix `δ` in the score's unit before Loop: `--delta-pct` converts once against baseline, `δ = pct × |baseline|`, and is not recomputed against later `best` values; `--delta` gives it directly, for example as an agreed noise floor. Read equality from the human's wording — "at least 90%" includes 90%, "below 100 ms" excludes 100 ms (`--exclusive`) — and record the choice; do not default it.
-
-Examples: latency baseline 200 ms, `δ` 10 ms, lower — 180 ms is accepted, 220 ms is rejected, and a later 185 ms is rejected because `best` is already 180 ms. Throughput target "at least 1000 req/s", higher — 800 req/s has not met the target; 1000 req/s has.
-
-## 4. Human review of the whole pass
-
-Show the benchmark and its conditions, the baseline score with its samples, and the proposed target, editable files, and time budget, together. The human decides:
-
-- **Revise:** apply the feedback and repeat from step 1. A changed benchmark, workload, or formula needs a new baseline before the next review; rerun `init --renew`, which archives the previous contract.
-- **Approve:** record the approved benchmark, baseline, and limits, then enter Loop.
-
-Record hashes or equivalent identities for the benchmark and measurement inputs. Changing the ruler, reducing work, or warming an undeclared cache is not an implementation improvement. A change in the approved measurement requires renewed Clarify and a new baseline.
-
-Once approved, enter the do-while Loop with an optimization attempt, then evaluate the target and deadline after measurement and retention. A baseline that already meets the target does not bypass that first attempt. The approved wall-clock budget remains a hard limit.
-
-**Exit:** the human has approved one complete pass — the executable benchmark, its baseline, and the target, editable files, and time budget. Continue to [Loop: optimization](loop.md#performance-optimization).
+At handoff, show baseline and retained measurements with their conditions and limitations. Use a compact table for a short comparison or a chart for a longer history; preserve failures and rejected attempts in the underlying record. A process chart is useful evidence, not a mandatory report format.

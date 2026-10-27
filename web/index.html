@@ -6,7 +6,7 @@
     <title>autodev — Clarity for consequential changes</title>
     <meta
       name="description"
-      content="An Agent Skill for complex changes. Clarify the intent, inspect the work as it develops, and hand over evidence you can examine."
+      content="An explicitly invoked Agent Skill: clarify important unknowns, make a concise visual plan, execute, and hand over evidence."
     />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#080f25" />
@@ -16,7 +16,7 @@
     />
     <meta
       property="og:description"
-      content="Shared understanding from intent to implementation to evidence."
+      content="A concise visual plan, checked execution, and a clear handoff. Use autodev when you explicitly ask for it."
     />
     <meta property="og:type" content="website" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
@@ -87,10 +87,9 @@
           <p class="intro-line">
             <span class="signal-dot" aria-hidden="true"></span
             ><span
-              data-en="An Agent Skill for consequential changes"
-              data-zh="为复杂而重要的变更而设计的 Agent Skill"
-              >An Agent Skill for consequential changes</span
-            >
+              data-en="An Agent Skill, invoked by you"
+              data-zh="由你主动调用的 Agent Skill"
+              >An Agent Skill, invoked by you</span>
           </p>
           <h1 id="hero-title">
             <span data-en="Make the change." data-zh="推进变更。"
@@ -101,13 +100,10 @@
             >
           </h1>
           <p
-            data-en="Agree on what matters. See what is actually built. Review the evidence before it lands."
-            data-zh="对齐真正重要的目标，看清实际完成的工作，在交付前审视证据。"
+            data-en="Clarify what matters. Start with a small visual plan. Build, check, and hand over clear evidence."
+            data-zh="澄清关键疑问，从简洁的图文计划开始。实现、验证，再交付清晰的依据。"
             class="hero-description"
-          >
-            Agree on what matters. See what is actually built. Review the
-            evidence before it lands.
-          </p>
+          >Clarify what matters. Start with a small visual plan. Build, check, and hand over clear evidence.</p>
           <div class="hero-actions">
             <a class="button primary" href="#workflow"
               ><span data-en="Explore the workflow" data-zh="探索工作流"
@@ -120,13 +116,10 @@
             >
           </div>
           <p
-            data-en="For changes that are expensive to misunderstand. Small, obvious fixes can stay small."
-            data-zh="用于那些经不起误解的变更。简单明确的小修复，保持简单。"
+            data-en="Use autodev when you ask for it. Keep the plan and evidence proportional to the task."
+            data-zh="仅在你主动要求时使用 autodev。计划与证据的分量，随任务而定。"
             class="hero-note"
-          >
-            For changes that are expensive to misunderstand. Small, obvious
-            fixes can stay small.
-          </p>
+          >Use autodev when you ask for it. Keep the plan and evidence proportional to the task.</p>
         </div>
         <figure class="hero-visual">
           <div class="diagram-coordinates" aria-hidden="true">
@@ -250,13 +243,10 @@
             >
           </h2>
           <p
-            data-en="From the first agreement to the final review, keep intent, implementation, and evidence in the same conversation."
-            data-zh="从最初的约定到最后的审阅，让目标、实现与证据始终对得上。"
+            data-en="Clarify and Loop are plan and execute: resolve important uncertainty, show the core path, then build and check it."
+            data-zh="Clarify 和 Loop 本质就是计划与执行：澄清关键疑问，画出核心路径，再实现并验证。"
             class="section-description"
-          >
-            From the first agreement to the final review, keep intent,
-            implementation, and evidence in the same conversation.
-          </p>
+          >Clarify and Loop are plan and execute: resolve important uncertainty, show the core path, then build and check it.</p>
         </div>
         <div class="workflow-layout">
           <div class="stage-list" role="group" aria-label="Workflow stages">
@@ -272,18 +262,13 @@
               </button>
               <div class="stage-copy">
                 <h3
-                  data-en="Prepare the whole picture."
-                  data-zh="准备完整图景。"
-                >
-                  Prepare the whole picture.
-                </h3>
+                  data-en="Clarify the important unknowns."
+                  data-zh="澄清真正重要的疑问。"
+                >Clarify the important unknowns.</h3>
                 <p
-                  data-en="Inspect the code, prepare the target and baseline, and propose scope and checks. Review the complete pass together, once."
-                  data-zh="读代码、准备目标与基线，提出修改范围和验证方式。一起审阅完整方案，再开始实现。"
-                >
-                  Inspect the code, prepare the target and baseline, and propose
-                  scope and checks. Review the complete pass together, once.
-                </p>
+                  data-en="Inspect the relevant code. Ask about uncertainty that could change the solution, then show a short plan with a useful diagram. Mermaid is often enough."
+                  data-zh="阅读相关代码，主动澄清会改变方案的不确定性，再给出简短的图文计划。通常 Mermaid 就够了。"
+                >Inspect the relevant code. Ask about uncertainty that could change the solution, then show a short plan with a useful diagram. Mermaid is often enough.</p>
               </div>
             </div>
             <div class="stage-item">
@@ -304,13 +289,9 @@
                   See the work as it stands.
                 </h3>
                 <p
-                  data-en="Implement within the agreement. Keep actual partial state, recorded checks, failures, and the next step visible at meaningful checkpoints."
-                  data-zh="在约定内实现。在关键节点展示实际的部分进展、检查记录、失败和下一步。"
-                >
-                  Implement within the agreement. Keep actual partial state,
-                  recorded checks, failures, and the next step visible at
-                  meaningful checkpoints.
-                </p>
+                  data-en="Execute the plan with the project’s tools. Check meaningful changes and explain important progress, failures, or new decisions."
+                  data-zh="用项目已有工具执行计划，验证有意义的改动，说明重要进展、失败或新出现的决策。"
+                >Execute the plan with the project’s tools. Check meaningful changes and explain important progress, failures, or new decisions.</p>
               </div>
             </div>
             <div class="stage-item">
@@ -325,19 +306,13 @@
               </button>
               <div class="stage-copy">
                 <h3
-                  data-en="Review what you can inspect."
-                  data-zh="交付可审视的依据。"
-                >
-                  Review what you can inspect.
-                </h3>
+                  data-en="Hand over the result clearly."
+                  data-zh="清楚地交付结果。"
+                >Hand over the result clearly.</h3>
                 <p
-                  data-en="Compare the delivered code with the agreement. Present the required artifact, reproducible evidence, and open gaps for human approval."
-                  data-zh="将交付代码与约定对照，呈现应有产物、可复现的证据和未验证之处，交由人来批准。"
-                >
-                  Compare the delivered code with the agreement. Present the
-                  required artifact, reproducible evidence, and open gaps for
-                  human approval.
-                </p>
+                  data-en="Summarize what changed, what was verified, and what remains open. HTML is optional; ask another skill to render it when you want a richer view."
+                  data-zh="简要交代改了什么、验证了什么、还剩什么。HTML 由你选择，需要更丰富的展示时，可交给其他 skill 渲染。"
+                >Summarize what changed, what was verified, and what remains open. HTML is optional; ask another skill to render it when you want a richer view.</p>
               </div>
             </div>
           </div>
@@ -434,21 +409,16 @@
             </div>
             <p
               class="view-note"
-              data-en="Agree on the API → queue → ledger path and the checks that can support it."
-              data-zh="对齐 API → 队列 → 账本的路径，以及支撑它的验证方式。"
-            >
-              Agree on the API → queue → ledger path and the checks that can
-              support it.
-            </p>
+              data-en="Sketch the API → queue → ledger path and choose the checks that matter."
+              data-zh="画出 API → 队列 → 账本的核心路径，选出必要的检查。"
+            >Sketch the API → queue → ledger path and choose the checks that matter.</p>
           </div>
         </div>
         <p class="section-foot">
           <span
-            data-en="Progress is a snapshot of the actual state, refreshed at meaningful checkpoints. A green command is evidence for what it checked."
-            data-zh="进展是在关键节点刷新的真实状态快照。命令通过，支持的是它实际检查过的行为。"
-            >Progress is a snapshot of the actual state, refreshed at meaningful
-            checkpoints. A green command is evidence for what it checked.</span
-          >
+            data-en="A diagram helps explain the work. The code and actual checks support the result. Use your current workspace or choose isolation when you need it."
+            data-zh="图帮助理解工作，代码与实际检查支撑结果。可以直接用当前工作区，需要隔离时再选择。"
+            >A diagram helps explain the work. The code and actual checks support the result. Use your current workspace or choose isolation when you need it.</span>
         </p>
       </section>
       <section
@@ -488,38 +458,27 @@
           <div class="task-panels">
             <article class="task-panel" data-task-panel="0">
               <h3
-                data-en="Start from the system. Deliver the as-built view."
-                data-zh="从系统出发，交付实际构建的样貌。"
-              >
-                Start from the system. Deliver the as-built view.
-              </h3>
+                data-en="A small plan. A working change."
+                data-zh="简洁的计划，能用的改动。"
+              >A small plan. A working change.</h3>
               <p
-                data-en="Prepare the current architecture, proposed blueprint, dependencies, and regression checks. As you build, distinguish implemented paths from unfinished ones."
-                data-zh="准备现有架构、目标蓝图、依赖与回归检查。在实现过程中，明确哪些路径已完成，哪些尚未完成。"
-              >
-                Prepare the current architecture, proposed blueprint,
-                dependencies, and regression checks. As you build, distinguish
-                implemented paths from unfinished ones.
-              </p>
+                data-en="Clarify consequential unknowns, sketch the core flow, and implement the plan. Expand the diagram only when it helps a real decision."
+                data-zh="澄清会影响方案的疑问，画出核心流程，再按计划实现。只有能帮助实际决策时，才扩展图的细节。"
+              >Clarify consequential unknowns, sketch the core flow, and implement the plan. Expand the diagram only when it helps a real decision.</p>
               <div class="receive">
                 <span data-en="You receive" data-zh="你将收到"
                   >You receive</span
                 >
                 <p
-                  data-en="As-built diagrams, source, checks, and remaining gaps."
-                  data-zh="实际构建图、源码、检查记录与待验证项。"
-                >
-                  As-built diagrams, source, checks, and remaining gaps.
-                </p>
+                  data-en="A concise change summary, relevant checks, and remaining gaps."
+                  data-zh="简明的改动说明、相关检查与待验证项。"
+                >A concise change summary, relevant checks, and remaining gaps.</p>
               </div>
               <p
-                data-en="A picture describes the code. Its meaning still needs review against the code and evidence."
-                data-zh="图描述代码，图的含义仍需结合源码和证据来审视。"
+                data-en="Start with a draft, not a complete architecture document. Choose a richer handoff only when useful."
+                data-zh="从草稿开始，不必先写完整架构文档。需要时再选择更丰富的交付形式。"
                 class="limit-note"
-              >
-                A picture describes the code. Its meaning still needs review
-                against the code and evidence.
-              </p>
+              >Start with a draft, not a complete architecture document. Choose a richer handoff only when useful.</p>
               <a
                 class="text-link diagram-link"
                 href="diagrams/autodev-development.html?theme=dark"
@@ -541,24 +500,17 @@
                 Reproduce it. Preserve the regression.
               </h3>
               <p
-                data-en="Show the failure on unchanged source, prepare the relevant test set, and fix against that agreement. Preserve test versions and raw output."
-                data-zh="先在未修改的源码上复现失败，准备相关测试集，再按约定修复。保留测试版本与原始输出。"
-              >
-                Show the failure on unchanged source, prepare the relevant test
-                set, and fix against that agreement. Preserve test versions and
-                raw output.
-              </p>
+                data-en="Reproduce the reported failure and add a focused regression test when practical. Fix the cause, then run relevant checks without weakening their meaning."
+                data-zh="复现报告的故障，在可行时添加聚焦的回归测试。修复原因，再运行相关检查，保持测试含义。"
+              >Reproduce the reported failure and add a focused regression test when practical. Fix the cause, then run relevant checks without weakening their meaning.</p>
               <div class="receive">
                 <span data-en="You receive" data-zh="你将收到"
                   >You receive</span
                 >
                 <p
-                  data-en="The agreed test results, what they cover, and what remains untested."
-                  data-zh="约定的测试结果、覆盖了什么，以及哪些尚未测试。"
-                >
-                  The agreed test results, what they cover, and what remains
-                  untested.
-                </p>
+                  data-en="The reproduction, regression results, and any untested conditions."
+                  data-zh="复现依据、回归结果与尚未测试的条件。"
+                >The reproduction, regression results, and any untested conditions.</p>
               </div>
               <p
                 data-en="A broken environment is a blockage. It is not a reproduced bug."
@@ -588,11 +540,11 @@
                 Keep the ruler fixed. Show every attempt.
               </h3>
               <p
-                data-en="Agree on one score, baseline, conditions, scope, and budget. Measure each attempt, retain valid improvements, and record rejected routes."
-                data-zh="对齐一个分数、基线、测量条件、范围与预算。逐次测量，保留有效改进，记录被否决的路线。"
+                data-en="Choose useful metrics and comparable conditions. Measure each attempt within the budget, retain valid improvements, and record rejected routes."
+                data-zh="选择有用的指标与可比条件。在预算内逐次测量，保留有效改进，也记录被否决的路线。"
               >
-                Agree on one score, baseline, conditions, scope, and budget.
-                Measure each attempt, retain valid improvements, and record
+                Choose useful metrics and comparable conditions. Measure each
+                attempt within the budget, retain valid improvements, and record
                 rejected routes.
               </p>
               <div class="receive">
@@ -600,12 +552,9 @@
                   >You receive</span
                 >
                 <p
-                  data-en="The measured process chart, retained source, and verification evidence."
-                  data-zh="实测过程图、保留的源码与验证证据。"
-                >
-                  The measured process chart, retained source, and verification
-                  evidence.
-                </p>
+                  data-en="The baseline, measured attempts, retained result, and a chart when useful."
+                  data-zh="基线、各次实测、保留结果，以及有助于理解时的图表。"
+                >The baseline, measured attempts, retained result, and a chart when useful.</p>
               </div>
               <p
                 data-en="A deadline can arrive before the target. Missing measurements stay missing."
@@ -655,11 +604,9 @@
                 <text
                   x="164"
                   y="149"
-                  data-en="agreed target"
-                  data-zh="约定目标"
-                >
-                  agreed target
-                </text>
+                  data-en="plan / result"
+                  data-zh="计划 / 结果"
+                >plan / result</text>
                 <text
                   x="164"
                   y="352"
@@ -920,14 +867,10 @@
               >
             </h2>
             <p
-              data-en="Install the skill. Describe the consequential change. Your agent prepares the whole Clarify pass for one review before implementation."
-              data-zh="安装 Skill，描述这次重要的变更。Agent 会在实现前准备完整的 Clarify 方案，供你一并审阅。"
+              data-en="Install the skill and explicitly ask to use autodev. You choose the depth of the plan, workspace isolation, and whether the handoff needs HTML."
+              data-zh="安装后，主动要求使用 autodev。计划深度、是否隔离工作区，以及交付是否需要 HTML，都由你选择。"
               class="section-description"
-            >
-              Install the skill. Describe the consequential change. Your agent
-              prepares the whole Clarify pass for one review before
-              implementation.
-            </p>
+            >Install the skill and explicitly ask to use autodev. You choose the depth of the plan, workspace isolation, and whether the handoff needs HTML.</p>
             <div class="install-command">
               <code>npx skills add Momoyeyu/autodev -g</code
               ><button
@@ -962,13 +905,9 @@
                 ></span
               >
               <p
-                data-en="Use autodev for our billing retry change. Inspect the API, queue, and ledger. Prepare the flow, baseline checks, scope, and verification gaps for one review."
-                data-zh="用 autodev 修改计费重试逻辑。检查 API、队列与账本，准备流程、基线检查、修改范围与验证缺口，供我一并审阅。"
-              >
-                Use autodev for our billing retry change. Inspect the API,
-                queue, and ledger. Prepare the flow, baseline checks, scope, and
-                verification gaps for one review.
-              </p>
+                data-en="Use autodev for our billing retry change. Clarify important unknowns, show me a short flow diagram and plan, then implement and verify. Keep the handoff concise."
+                data-zh="用 autodev 修改计费重试逻辑。先澄清关键疑问，给我一张简短流程图和计划，再实现并验证。最后简要交付。"
+              >Use autodev for our billing retry change. Clarify important unknowns, show me a short flow diagram and plan, then implement and verify. Keep the handoff concise.</p>
             </div>
             <a
               href="https://github.com/Momoyeyu/autodev/blob/master/autodev/SKILL.md"

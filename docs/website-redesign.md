@@ -1,5 +1,11 @@
 # Website redesign
 
+## Workflow simplification on 2026-10-27
+
+The bilingual copy and six linked scenario diagrams now describe explicit invocation, a concise illustrated plan, execution with relevant checks, and a short evidence handoff. HTML and workspace isolation are optional user choices. The earlier contract-based review gates and frozen-test requirements have been removed from current copy; the layout and motion implementation below are unchanged.
+
+The existing browser suite passed 324 assertions across both languages and its seven viewport sizes, with no JavaScript exceptions or failed resources. Six motion tests and all six linked diagram text-bound checks passed. The separate README SVG suites were also checked at reading width. These checks concern presentation and instruction consistency, not skill effectiveness in real development.
+
 ## Intent and visual direction
 
 The previous website presented autodev as a rigid protocol with broad mechanical guarantees. The current skill is an optional workflow for consequential changes: shared understanding of intent, actual implementation, and the basis and limits of verification. The website now follows that positioning in English and Chinese.
